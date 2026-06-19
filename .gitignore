@@ -39,5 +39,8 @@ build/
 .beads/
 .daedalus/
 
+# Claude Code local session state (logs, worktrees): per-machine, not source
+.claude/
+
 # Logs
 *.log
