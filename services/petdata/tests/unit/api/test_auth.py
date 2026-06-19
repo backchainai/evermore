@@ -4,21 +4,21 @@ from __future__ import annotations
 
 import pytest
 
-from petbio.modules.api.auth import CookieAuth
-from petbio.modules.api.exceptions import APIAuthenticationError
+from petdata.modules.api.auth import CookieAuth
+from petdata.modules.api.exceptions import APIAuthenticationError
 
 
 class TestCookieValidation:
     """Tests for cookie format validation."""
 
     def test_missing_cookies_raises_error(self):
-        """CookieAuth raises error when PETBIO_COOKIES not set."""
-        with pytest.raises(APIAuthenticationError, match=r"PETBIO_COOKIES.*required"):
+        """CookieAuth raises error when PETDATA_COOKIES not set."""
+        with pytest.raises(APIAuthenticationError, match=r"PETDATA_COOKIES.*required"):
             CookieAuth(cookies="")
 
     def test_empty_cookies_raises_error(self):
         """CookieAuth raises error for empty cookie string."""
-        with pytest.raises(APIAuthenticationError, match=r"PETBIO_COOKIES.*required"):
+        with pytest.raises(APIAuthenticationError, match=r"PETDATA_COOKIES.*required"):
             CookieAuth(cookies="")
 
     def test_whitespace_only_cookies_raises_error(self):

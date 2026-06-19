@@ -36,17 +36,17 @@ services:
       postgres:
         condition: service_healthy
 
-  petbio-api:
+  petdata-api:
     build:
-      context: ../petbio
+      context: ../petdata
     ports:
       - "8002:8000"
     env_file:
-      - ../petbio/.env
+      - ../petdata/.env
     environment:
-      - PETBIO_DATABASE_PATH=/app/data/petbio.db
+      - PETDATA_DATABASE_PATH=/app/data/petdata.db
     volumes:
-      - petbio-data:/app/data
+      - petdata-data:/app/data
 
   jaeger:
     image: jaegertracing/jaeger:latest
@@ -56,4 +56,4 @@ services:
 
 volumes:
   pgdata:
-  petbio-data:
+  petdata-data:

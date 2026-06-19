@@ -12,7 +12,7 @@ dependencies:
 ---
 # Development Standards
 
-Standards for petbio development.
+Standards for petdata development.
 
 ## Git Workflow: GitHub Flow
 

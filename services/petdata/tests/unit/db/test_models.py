@@ -6,7 +6,7 @@ from datetime import datetime
 
 import pytest
 
-from petbio.modules.db.models import (
+from petdata.modules.db.models import (
     Animal,
     AnimalImage,
     KennelCard,
@@ -22,15 +22,15 @@ class TestAnimal:
 
     def test_create_animal_minimal(self):
         """Animal can be created with minimal required fields."""
-        animal = Animal(id="FOHA-A-55833", name="Buddy")
-        assert animal.id == "FOHA-A-55833"
+        animal = Animal(id="A-55833", name="Buddy")
+        assert animal.id == "A-55833"
         assert animal.name == "Buddy"
         assert animal.breed is None
 
     def test_create_animal_full(self):
         """Animal can be created with all fields."""
         animal = Animal(
-            id="FOHA-A-55833",
+            id="A-55833",
             name="Buddy",
             aka="Bud",
             breed="Labrador",
@@ -43,7 +43,7 @@ class TestAnimal:
             is_in_kennel=True,
             is_foster_care=False,
             photo_url="https://example.com/photo.jpg",
-            public_profile_url="https://foha.org/pet/buddy/",
+            public_profile_url="https://example.org/pet/buddy/",
             adalo_record_id="abc123",
         )
         assert animal.weight_lbs == 65.5
@@ -52,7 +52,7 @@ class TestAnimal:
 
     def test_model_dump_excludes_none(self):
         """model_dump excludes None values when exclude_none=True."""
-        animal = Animal(id="FOHA-A-55833", name="Buddy")
+        animal = Animal(id="A-55833", name="Buddy")
         data = animal.model_dump(mode="json", exclude_none=True)
         assert "aka" not in data  # None field excluded
         assert "name" in data  # Non-None field included
@@ -60,7 +60,7 @@ class TestAnimal:
 
     def test_model_dump_includes_none(self):
         """model_dump includes None values when exclude_none=False."""
-        animal = Animal(id="FOHA-A-55833", name="Buddy")
+        animal = Animal(id="A-55833", name="Buddy")
         data = animal.model_dump(mode="json", exclude_none=False)
         assert "aka" in data  # None field included
         assert data["aka"] is None
@@ -68,7 +68,7 @@ class TestAnimal:
     def test_sqlite_bool_conversion_from_dict(self):
         """model_validate(dict) correctly converts SQLite bools."""
         row_dict = {
-            "id": "FOHA-A-55833",
+            "id": "A-55833",
             "name": "Buddy",
             "aka": None,
             "breed": "Labrador",
@@ -89,7 +89,7 @@ class TestAnimal:
         }
 
         animal = Animal.model_validate(row_dict)
-        assert animal.id == "FOHA-A-55833"
+        assert animal.id == "A-55833"
         assert animal.name == "Buddy"
         assert animal.is_in_kennel is True  # Converted from 1
         assert animal.is_foster_care is False  # Converted from 0
@@ -275,7 +275,7 @@ class TestVolunteerNote:
     def test_create_note_with_ratings(self):
         """VolunteerNote can store all rating categories."""
         note = VolunteerNote(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             volunteer_name="Chris",
             note_date="2024-12-23T17:37:00",
             note_text="Great walk today!",
@@ -292,7 +292,7 @@ class TestVolunteerNote:
     def test_model_dump_excludes_id(self):
         """model_dump can exclude id field."""
         note = VolunteerNote(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             volunteer_name="Chris",
             note_date="2024-12-23T17:37:00",
         )
@@ -304,7 +304,7 @@ class TestVolunteerNote:
         """model_dump includes id when set (if not excluded)."""
         note = VolunteerNote(
             id=42,
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             volunteer_name="Chris",
             note_date="2024-12-23T17:37:00",
         )
@@ -318,7 +318,7 @@ class TestKennelCard:
     def test_create_kennel_card(self):
         """KennelCard stores compatibility info."""
         card = KennelCard(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             about_text="Friendly and playful dog",
             dogs_compatibility="Good",
             dogs_compatibility_notes="Gets along with most dogs",
@@ -336,7 +336,7 @@ class TestStaffAssessment:
     def test_create_assessment(self):
         """StaffAssessment stores tags as list[str]."""
         assessment = StaffAssessment(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             assessment_tags=["Cat Test Complete", "Good with Dogs"],
             notes="Passed all tests",
             recorded_at="2024-12-01T10:00:00",
@@ -411,7 +411,7 @@ class TestWalkRecord:
     def test_create_walk_record(self):
         """WalkRecord tracks check-in/out times."""
         record = WalkRecord(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             volunteer_name="Chris",
             out_time="2024-12-23T14:00:00",
             in_time="2024-12-23T14:45:00",
@@ -426,7 +426,7 @@ class TestAnimalImage:
     def test_create_image(self):
         """AnimalImage stores URL and order."""
         image = AnimalImage(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             image_url="https://example.com/photo1.jpg",
             display_order=1,
         )

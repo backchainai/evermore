@@ -1,1 +1,1 @@
-"""Integration tests for the PetBio web module."""
+"""Integration tests for the Pet Data web module."""

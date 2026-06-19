@@ -5,13 +5,13 @@ category: root
 when_to_use:
 - Starting a new project
 ---
-# petbio
+# petdata
 
 Automated adoption profile generator for animal shelters
 
 ## Overview
 
-petbio extracts animal data from shelter management systems, analyzes behavioral trends using time-decay algorithms, and generates evidence-based adoption profiles using LLMs. Built for Friends of Homeless Animals (FOHA).
+petdata extracts animal data from shelter management systems, analyzes behavioral trends using time-decay algorithms, and generates evidence-based adoption profiles using LLMs. Built for nonprofit animal shelters.
 
 **Current Status:** Phase 1 complete (data extraction and storage infrastructure)
 
@@ -51,35 +51,35 @@ petbio extracts animal data from shelter management systems, analyzes behavioral
 
 ```bash
 # Clone the repository
-git clone https://github.com/username/petbio.git
-cd petbio
+git clone https://github.com/backchainai/evermore.git
+cd evermore/services/petdata
 
 # Install dependencies
 uv sync
 
 # Run the application
-uv run petbio
+uv run petdata
 ```
 
 ## Usage
 
 ```bash
 # Example command
-uv run petbio --help
+uv run petdata --help
 ```
 
 ## Configuration
 
-Configuration is handled via environment variables (prefix: `PETBIO_`):
+Configuration is handled via environment variables (prefix: `PETDATA_`):
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `PETBIO_DATABASE_PATH` | SQLite database file location | `data/petbio.db` |
-| `PETBIO_REQUEST_DELAY_MS` | API request throttling delay (ms) | `500` |
+| `PETDATA_DATABASE_PATH` | SQLite database file location | `data/petdata.db` |
+| `PETDATA_REQUEST_DELAY_MS` | API request throttling delay (ms) | `500` |
 
 ## HTTP API
 
-petbio exposes a FastAPI service (run with `uv run uvicorn petbio.main:app`).
+petdata exposes a FastAPI service (run with `uv run uvicorn petdata.main:app`).
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
@@ -102,8 +102,8 @@ curl http://localhost:8000/llms.txt
 
 ```bash
 # Clone repository
-git clone https://github.com/ckrough/petbio.git
-cd petbio
+git clone https://github.com/backchainai/evermore.git
+cd evermore/services/petdata
 
 # Install dependencies
 uv sync
@@ -127,7 +127,7 @@ uv run pytest tests/ --cov=src --cov-report=term-missing  # Tests + coverage
 ### Project Structure
 
 ```
-src/petbio/
+src/petdata/
 ├── config.py                      # pydantic-settings configuration
 └── modules/
     └── db/                        # Phase 1: Data layer
@@ -168,4 +168,4 @@ Copyright (C) 2026 Backchain LLC
 
 ## Acknowledgments
 
-Built for Friends of Homeless Animals (FOHA)
+Built for nonprofit animal shelters

@@ -9,17 +9,17 @@ from pathlib import Path
 
 import pytest
 
-from petbio.modules.db.migrate import (
+from petdata.modules.db.migrate import (
     _scan_migration_files,
     get_current_version,
     migrate,
 )
-from petbio.modules.db.schema import get_index_names, get_table_names
+from petdata.modules.db.schema import get_index_names, get_table_names
 
 MIGRATIONS_DIR = (
     Path(__file__).parent.parent.parent.parent
     / "src"
-    / "petbio"
+    / "petdata"
     / "modules"
     / "db"
     / "migrations"

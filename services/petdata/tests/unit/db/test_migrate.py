@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from petbio.modules.db.migrate import (
+from petdata.modules.db.migrate import (
     Migration,
     MigrationDuplicateError,
     MigrationExecutionError,

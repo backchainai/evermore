@@ -17,7 +17,7 @@ Canonical reference for how the Evermore subscription portal is structured. Read
                 └──┬───────────────────────────┬───┘
                    │ Authorization: Bearer     │ Authorization: Bearer
         ┌──────────▼──────────┐     ┌──────────▼──────────┐
-        │  retriever          │     │  petbio             │
+        │  retriever          │     │  petdata            │
         │  (FastAPI @ Cloud   │     │  (FastAPI @ Cloud   │
         │   Run)              │     │   Run)              │
         │  ─ JWKS validation  │     │  ─ JWKS validation  │

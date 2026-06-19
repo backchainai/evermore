@@ -1,5 +1,5 @@
 [project]
-name = "petbio"
+name = "petdata"
 version = "1.2.0"
 description = "automated adoption profile generator"
 readme = "README.md"
@@ -32,7 +32,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/petbio"]
+packages = ["src/petdata"]
 
 [tool.ruff]
 target-version = "py313"
@@ -62,7 +62,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["petbio"]
+known-first-party = ["petdata"]
 
 [tool.mypy]
 python_version = "3.13"

@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from petbio.modules.db.models import (
+from petdata.modules.db.models import (
     Animal,
     AnimalImage,
     KennelCard,
@@ -18,8 +18,8 @@ from petbio.modules.db.models import (
     VolunteerNote,
     WalkRecord,
 )
-from petbio.modules.db.repository import Database
-from petbio.modules.db.schema import create_tables
+from petdata.modules.db.repository import Database
+from petdata.modules.db.schema import create_tables
 
 
 @pytest.fixture
@@ -35,7 +35,7 @@ def db() -> Database:
 def sample_animal() -> Animal:
     """Create a sample animal for testing."""
     return Animal(
-        id="FOHA-A-55833",
+        id="A-55833",
         name="Buddy",
         breed="Labrador",
         weight_lbs=65.5,
@@ -51,9 +51,9 @@ class TestAnimalOperations:
         """Can insert and retrieve an animal."""
         db.insert_animal(sample_animal)
 
-        retrieved = db.get_animal("FOHA-A-55833")
+        retrieved = db.get_animal("A-55833")
         assert retrieved is not None
-        assert retrieved.id == "FOHA-A-55833"
+        assert retrieved.id == "A-55833"
         assert retrieved.name == "Buddy"
         assert retrieved.breed == "Labrador"
         assert retrieved.weight_lbs == 65.5
@@ -71,7 +71,7 @@ class TestAnimalOperations:
         sample_animal.location = "Line 5, 5H"
         db.update_animal(sample_animal)
 
-        retrieved = db.get_animal("FOHA-A-55833")
+        retrieved = db.get_animal("A-55833")
         assert retrieved is not None
         assert retrieved.weight_lbs == 70.0
         assert retrieved.location == "Line 5, 5H"
@@ -79,7 +79,7 @@ class TestAnimalOperations:
     def test_list_animals(self, db: Database):
         """Can list animals with pagination."""
         for i in range(5):
-            animal = Animal(id=f"FOHA-A-{i:05d}", name=f"Dog {i}")
+            animal = Animal(id=f"A-{i:05d}", name=f"Dog {i}")
             db.insert_animal(animal)
 
         animals = db.list_animals(limit=3)
@@ -91,13 +91,13 @@ class TestAnimalOperations:
     def test_roundtrip_behavior_tags(self, db: Database):
         """Tags roundtrip through database correctly."""
         animal = Animal(
-            id="FOHA-A-99999",
+            id="A-99999",
             name="Test Dog",
             behavior_mod_tags=["Shy", "Reactive", "Good with Dogs"],
         )
         db.insert_animal(animal)
 
-        retrieved = db.get_animal("FOHA-A-99999")
+        retrieved = db.get_animal("A-99999")
         assert retrieved is not None
         assert retrieved.behavior_mod_tags == ["Shy", "Reactive", "Good with Dogs"]
 
@@ -105,7 +105,7 @@ class TestAnimalOperations:
         retrieved.behavior_mod_tags = ["Friendly", "Energetic"]
         db.update_animal(retrieved)
 
-        updated = db.get_animal("FOHA-A-99999")
+        updated = db.get_animal("A-99999")
         assert updated is not None
         assert updated.behavior_mod_tags == ["Friendly", "Energetic"]
 
@@ -118,7 +118,7 @@ class TestVolunteerNoteOperations:
         db.insert_animal(sample_animal)
 
         note = VolunteerNote(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             volunteer_name="Chris",
             note_date="2024-12-23T17:37:00",
             note_text="Great walk today!",
@@ -128,7 +128,7 @@ class TestVolunteerNoteOperations:
         note_id = db.insert_volunteer_note(note)
         assert note_id > 0
 
-        notes = db.get_notes_for_animal("FOHA-A-55833")
+        notes = db.get_notes_for_animal("A-55833")
         assert len(notes) == 1
         assert notes[0].volunteer_name == "Chris"
         assert notes[0].rating_strong_on_leash == 4
@@ -139,13 +139,13 @@ class TestVolunteerNoteOperations:
 
         for i in range(3):
             note = VolunteerNote(
-                animal_id="FOHA-A-55833",
+                animal_id="A-55833",
                 volunteer_name=f"Volunteer {i}",
                 note_date=f"2024-12-{20 + i:02d}T10:00:00",
             )
             db.insert_volunteer_note(note)
 
-        notes = db.get_notes_for_animal("FOHA-A-55833")
+        notes = db.get_notes_for_animal("A-55833")
         assert notes[0].note_date == "2024-12-22T10:00:00"  # Most recent
         assert notes[2].note_date == "2024-12-20T10:00:00"  # Oldest
 
@@ -168,14 +168,14 @@ class TestKennelCardOperations:
         db.insert_animal(sample_animal)
 
         card = KennelCard(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             about_text="Friendly dog",
             dogs_compatibility="Good",
         )
         card_id = db.upsert_kennel_card(card)
         assert card_id > 0
 
-        retrieved = db.get_kennel_card("FOHA-A-55833")
+        retrieved = db.get_kennel_card("A-55833")
         assert retrieved is not None
         assert retrieved.about_text == "Friendly dog"
 
@@ -183,13 +183,13 @@ class TestKennelCardOperations:
         """upsert_kennel_card updates existing card."""
         db.insert_animal(sample_animal)
 
-        card1 = KennelCard(animal_id="FOHA-A-55833", about_text="Version 1")
+        card1 = KennelCard(animal_id="A-55833", about_text="Version 1")
         db.upsert_kennel_card(card1)
 
-        card2 = KennelCard(animal_id="FOHA-A-55833", about_text="Version 2")
+        card2 = KennelCard(animal_id="A-55833", about_text="Version 2")
         db.upsert_kennel_card(card2)
 
-        retrieved = db.get_kennel_card("FOHA-A-55833")
+        retrieved = db.get_kennel_card("A-55833")
         assert retrieved is not None
         assert retrieved.about_text == "Version 2"
 
@@ -202,7 +202,7 @@ class TestStaffAssessmentOperations:
         db.insert_animal(sample_animal)
 
         assessment = StaffAssessment(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             assessment_tags=["Cat Test Complete"],
             notes="Passed all tests",
             recorded_at="2024-12-01T10:00:00",
@@ -210,7 +210,7 @@ class TestStaffAssessmentOperations:
         assessment_id = db.insert_staff_assessment(assessment)
         assert assessment_id > 0
 
-        assessments = db.get_assessments_for_animal("FOHA-A-55833")
+        assessments = db.get_assessments_for_animal("A-55833")
         assert len(assessments) == 1
         assert "Cat Test Complete" in assessments[0].assessment_tags
 
@@ -223,7 +223,7 @@ class TestWalkRecordOperations:
         db.insert_animal(sample_animal)
 
         record = WalkRecord(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             volunteer_name="Chris",
             out_time="2024-12-23T14:00:00",
             in_time="2024-12-23T14:45:00",
@@ -231,7 +231,7 @@ class TestWalkRecordOperations:
         record_id = db.insert_walk_record(record)
         assert record_id > 0
 
-        walks = db.get_walks_for_animal("FOHA-A-55833")
+        walks = db.get_walks_for_animal("A-55833")
         assert len(walks) == 1
         assert walks[0].volunteer_name == "Chris"
 
@@ -244,14 +244,14 @@ class TestAnimalImageOperations:
         db.insert_animal(sample_animal)
 
         image = AnimalImage(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             image_url="https://example.com/photo.jpg",
             display_order=1,
         )
         image_id = db.insert_animal_image(image)
         assert image_id > 0
 
-        images = db.get_images_for_animal("FOHA-A-55833")
+        images = db.get_images_for_animal("A-55833")
         assert len(images) == 1
         assert images[0].display_order == 1
 
@@ -318,7 +318,7 @@ class TestTransactions:
             db.insert_volunteer_note(note)
 
         # Original animal should still exist (not affected by rollback)
-        animal = db.get_animal("FOHA-A-55833")
+        animal = db.get_animal("A-55833")
         assert animal is not None
 
 
@@ -330,7 +330,7 @@ class TestUniqueConstraints:
         db.insert_animal(sample_animal)
 
         note1 = VolunteerNote(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             adalo_record_id="unique123",
             volunteer_name="Chris",
             note_date="2024-12-23T17:37:00",
@@ -338,7 +338,7 @@ class TestUniqueConstraints:
         db.insert_volunteer_note(note1)
 
         note2 = VolunteerNote(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             adalo_record_id="unique123",  # Duplicate
             volunteer_name="Other",
             note_date="2024-12-24T17:37:00",
@@ -355,7 +355,7 @@ class TestUpdateOperations:
         db.insert_animal(sample_animal)
 
         note = VolunteerNote(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             volunteer_name="Chris",
             note_date="2024-12-23T17:37:00",
             note_text="Initial note",
@@ -378,7 +378,7 @@ class TestUpdateOperations:
     def test_update_volunteer_note_without_id_raises_error(self, db: Database):
         """Updating a volunteer note without ID raises ValueError."""
         note = VolunteerNote(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             volunteer_name="Chris",
             note_date="2024-12-23T17:37:00",
         )
@@ -391,7 +391,7 @@ class TestUpdateOperations:
         db.insert_animal(sample_animal)
 
         assessment = StaffAssessment(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             recorded_at="2024-12-23T17:37:00",
             notes="Initial assessment",
         )
@@ -410,7 +410,7 @@ class TestUpdateOperations:
     def test_update_staff_assessment_without_id_raises_error(self, db: Database):
         """Updating a staff assessment without ID raises ValueError."""
         assessment = StaffAssessment(
-            animal_id="FOHA-A-55833", recorded_at="2024-12-23T17:37:00"
+            animal_id="A-55833", recorded_at="2024-12-23T17:37:00"
         )
 
         with pytest.raises(
@@ -423,7 +423,7 @@ class TestUpdateOperations:
         db.insert_animal(sample_animal)
 
         record = WalkRecord(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             volunteer_name="Chris",
             out_time="2024-12-23T10:00:00",
         )
@@ -442,7 +442,7 @@ class TestUpdateOperations:
     def test_update_walk_record_without_id_raises_error(self, db: Database):
         """Updating a walk record without ID raises ValueError."""
         record = WalkRecord(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             volunteer_name="Chris",
             out_time="2024-12-23T10:00:00",
         )
@@ -455,7 +455,7 @@ class TestUpdateOperations:
         db.insert_animal(sample_animal)
 
         image = AnimalImage(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             image_url="https://example.com/image1.jpg",
             display_order=1,
         )
@@ -476,7 +476,7 @@ class TestUpdateOperations:
     def test_update_animal_image_without_id_raises_error(self, db: Database):
         """Updating an animal image without ID raises ValueError."""
         image = AnimalImage(
-            animal_id="FOHA-A-55833", image_url="https://example.com/image1.jpg"
+            animal_id="A-55833", image_url="https://example.com/image1.jpg"
         )
 
         with pytest.raises(ValueError, match="Cannot update animal image without ID"):
@@ -493,17 +493,17 @@ class TestDeleteOperations:
         # Insert multiple notes
         for i in range(3):
             note = VolunteerNote(
-                animal_id="FOHA-A-55833",
+                animal_id="A-55833",
                 volunteer_name=f"Volunteer {i}",
                 note_date="2024-12-23T17:37:00",
             )
             db.insert_volunteer_note(note)
 
         # Delete all notes
-        db.delete_notes_for_animal("FOHA-A-55833")
+        db.delete_notes_for_animal("A-55833")
 
         # Verify deletion
-        notes = db.get_notes_for_animal("FOHA-A-55833")
+        notes = db.get_notes_for_animal("A-55833")
         assert len(notes) == 0
 
     def test_delete_assessments_for_animal(self, db: Database, sample_animal: Animal):
@@ -513,15 +513,15 @@ class TestDeleteOperations:
         # Insert multiple assessments
         for _i in range(2):
             assessment = StaffAssessment(
-                animal_id="FOHA-A-55833", recorded_at="2024-12-23T17:37:00"
+                animal_id="A-55833", recorded_at="2024-12-23T17:37:00"
             )
             db.insert_staff_assessment(assessment)
 
         # Delete all assessments
-        db.delete_assessments_for_animal("FOHA-A-55833")
+        db.delete_assessments_for_animal("A-55833")
 
         # Verify deletion
-        assessments = db.get_assessments_for_animal("FOHA-A-55833")
+        assessments = db.get_assessments_for_animal("A-55833")
         assert len(assessments) == 0
 
     def test_delete_walks_for_animal(self, db: Database, sample_animal: Animal):
@@ -531,17 +531,17 @@ class TestDeleteOperations:
         # Insert multiple walk records
         for i in range(3):
             record = WalkRecord(
-                animal_id="FOHA-A-55833",
+                animal_id="A-55833",
                 volunteer_name=f"Volunteer {i}",
                 out_time="2024-12-23T10:00:00",
             )
             db.insert_walk_record(record)
 
         # Delete all walks
-        db.delete_walks_for_animal("FOHA-A-55833")
+        db.delete_walks_for_animal("A-55833")
 
         # Verify deletion
-        walks = db.get_walks_for_animal("FOHA-A-55833")
+        walks = db.get_walks_for_animal("A-55833")
         assert len(walks) == 0
 
     def test_delete_images_for_animal(self, db: Database, sample_animal: Animal):
@@ -551,31 +551,31 @@ class TestDeleteOperations:
         # Insert multiple images
         for i in range(2):
             image = AnimalImage(
-                animal_id="FOHA-A-55833",
+                animal_id="A-55833",
                 image_url=f"https://example.com/image{i}.jpg",
                 display_order=i,
             )
             db.insert_animal_image(image)
 
         # Delete all images
-        db.delete_images_for_animal("FOHA-A-55833")
+        db.delete_images_for_animal("A-55833")
 
         # Verify deletion
-        images = db.get_images_for_animal("FOHA-A-55833")
+        images = db.get_images_for_animal("A-55833")
         assert len(images) == 0
 
     def test_delete_kennel_card_for_animal(self, db: Database, sample_animal: Animal):
         """Can delete kennel card for an animal."""
         db.insert_animal(sample_animal)
 
-        card = KennelCard(animal_id="FOHA-A-55833", about_text="Friendly dog")
+        card = KennelCard(animal_id="A-55833", about_text="Friendly dog")
         db.upsert_kennel_card(card)
 
         # Delete kennel card
-        db.delete_kennel_card_for_animal("FOHA-A-55833")
+        db.delete_kennel_card_for_animal("A-55833")
 
         # Verify deletion
-        card = db.get_kennel_card("FOHA-A-55833")
+        card = db.get_kennel_card("A-55833")
         assert card is None
 
     def test_delete_animal_cascades_to_all_related_records(
@@ -586,42 +586,42 @@ class TestDeleteOperations:
 
         # Insert related records
         note = VolunteerNote(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             volunteer_name="Chris",
             note_date="2024-12-23T17:37:00",
         )
         db.insert_volunteer_note(note)
 
         assessment = StaffAssessment(
-            animal_id="FOHA-A-55833", recorded_at="2024-12-23T17:37:00"
+            animal_id="A-55833", recorded_at="2024-12-23T17:37:00"
         )
         db.insert_staff_assessment(assessment)
 
         record = WalkRecord(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             volunteer_name="Chris",
             out_time="2024-12-23T10:00:00",
         )
         db.insert_walk_record(record)
 
         image = AnimalImage(
-            animal_id="FOHA-A-55833", image_url="https://example.com/image.jpg"
+            animal_id="A-55833", image_url="https://example.com/image.jpg"
         )
         db.insert_animal_image(image)
 
-        card = KennelCard(animal_id="FOHA-A-55833", about_text="Friendly")
+        card = KennelCard(animal_id="A-55833", about_text="Friendly")
         db.upsert_kennel_card(card)
 
         # Delete animal (should cascade)
-        db.delete_animal("FOHA-A-55833")
+        db.delete_animal("A-55833")
 
         # Verify all related records are deleted
-        assert db.get_animal("FOHA-A-55833") is None
-        assert len(db.get_notes_for_animal("FOHA-A-55833")) == 0
-        assert len(db.get_assessments_for_animal("FOHA-A-55833")) == 0
-        assert len(db.get_walks_for_animal("FOHA-A-55833")) == 0
-        assert len(db.get_images_for_animal("FOHA-A-55833")) == 0
-        assert db.get_kennel_card("FOHA-A-55833") is None
+        assert db.get_animal("A-55833") is None
+        assert len(db.get_notes_for_animal("A-55833")) == 0
+        assert len(db.get_assessments_for_animal("A-55833")) == 0
+        assert len(db.get_walks_for_animal("A-55833")) == 0
+        assert len(db.get_images_for_animal("A-55833")) == 0
+        assert db.get_kennel_card("A-55833") is None
 
     def test_delete_animal_transaction_atomicity(
         self, db: Database, sample_animal: Animal
@@ -631,18 +631,18 @@ class TestDeleteOperations:
 
         # Insert related records
         note = VolunteerNote(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             volunteer_name="Chris",
             note_date="2024-12-23T17:37:00",
         )
         db.insert_volunteer_note(note)
 
         # Delete should succeed atomically
-        db.delete_animal("FOHA-A-55833")
+        db.delete_animal("A-55833")
 
         # Both animal and note should be gone
-        assert db.get_animal("FOHA-A-55833") is None
-        assert len(db.get_notes_for_animal("FOHA-A-55833")) == 0
+        assert db.get_animal("A-55833") is None
+        assert len(db.get_notes_for_animal("A-55833")) == 0
 
     def test_delete_sync_log(self, db: Database):
         """Can delete a sync log entry."""
@@ -699,7 +699,7 @@ class TestGetByIdOperations:
         db.insert_animal(sample_animal)
 
         note = VolunteerNote(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             volunteer_name="Chris",
             note_date="2024-12-23T17:37:00",
         )
@@ -719,7 +719,7 @@ class TestGetByIdOperations:
         """Can get kennel card by ID."""
         db.insert_animal(sample_animal)
 
-        card = KennelCard(animal_id="FOHA-A-55833", about_text="Friendly dog")
+        card = KennelCard(animal_id="A-55833", about_text="Friendly dog")
         card_id = db.upsert_kennel_card(card)
 
         retrieved = db.get_kennel_card_by_id(card_id)
@@ -737,7 +737,7 @@ class TestGetByIdOperations:
         db.insert_animal(sample_animal)
 
         assessment = StaffAssessment(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             recorded_at="2024-12-23T17:37:00",
             notes="Assessment notes",
         )
@@ -758,7 +758,7 @@ class TestGetByIdOperations:
         db.insert_animal(sample_animal)
 
         record = WalkRecord(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             volunteer_name="Chris",
             out_time="2024-12-23T10:00:00",
         )
@@ -779,7 +779,7 @@ class TestGetByIdOperations:
         db.insert_animal(sample_animal)
 
         image = AnimalImage(
-            animal_id="FOHA-A-55833",
+            animal_id="A-55833",
             image_url="https://example.com/image.jpg",
             display_order=1,
         )

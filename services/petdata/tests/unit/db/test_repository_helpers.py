@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from petbio.modules.db.repository import (
+from petdata.modules.db.repository import (
     _add_timestamps,
     _build_insert_sql,
     _build_update_sql,
@@ -122,7 +122,7 @@ class TestBuildUpdateSql:
 
     def test_build_update_sql_custom_id_key(self):
         """_build_update_sql handles custom ID column name."""
-        data = {"animal_id": "FOHA-A-123", "name": "Buddy"}
+        data = {"animal_id": "A-123", "name": "Buddy"}
         sql = _build_update_sql("volunteer_notes", data, id_key="animal_id")
         assert (
             sql
@@ -141,7 +141,7 @@ class TestBuildUpsertSql:
 
     def test_build_upsert_sql_basic(self):
         """_build_upsert_sql handles basic upsert."""
-        data = {"animal_id": "FOHA-A-123", "about_text": "Friendly dog"}
+        data = {"animal_id": "A-123", "about_text": "Friendly dog"}
         sql = _build_upsert_sql("kennel_cards", data, conflict_key="animal_id")
         assert "INSERT INTO kennel_cards" in sql
         assert "animal_id" in sql
@@ -157,7 +157,7 @@ class TestBuildUpsertSql:
     def test_build_upsert_sql_multiple_columns(self):
         """_build_upsert_sql handles multiple columns."""
         data = {
-            "animal_id": "FOHA-A-123",
+            "animal_id": "A-123",
             "about_text": "Friendly",
             "dogs_compatibility": "Good",
         }

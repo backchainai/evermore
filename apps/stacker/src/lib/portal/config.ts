@@ -1,10 +1,10 @@
 import type { ModuleDefinition, ModuleStatus } from './types';
 import { RETRIEVER_MODULE } from '$lib/modules/retriever/index';
-import { PETBIO_MODULE } from '$lib/modules/petbio/index';
+import { PETDATA_MODULE } from '$lib/modules/petdata/index';
 
 export const MODULE_REGISTRY: ModuleDefinition[] = [
 	RETRIEVER_MODULE,
-	PETBIO_MODULE
+	PETDATA_MODULE
 ];
 
 export function getActiveModule(pathname: string): ModuleDefinition | undefined {

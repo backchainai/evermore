@@ -20,7 +20,7 @@ def test_llms_txt_reflects_openapi_surface(client: TestClient) -> None:
     """Manifest is generated from the live OpenAPI surface."""
     response = client.get("/llms.txt")
 
-    assert "PetBio" in response.text
+    assert "Pet Data" in response.text
     assert "/api/v1/animals" in response.text
     assert "/health" in response.text
 
