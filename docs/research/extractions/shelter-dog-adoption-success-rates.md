@@ -173,7 +173,7 @@ Beyond saving 2,882 lives, the rescue network:
 
 ## Training Philosophy and Standards
 
-### Positive-Only Methods (FOHA/Evidence-Based Standards)
+### Positive-Only Methods (Evidence-Based Standards)
 
 **NEVER use:**
 - Squirt bottles

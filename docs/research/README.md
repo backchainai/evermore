@@ -4,6 +4,10 @@ The evidence base behind Evermore's generation and analysis. It is organized by 
 
 Two tiers feed the **BioWriter** module (kennel cards and adoption profiles), and a broader reference set backs **behavior analysis** and the **Retriever** shelter-operations assistant.
 
+## What is committed
+
+Only Tier 2 extractions (our distilled rules and templates, each citing the underlying research) are committed to this repository. The Tier 1 source PDFs in `source-research/` and `reference-library/` are third-party copyrighted material: they are kept local-only and git-ignored, never committed. Cite them from the extractions rather than redistributing the papers.
+
 ## Layout
 
 ### `extractions/` — Tier 2: compiled, purpose-built generation inputs
@@ -14,8 +18,8 @@ Distilled findings and templates derived from the primary research, written to d
 - `recommended-adoption-profile-pictures.md` — the photo checklist (a rubric-shaped, non-text capability for later).
 - `shelter-dog-adoption-success-rates.md` — success-factor overview (foster care, behavioral prep, advocacy).
 
-### `source-research/` — Tier 1: primary peer-reviewed sources (searchable, citable)
-The studies behind the extractions. Indexable by a Retriever collection so BioWriter can cite the paper a recommendation came from.
+### `source-research/` — Tier 1: primary peer-reviewed sources (searchable, citable; local-only, not committed)
+The studies behind the extractions. Indexable by a Retriever collection so BioWriter can cite the paper a recommendation came from. Third-party copyrighted PDFs: kept locally and git-ignored, never committed.
 
 - `adoption-advertising/` — directly backs the kennel-card wedge:
   - `putting-your-best-pet-forward_markowitz_2020.pdf` (Markowitz 2020; 184,805 Petfinder profiles)
@@ -23,8 +27,8 @@ The studies behind the extractions. Indexable by a Retriever collection so BioWr
 - `shelter-outcomes/` — outcome and live-release research (grounds the time-to-adoption metric).
 - `behavior-and-welfare/` — shelter-dog behavior and welfare research (grounds behavioral descriptions and the behavior-analysis module).
 
-### `reference-library/` — operational and interpretive knowledge (Retriever ops corpus)
-How-to material for shelter staff and volunteers, not generation inputs. Suited to the Retriever knowledge-assistant use case.
+### `reference-library/` — operational and interpretive knowledge (Retriever ops corpus; local-only, not committed)
+How-to material for shelter staff and volunteers, not generation inputs. Suited to the Retriever knowledge-assistant use case. Third-party copyrighted material: kept locally and git-ignored, never committed.
 
 - `handbooks/` — volunteer and foster-care handbooks/manuals.
 - `training/` — training guides and protocols.

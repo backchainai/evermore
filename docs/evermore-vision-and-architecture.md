@@ -6,7 +6,7 @@ Status: draft, 2026-06-19. Living document. Source of truth for what Evermore is
 
 Evermore is an AI platform for nonprofit animal shelters. It ingests each shelter's animal data from whatever systems they already use, runs AI modules that produce adoption marketing and answer staff questions, and over time distributes and measures campaigns. Shelters subscribe to the modules they need through one authenticated portal.
 
-The architecture is industry-neutral. The initial design partner is Friends of Homeless Animals (FOHA), an animal shelter served pro bono. The name comes from a short story written by the project owner.
+The architecture is industry-neutral. The initial design partner is a nonprofit animal shelter served pro bono. The name comes from a short story written by the project owner.
 
 ## North Star
 
@@ -14,11 +14,11 @@ Maximize **healthy, safe, and permanent adoptions** for homeless animals. Every 
 
 ## Who it serves
 
-Nonprofit shelters: chronically under-funded, skeleton crews, volunteer-heavy, and a patchwork of data systems (Shelterluv and peers, bespoke in-house apps, or plain PDF / HTML / Word / text exports, with an API or database only if you are lucky). The wedge: shelters are starved for labor, so any task AI can absorb frees a human for the work that actually places animals.
+Nonprofit shelters: chronically under-funded, skeleton crews, volunteer-heavy, and a patchwork of data systems (a commercial Shelter Management System (SMS), bespoke in-house apps, or plain PDF / HTML / Word / text exports, with an API or database only if you are lucky). The wedge: shelters are starved for labor, so any task AI can absorb frees a human for the work that actually places animals.
 
 ## Positioning
 
-Evermore is **not** a shelter management system and does not replace Shelterluv. It is the **AI intelligence layer that rides on top of whatever system a shelter already uses.** Incumbent systems are rigid, built by small non-specialist teams, with weak or no data-extraction APIs and almost no real AI. That gap is the reason to exist: Evermore brings advanced tooling the incumbents cannot build, and meets the data wherever it lives (even a PDF export).
+Evermore is **not** a Shelter Management System (SMS) and does not replace the one a shelter already runs. It is the **AI intelligence layer that rides on top of whatever system a shelter already uses.** Today's systems are built for records and day-to-day operations, with limited data-extraction APIs and little built-in AI. That gap is the reason to exist: Evermore brings advanced tooling on top of the system of record, and meets the data wherever it lives (even a PDF export).
 
 ## Business model
 
@@ -31,7 +31,7 @@ The platform is a pipeline of named objects. These names are settled; do not ove
 
 | Object | What it is | Provenance | Versioned | Owner |
 |---|---|---|---|---|
-| **Source documents** | Raw inputs: Shelterluv kennel-card export, FOHA-app observations, PDFs, HTML, Word | n/a | no | external |
+| **Source documents** | Raw inputs: SMS kennel-card export, in-house app observations, PDFs, HTML, Word | n/a | no | external |
 | **Animal Record** | Canonical normalized data for one animal (demographics, history, behavior observations, medical) | n/a | tracked | Pet Data |
 | **Package** | A curated, named selection of evidence assembled by a human (now) or the LLM (later), the generation-ready subset of the Animal Record | **yes**, per item `{source document, location, category}` | **yes** | Pet Data |
 | **Template** | The structure and rules for a collateral type (the five-section kennel card, a Facebook post, an adoption ad) | n/a | n/a | BioWriter |
@@ -53,7 +53,7 @@ Flow: `Sources -> Animal Record -> Package -> Composition -> Export`. Provenance
 
 ## The wedge: the research-backed kennel card
 
-The first thing put in front of a shelter is the **kennel card writer**. Why it is the highest-leverage artifact on the platform: a volunteer writes the kennel card, it is entered in Shelterluv, Shelterluv federates it to Petfinder and Adopt-a-Pet, and that text becomes the animal's public listing on the sites adopters actually search. The photos come from the shelter system; the words come straight from the kennel card. An untrained volunteer's phrasing is therefore the top of the adoption funnel, published nationally.
+The first thing put in front of a shelter is the **kennel card writer**. Why it is the highest-leverage artifact on the platform: a volunteer writes the kennel card, it is entered in the SMS, the SMS federates it to the public adoption-listing sites, and that text becomes the animal's public listing on the sites adopters actually search. The photos come from the SMS; the words come straight from the kennel card. An untrained volunteer's phrasing is therefore the top of the adoption funnel, published nationally.
 
 Two capabilities, both grounded in the research rubric:
 
