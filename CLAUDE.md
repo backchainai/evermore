@@ -12,19 +12,20 @@ An AI platform for nonprofit animal shelters: it ingests animal data from any sh
 - The execution plan: `docs/plans/repo-restructure-and-rename.md`
 - Research corpus: `docs/research/README.md`
 
-## Current state: mid-consolidation
+## Current state: consolidated monorepo (post Phase 2)
 
-This is **transitioning from four separate git repositories into one monorepo.** Until Phase 2 of the restructure plan runs, the four modules still exist as their own git repos under this directory and are git-ignored at the root:
+The four formerly-separate module repos are now tracked directly in this one git repo. Phase 2 imported each module's committed tree as a clean snapshot (a true monorepo: no submodules, no subtrees, no nested `.git`); the granular pre-consolidation history lives in the archived `ckrough/*` origin repos, not here. Per-module build and test commands live in each module's own `CLAUDE.md`; the tech-stack standard governs all of them.
 
-| Now (separate repo) | Becomes |
-|---|---|
-| `petbio/` | `services/petdata/` (also a code-level rename, not just a move) |
-| `retriever/` | `services/retriever/` |
-| `stacker/` | `apps/stacker/` |
-| `platform/` | retires; its docs fold into `docs/` |
-| (new) | `services/biowriter/` |
+| Module path | From | Notes |
+|---|---|---|
+| `services/petdata/` | `petbio` | Directory moved. The code-level `petbio` -> `petdata` rename (Python package, imports, env prefix) is still pending (plan Phase 3); the package inside is still named `petbio`. |
+| `services/retriever/` | `retriever` | The inner `backend/` was flattened up to the service root. |
+| `apps/stacker/` | `stacker` | SvelteKit portal. |
+| `services/biowriter/` | (new) | Not yet scaffolded (plan Phase 5/6). |
 
-The root git repo currently tracks documentation and scaffold only. Do not commit the four module directories as plain files; they consolidate with history via `git subtree` (plan Phase 2).
+`platform` is retired; its docs (`architecture.md`, `auth-flow.md`, `subscriptions.md`, `module-template.md`) folded into `docs/`.
+
+Pending follow-ups from the plan: physically remove the now-unused top-level `petbio/`/`retriever/`/`stacker/`/`platform/` directories and drop their `.gitignore` entries (Phase 2 cleanup); the `petbio` -> `petdata` code rename (Phase 3); FOHA scrub before the repo flips public; tech-stack conformance (Phase 5).
 
 ## The data spine (settled vocabulary, do not overload)
 
@@ -45,6 +46,7 @@ The root git repo currently tracks documentation and scaffold only. Do not commi
 
 ## Working conventions
 
-- This directory is not yet fully under one git history; treat moves and deletes carefully and get approval before deleting.
+- The repo is now under one git history. Treat moves and deletes carefully and get approval before deleting.
 - User-visible content avoids em-dashes (use colons, parentheses, commas).
-- Per-module build/test commands live in each module's own `CLAUDE.md` until consolidation; the tech-stack standard governs all of them.
+- Per-module build/test commands live in each module's own `CLAUDE.md`; the tech-stack standard governs all of them.
+- FOHA is still referenced in imported module code, tests, and docs. Removing it is a tracked prerequisite before the repo goes public; do not add new references.

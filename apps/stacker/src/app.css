@@ -1,0 +1,55 @@
+@import 'tailwindcss';
+@import '@skeletonlabs/skeleton';
+@import '$lib/portal/theme/fonts.css';
+@import '$lib/portal/theme/tokens.css';
+@import '$lib/portal/theme/light.css';
+@import '$lib/portal/theme/dark.css';
+@import '$lib/portal/theme/neutral.css';
+
+/* --- Accessibility: Focus visible (WCAG 2.4.7) --- */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--portal-card-bg, #fff), 0 0 0 4px var(--portal-focus-ring, #41423D);
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* --- Accessibility: Reduced motion (WCAG 2.3.3) --- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --- Accessibility: Skip navigation (WCAG 2.4.1) --- */
+.skip-nav {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 100;
+  padding: 0.75rem 1.5rem;
+  background: var(--portal-card-bg, #F5F0E8);
+  color: var(--portal-focus-ring, #41423D);
+  border: 2px solid var(--portal-focus-ring, #41423D);
+  border-radius: 4px;
+  font-size: 1rem;
+  text-decoration: none;
+}
+
+.skip-nav:focus {
+  top: 1rem;
+}
+
+/* --- Accessibility: Link hover (WCAG 1.4.1) --- */
+a:hover {
+  color: var(--color-primary-500);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

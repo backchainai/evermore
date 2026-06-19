@@ -1,0 +1,123 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "retriever"
+version = "1.5.0"
+description = "AI-powered Q&A system for shelter volunteers"
+readme = "README.md"
+requires-python = ">=3.13"
+license = "Apache-2.0"
+authors = [{ name = "Chris Krough", email = "dev@krough.org" }]
+maintainers = [{ name = "Chris Krough", email = "dev@krough.org" }]
+
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic>=2.10",
+    "pydantic-settings>=2.6",
+    "structlog>=24.4",
+    "opentelemetry-api>=1.28",
+    "opentelemetry-sdk>=1.28",
+    "opentelemetry-instrumentation-fastapi>=0.49b0",
+    "sqlalchemy[asyncio]>=2.0",
+    "asyncpg>=0.30",
+    "alembic>=1.14",
+    "pgvector>=0.3",
+    "pyjwt[crypto]>=2.10",
+    "openai>=1.60",
+    "tenacity>=9.0",
+    "aiobreaker>=1.2",
+    "python-multipart>=0.0.18",
+    "docling>=2.0",
+    "docling-core[chunking-openai]>=2.0",
+    "opentelemetry-exporter-gcp-trace>=1.8",
+    "opentelemetry-resourcedetector-gcp>=1.8",
+    "langfuse>=3.0",
+    "opentelemetry-exporter-otlp-proto-grpc>=1.28",
+    "easyocr>=1.7.2",
+]
+
+[project.urls]
+Homepage = "https://dev.krough.org"
+Repository = "https://github.com/ckrough/retriever"
+Documentation = "https://github.com/ckrough/retriever/tree/main/docs"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/retriever"]
+
+[tool.ruff]
+src = ["src"]
+target-version = "py313"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["retriever"]
+
+[tool.mypy]
+strict = true
+mypy_path = "src"
+python_version = "3.13"
+plugins = ["sqlalchemy.ext.mypy.plugin"]
+
+[[tool.mypy.overrides]]
+module = ["aiobreaker", "aiobreaker.*"]
+ignore_missing_imports = true
+follow_imports = "skip"
+
+[[tool.mypy.overrides]]
+module = [
+    "opentelemetry.exporter.cloud_trace",
+    "opentelemetry.exporter.cloud_trace.*",
+    "opentelemetry.resourcedetector.gcp_resource_detector",
+    "opentelemetry.resourcedetector.gcp_resource_detector.*",
+    "opentelemetry.exporter.otlp.*",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["langfuse", "langfuse.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["docling.*", "docling_core.*"]
+ignore_missing_imports = true
+follow_imports = "skip"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "--cov=src/retriever --cov-report=term-missing --cov-fail-under=80 --ignore=tests/integration"
+
+[tool.coverage.run]
+source = ["src/retriever"]
+omit = ["*/tests/*"]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "mypy>=1.19.1",
+    "pip-audit>=2.10.0",
+    "pytest>=9.0.2",
+    "pytest-asyncio>=1.3.0",
+    "pytest-cov>=7.0.0",
+    "respx>=0.22.0",
+    "ruff>=0.8",
+]
+
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+tag_format = "v{version}"
+commit_message = "chore(release): {version}"
+branch = "main"
+
+[tool.semantic_release.changelog]
+changelog_file = "CHANGELOG.md"
+
+[tool.semantic_release.remote]
+type = "github"

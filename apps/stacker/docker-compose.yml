@@ -1,0 +1,59 @@
+# Local development: backend services for Stacker portal
+# Frontend runs natively: npm run dev (port 5173)
+#
+# Usage:
+#   docker compose up -d          # Start all backends
+#   docker compose logs -f        # Follow logs
+#   docker compose down           # Stop all
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: stacker
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  retriever-api:
+    build:
+      context: ../retriever/backend
+    ports:
+      - "8001:8000"
+    env_file:
+      - ../retriever/.env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/stacker
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  petbio-api:
+    build:
+      context: ../petbio
+    ports:
+      - "8002:8000"
+    env_file:
+      - ../petbio/.env
+    environment:
+      - PETBIO_DATABASE_PATH=/app/data/petbio.db
+    volumes:
+      - petbio-data:/app/data
+
+  jaeger:
+    image: jaegertracing/jaeger:latest
+    ports:
+      - "16686:16686"  # UI
+      - "4317:4317"    # OTLP gRPC
+
+volumes:
+  pgdata:
+  petbio-data:
