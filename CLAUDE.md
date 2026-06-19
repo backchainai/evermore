@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What Evermore is
 
-An AI platform for nonprofit animal shelters: it ingests animal data from any shelter system, generates research-backed adoption marketing, answers staff questions, and is measured against one outcome, more healthy, safe, and permanent adoptions. It rides on top of existing shelter management systems (Shelterluv and peers) rather than replacing them. Owned by Backchain LLC, Apache-2.0. Initial design partner: Friends of Homeless Animals (FOHA), pro bono.
+An AI platform for nonprofit animal shelters: it ingests animal data from any shelter system, generates research-backed adoption marketing, answers staff questions, and is measured against one outcome, more healthy, safe, and permanent adoptions. It rides on top of the Shelter Management System (SMS) a shelter already runs rather than replacing it. Owned by Backchain LLC, Apache-2.0. Initial design partner: a nonprofit animal shelter, served pro bono.
 
 **Read the canonical docs before doing real work:**
 - Product and architecture: `docs/evermore-vision-and-architecture.md`

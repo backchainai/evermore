@@ -80,7 +80,7 @@ Recommended order (petdata gates the schema work):
 5. **biowriter:** scaffold greenfield to the standard.
 
 ### Phase 6: build the wedge
-The research-backed kennel card: generation + live lint/score, on the petdata Package and the distilled template. Validate the highlighter's precision/recall on Sally's real FOHA documents before building the full Package-builder UI.
+The research-backed kennel card: generation + live lint/score, on the petdata Package and the distilled template. Validate the highlighter's precision/recall on Sally's real shelter documents before building the full Package-builder UI.
 
 ## Doc-update checklist (during consolidation)
 - Rewrite the top-level `evermore/CLAUDE.md` (currently describes the polyrepo; must describe the monorepo).
