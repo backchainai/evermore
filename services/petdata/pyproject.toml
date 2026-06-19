@@ -4,7 +4,7 @@ version = "1.2.0"
 description = "automated adoption profile generator"
 readme = "README.md"
 license = "Apache-2.0"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = [
     "pydantic>=2.9",
     "pydantic-settings>=2.0",
@@ -13,6 +13,10 @@ dependencies = [
     "uvicorn[standard]>=0.34",
     "structlog>=24.0",
     "fast-llms-txt>=0.5.5",
+    "sqlalchemy[asyncio]>=2.0",
+    "asyncpg>=0.30",
+    "alembic>=1.14",
+    "pgvector>=0.3",
 ]
 
 [project.optional-dependencies]
@@ -25,6 +29,7 @@ dev = [
     "python-semantic-release>=9.0",
     "respx>=0.21",
     "pytest-mock>=3.14",
+    "pytest-asyncio>=1.0",
 ]
 
 [build-system]
@@ -35,7 +40,7 @@ build-backend = "hatchling.build"
 packages = ["src/petdata"]
 
 [tool.ruff]
-target-version = "py313"
+target-version = "py314"
 line-length = 88
 src = ["src", "tests"]
 
@@ -64,8 +69,14 @@ ignore = [
 [tool.ruff.lint.isort]
 known-first-party = ["petdata"]
 
+[tool.ruff.lint.flake8-type-checking]
+# SQLAlchemy resolves Mapped[...] annotations at runtime, so imports used only
+# in mapped-class annotations must stay at module scope.
+runtime-evaluated-base-classes = ["petdata.models.base.Base"]
+
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.14"
+plugins = ["sqlalchemy.ext.mypy.plugin"]
 strict = true
 warn_return_any = true
 warn_unused_configs = true
