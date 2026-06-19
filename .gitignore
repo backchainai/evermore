@@ -1,0 +1,43 @@
+# OS / editor
+.DS_Store
+
+# Existing module repositories: still separate git repos pending Phase 2
+# history-preserving consolidation. See docs/plans/repo-restructure-and-rename.md.
+/petbio/
+/platform/
+/retriever/
+/stacker/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Node / SvelteKit
+node_modules/
+.svelte-kit/
+build/
+.wrangler/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Third-party research papers: copyright-protected, not ours to redistribute, and
+# heavy binaries. Kept on disk and indexed at runtime from a private store. Our own
+# derived work (docs/research/extractions, README, manifest) stays tracked.
+/docs/research/source-research/
+/docs/research/reference-library/
+
+# Retired tooling cruft (Beads retired for Evermore per ADR 0002)
+.beads/
+.daedalus/
+
+# Logs
+*.log
