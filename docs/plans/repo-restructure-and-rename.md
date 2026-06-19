@@ -73,12 +73,14 @@ Done: labels (standard set + per-module, with `module:petbio` -> `module:petdata
 The v1 wedge backlog is filed under the `v1 wedge: research-backed kennel card` milestone (#38-#47), all added to the Project board: provenance on every Package item, typed highlights mapped to template sections, the highlighter over Docling output, the Package builder UI, the Composition + live lint/score editor, hover-to-see-evidence, Export (PDF/Word/Drive; re-import deferred), the `docs/research/extractions` -> `distilled` rename, distilling the behavior/welfare papers, and the time-online metric. Backlog items already covered by existing issues (org/user auth, subscription gating, one-command local stack) were not refiled.
 
 ### Phase 5: aggressive tech-stack conformance (ADR 0003)
+Tracked under GitHub epic #50, with the conformance work filed as its child issues. The decisions the implementation PRs enact are recorded write-first as ADRs 0004 (petdata SQLite -> Postgres + pgvector), 0005 (retriever Langfuse v3 -> v4), and 0006 (Datadog via the OpenTelemetry Collector, superseding retriever ADR 018).
+
 Recommended order (petdata gates the schema work):
-1. **petdata:** SQLite -> Supabase Postgres + pgvector; SQLAlchemy 2.0 async + Alembic; Supabase auth; OTel/structlog/Sentry; Python 3.14.
-2. **packages/schema:** define Animal Record / Package / Composition in Pydantic; generate TS types from OpenAPI.
-3. **retriever:** Python 3.14; AI Gateway default; Langfuse v4; Datadog-via-OTel-Collector (superseding ADR 018); Promptfoo, Schemathesis, Sentry.
-4. **stacker:** TS 6 strict + shared tsconfig; extract `packages/ui`; entitlements via `+layout.server.ts`.
-5. **biowriter:** scaffold greenfield to the standard.
+1. **petdata:** SQLite -> Supabase Postgres + pgvector; SQLAlchemy 2.0 async + Alembic; Supabase auth; OTel/structlog/Sentry; Python 3.14. (ADR 0004; issues #9, #29, #16)
+2. **packages/schema:** define Animal Record / Package / Composition in Pydantic; generate TS types from OpenAPI. (issues #54, #17)
+3. **retriever:** Python 3.14; AI Gateway default; Langfuse v4; Datadog-via-OTel-Collector (superseding ADR 018); Promptfoo, Schemathesis, Sentry. (ADRs 0005, 0006; issues #57, #58, #59, #60, #61)
+4. **stacker:** TS 6 strict + shared tsconfig; extract `packages/ui`; entitlements via `+layout.server.ts`. (issues #62, #63, #56, #31)
+5. **biowriter:** scaffold greenfield to the standard. (issue #64)
 
 ### Phase 6: build the wedge
 The research-backed kennel card: generation + live lint/score, on the petdata Package and the distilled template. Validate the highlighter's precision/recall on Sally's real shelter documents before building the full Package-builder UI.

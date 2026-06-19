@@ -9,7 +9,7 @@ tags:
   - langfuse
   - opentelemetry
 supersedes: 8
-superseded_by: null
+superseded_by: "evermore platform ADR 0006"
 related: [8, 10]
 ---
 
@@ -17,7 +17,7 @@ related: [8, 10]
 
 ## Status
 
-Accepted — supersedes [ADR-008](008-observability-stack.md).
+Superseded by evermore platform ADR 0006 (`docs/adr/0006-datadog-via-otel-collector.md`), which moves the telemetry backend to Datadog via the OpenTelemetry Collector under the ADR 0003 conformance mandate. This ADR supersedes [ADR-008](008-observability-stack.md).
 
 ## Context
 
