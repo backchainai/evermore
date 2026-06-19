@@ -54,13 +54,15 @@ Vision spec, ADRs 0001-0003, and this plan written to `docs/`.
 3. Commit the documentation and root scaffold only: `docs/`, `CLAUDE.md`, `README.md`, `LICENSE`, `CONTRIBUTING.md`, `.gitignore`.
 4. Operator creates the remote at `github.com/backchainai/evermore` and configures it (see "GitHub structure" below); push `main`.
 
-### Phase 2: consolidate the modules (history-preserving)
-1. For each module repo, `git subtree add --prefix=<target> <path-or-remote> <branch>` into the monorepo so history is preserved:
+### Phase 2: consolidate the modules (clean-snapshot true monorepo)
+Method: import each module's committed tree as a clean snapshot (`git archive HEAD | tar -x`), not `git subtree`. The repo is public-bound and FOHA is woven through module code and history; a snapshot keeps the monorepo history clean from commit one, avoids a future `git filter-repo` rewrite before going public, and removes the merge-method constraint that subtree merge commits impose under branch protection. The granular pre-consolidation history is preserved in the archived `ckrough/*` origin repos.
+
+1. Snapshot each module into the monorepo, excluding monorepo-redundant paths (`.beads`, `.claude`, `.github`, `.vscode`, `LICENSE`, `NOTICE`, `CONTRIBUTING.md`, `CITATION.cff`, module `.gitignore`/`.gitattributes`):
    - `petbio` -> `services/petdata`
    - `retriever` -> `services/retriever` (flatten the inner `backend/` up to the service root)
    - `stacker` -> `apps/stacker`
    - `platform`: copy `platform/docs/*` into `docs/` (architecture, auth-flow, subscriptions, module-template), then retire the repo.
-2. Remove the now-ignored top-level module directories and drop their ignore entries.
+2. Remove the now-unused top-level module directories and drop their ignore entries. (Confirm the `ckrough/*` origins are intact as the history archive first; `platform` has no remote, so deleting it drops its 2-commit history, though its docs are preserved in `docs/`.)
 
 ### Phase 3: rename petbio -> petdata (code-level, careful)
 Beyond the directory move: Python package `petbio` -> `petdata`, all imports, the FastAPI app, config env prefix `PETBIO_` -> `PETDATA_`, `pyproject.toml` name and console scripts, database references, tests, and docs. Treat as its own reviewed change.
@@ -89,4 +91,7 @@ The research-backed kennel card: generation + live lint/score, on the petdata Pa
 
 ## Open items
 - **Repo visibility:** public now vs private until the wedge is demoable. Note the vision spec contains business-model/pricing detail; decide whether that section stays in the public repo or moves to a private planning location before going public.
-- **History preservation:** recommended via `git subtree` (Phase 2). Confirm before executing.
+- **FOHA scrub before public:** the imported module code, tests, and docs still reference FOHA. Scrub the working tree (folded into the Phase 3 `petbio` -> `petdata` rename) before the repo flips public.
+
+## Resolved
+- **History preservation:** resolved as clean-snapshot true monorepo (see Phase 2), superseding the `git subtree` recommendation. Granular history stays in the archived `ckrough/*` origins.
