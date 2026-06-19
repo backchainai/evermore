@@ -1,8 +1,8 @@
-# petbio
+# petdata
 
 ## Repository Overview
 
-petbio is an automated adoption profile generator for animal shelters, built for Friends of Homeless Animals (FOHA). The project extracts animal data from shelter management systems, analyzes behavioral trends using time-decay algorithms, and generates evidence-based adoption profiles using LLMs.
+petdata is an automated adoption profile generator for animal shelters, built for nonprofit animal shelters. The project extracts animal data from shelter management systems, analyzes behavioral trends using time-decay algorithms, and generates evidence-based adoption profiles using LLMs.
 
 **Current Phase:** Phase 1 complete (data extraction and storage)
 **Next Phase:** Time-decay behavioral analysis
@@ -51,7 +51,7 @@ petbio is an automated adoption profile generator for animal shelters, built for
 ## Project Structure
 
 ```
-src/petbio/
+src/petdata/
 ├── config.py                      # Settings via pydantic-settings
 └── modules/
     └── db/                        # Phase 1: Data layer
@@ -129,24 +129,24 @@ All database access goes through `Database` class methods:
 
 **Usage Pattern:**
 ```python
-from petbio.modules.db import Database, Animal
+from petdata.modules.db import Database, Animal
 from pathlib import Path
 
-db = Database(Path("data/petbio.db"))
+db = Database(Path("data/petdata.db"))
 
 # Create
-animal = Animal(id="FOHA-A-12345", name="Buddy")
+animal = Animal(id="A-12345", name="Buddy")
 db.insert_animal(animal)
 
 # Read
-animal = db.get_animal("FOHA-A-12345")
+animal = db.get_animal("A-12345")
 
 # Update (mutable pattern)
 animal.weight_lbs = 70.0
 db.update_animal(animal)
 
 # Delete
-db.delete_animal("FOHA-A-12345")
+db.delete_animal("A-12345")
 ```
 
 **Context Managers:**
@@ -168,7 +168,7 @@ db.delete_animal("FOHA-A-12345")
 
 **Public API:**
 ```python
-from petbio.modules.db import init_database, migrate
+from petdata.modules.db import init_database, migrate
 
 init_database(db_path)           # Create migration_history table
 migrate(db_path)                 # Apply pending migrations
@@ -268,14 +268,14 @@ SQLite (Schema + Migrations)
 
 **pydantic-settings pattern:**
 ```python
-from petbio.config import get_settings
+from petdata.config import get_settings
 
 settings = get_settings()
 db_path = settings.database_path
 ```
 
 **Environment variables:**
-- Prefix: `PETBIO_`
+- Prefix: `PETDATA_`
 - Source: `.env` file or environment
 - Type validation via Pydantic
 
@@ -340,5 +340,5 @@ def process_data(input_data: str, options: list[str]) -> str:
 ## Subdirectory Context
 
 No subdirectory CLAUDE.md files exist yet. Create when needed:
-- `src/petbio/modules/db/CLAUDE.md` - Database layer specifics (if patterns become complex)
+- `src/petdata/modules/db/CLAUDE.md` - Database layer specifics (if patterns become complex)
 - `tests/CLAUDE.md` - Testing utilities and fixtures (if shared test code grows)

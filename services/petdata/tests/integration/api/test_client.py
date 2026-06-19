@@ -6,8 +6,8 @@ import pytest
 import respx
 from httpx import Response
 
-from petbio.modules.api.client import AdaloClient
-from petbio.modules.api.exceptions import (
+from petdata.modules.api.client import AdaloClient
+from petdata.modules.api.exceptions import (
     APIRateLimitError,
     APIResponseParseError,
     APIServerError,
@@ -16,8 +16,8 @@ from petbio.modules.api.exceptions import (
 
 @pytest.fixture
 def _mock_cookies(monkeypatch):
-    """Mock PETBIO_COOKIES environment variable."""
-    monkeypatch.setenv("PETBIO_COOKIES", "session=test123")
+    """Mock PETDATA_COOKIES environment variable."""
+    monkeypatch.setenv("PETDATA_COOKIES", "session=test123")
 
 
 class TestAdaloClientRetry:

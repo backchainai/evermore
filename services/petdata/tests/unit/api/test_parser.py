@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from petbio.modules.api.exceptions import APIValidationError
-from petbio.modules.api.parser import (
+from petdata.modules.api.exceptions import APIValidationError
+from petdata.modules.api.parser import (
     parse_animal_response,
     parse_volunteer_note_response,
     parse_walk_record_response,
@@ -21,7 +21,7 @@ class TestParseAnimalResponse:
             "records": [
                 {
                     "id": "adalo123",
-                    "FOHA ID": "FOHA-A-001",
+                    "Animal ID": "A-001",
                     "Name": "Buddy",
                     "AKA": "Bud",
                     "Breed": "Labrador",
@@ -33,7 +33,7 @@ class TestParseAnimalResponse:
         }
         animals = parse_animal_response(raw)
         assert len(animals) == 1
-        assert animals[0].id == "FOHA-A-001"
+        assert animals[0].id == "A-001"
         assert animals[0].name == "Buddy"
         assert animals[0].adalo_record_id == "adalo123"
 
@@ -61,7 +61,7 @@ class TestParseAnimalResponse:
             "records": [
                 {
                     "id": "adalo123",
-                    "FOHA ID": None,  # None ID will fail (str required)
+                    "Animal ID": None,  # None ID will fail (str required)
                     "Name": None,  # None name will fail (str required)
                 }
             ]
@@ -75,7 +75,7 @@ class TestParseAnimalResponse:
             "records": [
                 {
                     "id": "adalo123",
-                    "FOHA ID": "FOHA-A-002",
+                    "Animal ID": "A-002",
                     "Name": "Max",
                     "AKA": None,
                     "Breed": None,
@@ -85,7 +85,7 @@ class TestParseAnimalResponse:
         }
         animals = parse_animal_response(raw)
         assert len(animals) == 1
-        assert animals[0].id == "FOHA-A-002"
+        assert animals[0].id == "A-002"
         assert animals[0].aka is None
         assert animals[0].breed is None
 
@@ -93,9 +93,9 @@ class TestParseAnimalResponse:
         """parse_animal_response handles multiple records."""
         raw = {
             "records": [
-                {"id": "adalo1", "FOHA ID": "FOHA-A-001", "Name": "Buddy"},
-                {"id": "adalo2", "FOHA ID": "FOHA-A-002", "Name": "Max"},
-                {"id": "adalo3", "FOHA ID": "FOHA-A-003", "Name": "Luna"},
+                {"id": "adalo1", "Animal ID": "A-001", "Name": "Buddy"},
+                {"id": "adalo2", "Animal ID": "A-002", "Name": "Max"},
+                {"id": "adalo3", "Animal ID": "A-003", "Name": "Luna"},
             ]
         }
         animals = parse_animal_response(raw)
@@ -112,7 +112,7 @@ class TestParseVolunteerNoteResponse:
             "records": [
                 {
                     "id": "note123",
-                    "Animal ID": "FOHA-A-001",
+                    "Animal ID": "A-001",
                     "Volunteer Name": "Chris Krough",
                     "Note Date": "2025-01-12T10:00:00",
                     "Note Text": "Good walk today",
@@ -125,7 +125,7 @@ class TestParseVolunteerNoteResponse:
         }
         notes = parse_volunteer_note_response(raw)
         assert len(notes) == 1
-        assert notes[0].animal_id == "FOHA-A-001"
+        assert notes[0].animal_id == "A-001"
         assert notes[0].volunteer_name == "Chris Krough"
         assert notes[0].rating_strong_on_leash == 4
 
@@ -147,7 +147,7 @@ class TestParseVolunteerNoteResponse:
             "records": [
                 {
                     "id": "note123",
-                    "Animal ID": "FOHA-A-001",
+                    "Animal ID": "A-001",
                     "Volunteer Name": "Chris",
                     "Note Date": "2025-01-12T10:00:00",
                     "Strong on Leash": 10,  # Out of range (>5)
@@ -165,7 +165,7 @@ class TestParseVolunteerNoteResponse:
             "records": [
                 {
                     "id": "note123",
-                    "Animal ID": "FOHA-A-001",
+                    "Animal ID": "A-001",
                     "Volunteer Name": "Chris",
                     "Note Date": "2025-01-12T10:00:00",
                     "Note Text": "No ratings today",
@@ -185,13 +185,13 @@ class TestParseVolunteerNoteResponse:
             "records": [
                 {
                     "id": "note1",
-                    "Animal ID": "FOHA-A-001",
+                    "Animal ID": "A-001",
                     "Volunteer Name": "Chris",
                     "Note Date": "2025-01-12T10:00:00",
                 },
                 {
                     "id": "note2",
-                    "Animal ID": "FOHA-A-002",
+                    "Animal ID": "A-002",
                     "Volunteer Name": "Sam",
                     "Note Date": "2025-01-12T11:00:00",
                 },
@@ -212,7 +212,7 @@ class TestParseWalkRecordResponse:
             "records": [
                 {
                     "id": "walk123",
-                    "Animal ID": "FOHA-A-001",
+                    "Animal ID": "A-001",
                     "Volunteer Name": "Chris",
                     "Out Time": "2025-01-12T10:00:00",
                     "In Time": "2025-01-12T10:30:00",
@@ -221,7 +221,7 @@ class TestParseWalkRecordResponse:
         }
         walks = parse_walk_record_response(raw)
         assert len(walks) == 1
-        assert walks[0].animal_id == "FOHA-A-001"
+        assert walks[0].animal_id == "A-001"
         assert walks[0].volunteer_name == "Chris"
 
     def test_empty_records_list_returns_empty_list(self):
@@ -242,7 +242,7 @@ class TestParseWalkRecordResponse:
             "records": [
                 {
                     "id": "walk123",
-                    "Animal ID": "FOHA-A-001",
+                    "Animal ID": "A-001",
                     "Volunteer Name": None,
                     "Out Time": None,
                     "In Time": None,
@@ -260,17 +260,17 @@ class TestParseWalkRecordResponse:
             "records": [
                 {
                     "id": "walk1",
-                    "Animal ID": "FOHA-A-001",
+                    "Animal ID": "A-001",
                     "Volunteer Name": "Chris",
                 },
                 {
                     "id": "walk2",
-                    "Animal ID": "FOHA-A-002",
+                    "Animal ID": "A-002",
                     "Volunteer Name": "Sam",
                 },
                 {
                     "id": "walk3",
-                    "Animal ID": "FOHA-A-003",
+                    "Animal ID": "A-003",
                     "Volunteer Name": "Alex",
                 },
             ]

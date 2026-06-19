@@ -2,7 +2,7 @@
 
 ## Summary
 
-Design and implement a data extraction system for FOHA's Adalo-based shelter management system, storing animal data in SQLite with full behavioral rating history for future time-decay analysis.
+Design and implement a data extraction system for an Adalo-based shelter management system (SMS), storing animal data in SQLite with full behavioral rating history for future time-decay analysis.
 
 ---
 
@@ -45,7 +45,7 @@ https://database-red.adalo.com/databases/{database_id}/tables/{table_id}
 ### Animal Record
 | Field | Example | Notes |
 |-------|---------|-------|
-| ID | FOHA-A-55833 | Unique identifier |
+| ID | A-55833 | Unique identifier |
 | Name | Eros | Display name |
 | AKA | Dame | Alternate name |
 | Breed | Sheep Dog | Breed string |
@@ -62,7 +62,7 @@ https://database-red.adalo.com/databases/{database_id}/tables/{table_id}
 ### Volunteer Note Record
 | Field | Example | Notes |
 |-------|---------|-------|
-| Animal ID | FOHA-A-55833 | Foreign key |
+| Animal ID | A-55833 | Foreign key |
 | Volunteer Name | Chris Krough | String |
 | Date/Time | 12/23/2025 5:37 PM | Timestamp |
 | Note Text | "High energy and alert..." | Free text |
@@ -80,7 +80,7 @@ https://database-red.adalo.com/databases/{database_id}/tables/{table_id}
 - Housebreaking/Crating Status
 - Things I Like
 - Things I Dislike
-- Public Profile URL (foha.org/pet/{slug}/)
+- Public Profile URL (example.org/pet/{slug}/)
 
 ### Behavioral Staff Notes
 - Structured tags: Cat Test Complete, Good with Dogs, Good with Kids, etc.
@@ -95,7 +95,7 @@ https://database-red.adalo.com/databases/{database_id}/tables/{table_id}
 ```sql
 -- Animals table
 CREATE TABLE animals (
-    id TEXT PRIMARY KEY,                    -- FOHA-A-55833
+    id TEXT PRIMARY KEY,                    -- A-55833
     name TEXT NOT NULL,
     aka TEXT,
     breed TEXT,
@@ -238,7 +238,7 @@ CREATE INDEX idx_volunteer_notes_last_synced
 ### Rate Limiting
 
 - **Default delay**: 500ms between requests
-- **Configurable**: Environment variable `PETBIO_REQUEST_DELAY_MS`
+- **Configurable**: Environment variable `PETDATA_REQUEST_DELAY_MS`
 - **Batch size**: 50 records per request (configurable)
 - **Retry logic**: Exponential backoff on 429/5xx errors
 
@@ -255,7 +255,7 @@ CREATE INDEX idx_volunteer_notes_last_synced
 ### Files to Create
 
 ```
-src/petbio/
+src/petdata/
     __init__.py
     config.py              # Configuration and constants
     db/
@@ -293,9 +293,9 @@ src/petbio/
    - Error handling and recovery
 
 4. **CLI** (cli.py)
-   - `petbio sync --full`: Initial sync
-   - `petbio sync --incremental`: Update only
-   - `petbio status`: Show sync status
+   - `petdata sync --full`: Initial sync
+   - `petdata sync --incremental`: Update only
+   - `petdata status`: Show sync status
 
 ---
 
@@ -315,7 +315,7 @@ src/petbio/
 
 ## Verification Plan
 
-1. **Schema creation**: `uv run python -c "from petbio.db.schema import create_tables; ..."`
+1. **Schema creation**: `uv run python -c "from petdata.db.schema import create_tables; ..."`
 
 2. **API connectivity**: Test single animal fetch with captured cookies
 
@@ -343,8 +343,8 @@ src/petbio/
 
 | ID | Title | Priority | Depends On |
 |----|-------|----------|------------|
-| petbio-11o | Set up SQLite database schema | P1 | - |
-| petbio-jf5 | Implement Adalo API client | P1 | petbio-11o |
-| petbio-ic4 | Create full sync extraction engine | P2 | petbio-jf5 |
-| petbio-ucw | Add incremental sync capability | P2 | petbio-ic4 |
-| petbio-w78 | Build CLI interface for sync commands | P3 | petbio-ic4 |
+| petdata-11o | Set up SQLite database schema | P1 | - |
+| petdata-jf5 | Implement Adalo API client | P1 | petdata-11o |
+| petdata-ic4 | Create full sync extraction engine | P2 | petdata-jf5 |
+| petdata-ucw | Add incremental sync capability | P2 | petdata-ic4 |
+| petdata-w78 | Build CLI interface for sync commands | P3 | petdata-ic4 |

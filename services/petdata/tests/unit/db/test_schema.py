@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from petbio.modules.db.schema import (
+from petdata.modules.db.schema import (
     create_tables,
     drop_tables,
     get_index_names,

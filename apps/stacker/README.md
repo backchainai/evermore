@@ -1,6 +1,6 @@
 # Stacker
 
-Unified portal frontend for FOHA shelter management tools. Built with SvelteKit, it hosts independent backend service modules (Retriever, PetBio) behind a single authenticated UI, gating access per subscription.
+Unified portal frontend for shelter management tools. Built with SvelteKit, it hosts independent backend service modules (Retriever, Pet Data) behind a single authenticated UI, gating access per subscription.
 
 - **Stack:** SvelteKit + Svelte 5 runes + Skeleton UI v4, Tailwind CSS v4
 - **Auth:** Supabase Auth (SSR via `@supabase/ssr`)

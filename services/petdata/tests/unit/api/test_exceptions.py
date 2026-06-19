@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from petbio.modules.api.exceptions import (
+from petdata.modules.api.exceptions import (
     APIAuthenticationError,
     APIError,
     APINetworkError,

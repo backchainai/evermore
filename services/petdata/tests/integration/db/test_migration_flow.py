@@ -8,10 +8,10 @@ from pathlib import Path
 
 import pytest
 
-from petbio.modules.db import Database, init_database, migrate
-from petbio.modules.db.migrate import get_current_version, get_pending_migrations
-from petbio.modules.db.models import Animal
-from petbio.modules.db.schema import get_table_names
+from petdata.modules.db import Database, init_database, migrate
+from petdata.modules.db.migrate import get_current_version, get_pending_migrations
+from petdata.modules.db.models import Animal
+from petdata.modules.db.schema import get_table_names
 
 
 @pytest.fixture

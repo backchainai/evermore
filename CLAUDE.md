@@ -12,20 +12,20 @@ An AI platform for nonprofit animal shelters: it ingests animal data from any sh
 - The execution plan: `docs/plans/repo-restructure-and-rename.md`
 - Research corpus: `docs/research/README.md`
 
-## Current state: consolidated monorepo (post Phase 2)
+## Current state: consolidated monorepo (post Phase 3)
 
 The four formerly-separate module repos are now tracked directly in this one git repo. Phase 2 imported each module's committed tree as a clean snapshot (a true monorepo: no submodules, no subtrees, no nested `.git`); the granular pre-consolidation history lives in the archived `ckrough/*` origin repos, not here. Per-module build and test commands live in each module's own `CLAUDE.md`; the tech-stack standard governs all of them.
 
 | Module path | From | Notes |
 |---|---|---|
-| `services/petdata/` | `petbio` | Directory moved. The code-level `petbio` -> `petdata` rename (Python package, imports, env prefix) is still pending (plan Phase 3); the package inside is still named `petbio`. |
+| `services/petdata/` | `petbio` | Directory moved and code renamed `petbio` -> `petdata` (Phase 3): Python package `src/petdata/`, all imports, env prefix `PETDATA_`, FastAPI title "Pet Data". |
 | `services/retriever/` | `retriever` | The inner `backend/` was flattened up to the service root. |
 | `apps/stacker/` | `stacker` | SvelteKit portal. |
 | `services/biowriter/` | (new) | Not yet scaffolded (plan Phase 5/6). |
 
 `platform` is retired; its docs (`architecture.md`, `auth-flow.md`, `subscriptions.md`, `module-template.md`) folded into `docs/`.
 
-Pending follow-ups from the plan: physically remove the now-unused top-level `petbio/`/`retriever/`/`stacker/`/`platform/` directories and drop their `.gitignore` entries (Phase 2 cleanup); the `petbio` -> `petdata` code rename (Phase 3); FOHA scrub before the repo flips public; tech-stack conformance (Phase 5).
+Pending follow-ups from the plan: tech-stack conformance (Phase 5) and scaffolding `services/biowriter` (Phase 5/6).
 
 ## The data spine (settled vocabulary, do not overload)
 
@@ -49,4 +49,4 @@ Pending follow-ups from the plan: physically remove the now-unused top-level `pe
 - The repo is now under one git history. Treat moves and deletes carefully and get approval before deleting.
 - User-visible content avoids em-dashes (use colons, parentheses, commas).
 - Per-module build/test commands live in each module's own `CLAUDE.md`; the tech-stack standard governs all of them.
-- FOHA is still referenced in imported module code, tests, and docs. Removing it is a tracked prerequisite before the repo goes public; do not add new references.
+- FOHA was scrubbed from the working tree in Phase 3: code, tests, and docs are genericized to "Shelter Management System (SMS)". Do not reintroduce client names or branded SMS tool names; refer to shelter systems generically. The pre-Phase-3 snapshot-import commit still contains FOHA in git history; a history scrub is a separate prerequisite before the repo flips public.

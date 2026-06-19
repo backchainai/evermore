@@ -561,8 +561,8 @@ wheels = [
 ]
 
 [[package]]
-name = "petbio"
-version = "1.0.0"
+name = "petdata"
+version = "1.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "fast-llms-txt" },

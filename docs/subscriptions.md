@@ -26,10 +26,10 @@ create index subscriptions_stripe_sub_id_idx on public.subscriptions (stripe_sub
 
 ### Module IDs
 
-Match the module's `id` field in `stacker/src/lib/portal/config.ts`. Currently:
+Match the module's `id` field in `apps/stacker/src/lib/portal/config.ts`. Currently:
 
 - `retriever`
-- `petbio`
+- `petdata`
 
 When adding a module, use its registry id verbatim.
 

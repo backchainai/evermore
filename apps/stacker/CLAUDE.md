@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## Project: Stacker
 
-Unified portal frontend for FOHA shelter management tools. Built with SvelteKit, hosts multiple backend service modules behind a single UI.
+Unified portal frontend for shelter management tools. Built with SvelteKit, hosts multiple backend service modules behind a single UI.
 
 ### Stack
 
@@ -21,7 +21,7 @@ Stacker is a **portal frontend** that hosts module UIs for independent backend s
 | Module | Backend Service | API URL Env Var |
 |--------|----------------|-----------------|
 | Retriever | Retriever API (Cloud Run) | `PUBLIC_RETRIEVER_API_URL` |
-| PetBio | PetBio API (Cloud Run) | `PUBLIC_PETBIO_API_URL` |
+| Pet Data | Pet Data API (Cloud Run) | `PUBLIC_PETDATA_API_URL` |
 
 Each module provides:
 - `src/lib/modules/{id}/index.ts` — `ModuleDefinition` export

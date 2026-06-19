@@ -64,8 +64,8 @@ Method: import each module's committed tree as a clean snapshot (`git archive HE
    - `platform`: copy `platform/docs/*` into `docs/` (architecture, auth-flow, subscriptions, module-template), then retire the repo.
 2. Remove the now-unused top-level module directories and drop their ignore entries. (Confirm the `ckrough/*` origins are intact as the history archive first; `platform` has no remote, so deleting it drops its 2-commit history, though its docs are preserved in `docs/`.)
 
-### Phase 3: rename petbio -> petdata (code-level, careful)
-Beyond the directory move: Python package `petbio` -> `petdata`, all imports, the FastAPI app, config env prefix `PETBIO_` -> `PETDATA_`, `pyproject.toml` name and console scripts, database references, tests, and docs. Treat as its own reviewed change.
+### Phase 3 (done, 2026-06-19): rename petbio -> petdata (code-level) + FOHA scrub
+Done: Python package `petbio` -> `petdata`, all imports, the FastAPI app (title "Pet Data"), config env prefix `PETBIO_` -> `PETDATA_`, `pyproject.toml` name, `uv.lock`, database references, tests, and docs. The stacker portal renamed in lockstep: module id, `/app/petdata` route, `PUBLIC_PETDATA_API_URL`, the `PetDataApi` client. FOHA scrubbed from the working tree (code, tests, docs) to generic "Shelter Management System (SMS)", including the design partner's leaked SMS URL and the `"FOHA ID"` parser field key (-> `"Animal ID"`). Gates green: petdata pytest (248)/ruff/mypy, stacker svelte-check (0 errors).
 
 ### Phase 4: GitHub setup and issue migration
 1. Labels, milestones, Project board, templates, branch protection (see "GitHub structure").
@@ -91,7 +91,9 @@ The research-backed kennel card: generation + live lint/score, on the petdata Pa
 
 ## Open items
 - **Repo visibility:** public now vs private until the wedge is demoable. Note the vision spec contains business-model/pricing detail; decide whether that section stays in the public repo or moves to a private planning location before going public.
-- **FOHA scrub before public:** the imported module code, tests, and docs still reference FOHA. Scrub the working tree (folded into the Phase 3 `petbio` -> `petdata` rename) before the repo flips public.
+- **History scrub before public:** the working tree is FOHA-clean as of Phase 3, but the Phase 2 snapshot-import commit still carries FOHA in git history. Decide whether to rewrite history (e.g. squash to a single clean root) before the repo flips public.
+- **Docker topology:** `apps/stacker/docker-compose.yml` still references pre-consolidation relative paths (`../petdata`, `../retriever/backend`). Refactor so each service is independently testable or runnable as a suite (tracked separately).
 
 ## Resolved
 - **History preservation:** resolved as clean-snapshot true monorepo (see Phase 2), superseding the `git subtree` recommendation. Granular history stays in the archived `ckrough/*` origins.
+- **FOHA scrub (working tree):** done in Phase 3 (2026-06-19). Code, tests, and docs across `services/petdata` and `apps/stacker` genericized to "Shelter Management System (SMS)"; the design partner's leaked SMS URL and the `"FOHA ID"` field key removed. History scrub is tracked separately under Open items.

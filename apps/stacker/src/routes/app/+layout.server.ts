@@ -7,6 +7,6 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 	}
 
 	return {
-		subscriptions: ['retriever', 'petbio'] // stub — real subscription backend is follow-up work
+		subscriptions: ['retriever', 'petdata'] // stub — real subscription backend is follow-up work
 	};
 };

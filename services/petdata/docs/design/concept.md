@@ -1,6 +1,6 @@
 ## Project Overview
 
-petbio is a Python application that extracts animal data from FOHA's Adalo-based shelter management system (https://fohadogs.adalo.com/), stores it in a local SQLite database, and will eventually generate optimized adoption profiles using time-decay behavioral analysis and LLM synthesis.
+petdata is a Python application that extracts animal data from an Adalo-based shelter management system (SMS), stores it in a local SQLite database, and will eventually generate optimized adoption profiles using time-decay behavioral analysis and LLM synthesis.
 
 This prompt covers Phase 1: Data extraction and storage design.
 
@@ -8,7 +8,7 @@ This prompt covers Phase 1: Data extraction and storage design.
 
 ## Your Mission
 
-Reverse engineer the fohadogs.adalo.com web application to understand its data structures, API endpoints, and authentication patterns. Use these findings to design a data extraction system and SQLite schema that captures all relevant animal information.
+Reverse engineer the shelter management system's web application to understand its data structures, API endpoints, and authentication patterns. Use these findings to design a data extraction system and SQLite schema that captures all relevant animal information.
 
 ---
 
@@ -26,7 +26,7 @@ Reverse engineer the fohadogs.adalo.com web application to understand its data s
 - Store all extracted data in SQLite
 - Preserve full history of behavioral ratings and notes (required for time-decay analysis in Phase 2)
 - Track data lineage (when records were synced, from which source)
-- Design schema to be shelter-agnostic where practical (FOHA-specific field mappings can be configuration rather than hardcoded)
+- Design schema to be shelter-agnostic where practical (shelter-specific field mappings can be configuration rather than hardcoded)
 
 ---
 
@@ -122,7 +122,7 @@ Any ambiguities discovered that require human decision-making before implementat
 
 **Target Database**: SQLite only for Phase 1. Schema should be straightforward to migrate to PostgreSQL later if needed, but don't over-engineer for that now.
 
-**Shelter Agnosticism**: While building for FOHA specifically, prefer configuration over hardcoding where it doesn't add complexity. Example: behavioral category names should come from the data or config, not be hardcoded constants.
+**Shelter Agnosticism**: While building for one shelter initially, prefer configuration over hardcoding where it doesn't add complexity. Example: behavioral category names should come from the data or config, not be hardcoded constants.
 
 **Future Phases** (context only, don't design these yet):
 - Phase 2: Time-decay algorithm using natural exponential decay (Euler's number), with the most recent 3 months weighted heavily before decay applies
@@ -132,7 +132,7 @@ Any ambiguities discovered that require human decision-making before implementat
 
 ## How to Investigate
 
-1. Open https://fohadogs.adalo.com/ in Chrome with DevTools Network tab active
+1. Open the shelter management system in Chrome with DevTools Network tab active
 2. Navigate through the application: view animal lists, individual animal profiles, volunteer notes sections
 3. Observe XHR/Fetch requests to identify API patterns
 4. Document request/response structures

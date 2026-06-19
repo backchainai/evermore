@@ -11,7 +11,7 @@ dependencies:
 - development-standards.md
 - decisions/
 ---
-# petbio Architecture
+# petdata Architecture
 
 Automated adoption profile generator for animal shelters
 
@@ -89,9 +89,9 @@ Automated adoption profile generator for animal shelters
 ## Project Structure
 
 ```
-petbio/
+petdata/
 ├── src/
-│   └── petbio/
+│   └── petdata/
 │       ├── __init__.py
 │       ├── config.py                 # pydantic-settings configuration
 │       │
@@ -147,24 +147,24 @@ petbio/
 All database access goes through `Database` class:
 
 ```python
-from petbio.modules.db import Database, Animal
+from petdata.modules.db import Database, Animal
 from pathlib import Path
 
-db = Database(Path("data/petbio.db"))
+db = Database(Path("data/petdata.db"))
 
 # Create
-animal = Animal(id="FOHA-A-12345", name="Buddy")
+animal = Animal(id="A-12345", name="Buddy")
 db.insert_animal(animal)
 
 # Read
-animal = db.get_animal("FOHA-A-12345")
+animal = db.get_animal("A-12345")
 
 # Update (mutable pattern)
 animal.weight_lbs = 70.0
 db.update_animal(animal)
 
 # Delete
-db.delete_animal("FOHA-A-12345")
+db.delete_animal("A-12345")
 ```
 
 **Benefits:**
@@ -179,7 +179,7 @@ Models use `validate_assignment=True` for ergonomic updates:
 
 ```python
 # Fetch
-animal = db.get_animal("FOHA-A-12345")
+animal = db.get_animal("A-12345")
 
 # Modify (validators run on assignment)
 animal.weight_lbs = 70.0
@@ -216,7 +216,7 @@ CREATE INDEX IF NOT EXISTS idx_animal_id ON volunteer_notes(animal_id);
 
 **Commands:**
 ```python
-from petbio.modules.db import init_database, migrate
+from petdata.modules.db import init_database, migrate
 
 init_database(db_path)  # One-time setup
 migrate(db_path)        # Apply pending migrations
@@ -230,20 +230,20 @@ Environment variables override defaults:
 ```python
 # config.py
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="PETBIO_")
+    model_config = SettingsConfigDict(env_prefix="PETDATA_")
 
-    database_path: Path = Path("data/petbio.db")
+    database_path: Path = Path("data/petdata.db")
     request_delay_ms: int = 500
 
 # Usage
-from petbio.config import get_settings
+from petdata.config import get_settings
 settings = get_settings()
 ```
 
 **Environment:**
 ```bash
-export PETBIO_DATABASE_PATH=/custom/path/db.sqlite
-export PETBIO_REQUEST_DELAY_MS=1000
+export PETDATA_DATABASE_PATH=/custom/path/db.sqlite
+export PETDATA_REQUEST_DELAY_MS=1000
 ```
 
 ## Data Model Design
