@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pydantic import field_validator
+from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -18,6 +18,13 @@ class Settings(BaseSettings):
     )
 
     database_path: Path = Path("data/petdata.db")
+
+    # Supabase Postgres connection (postgres:// or postgresql:// URL). Empty by
+    # default so the package imports without a configured database; the async
+    # SQLAlchemy engine is built lazily on first request.
+    database_url: SecretStr = SecretStr("")
+    database_require_ssl: bool = False  # True in production (Supabase / Cloud Run)
+
     request_delay_ms: int = 500
 
     # Web server configuration

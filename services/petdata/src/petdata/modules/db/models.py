@@ -116,7 +116,7 @@ class Animal(BaseModel):
                 return None  # Future birth date is invalid
             age_days = (today - birth).days
             return round(age_days / 365.25, 1)  # Account for leap years
-        except (ValueError, AttributeError):
+        except ValueError, AttributeError:
             return None
 
     @property
@@ -135,7 +135,7 @@ class Animal(BaseModel):
             if intake > today:
                 return None  # Future intake date is invalid
             return (today - intake).days
-        except (ValueError, AttributeError):
+        except ValueError, AttributeError:
             return None
 
     @property
