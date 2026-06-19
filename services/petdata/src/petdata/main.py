@@ -2,20 +2,26 @@
 
 from __future__ import annotations
 
-import asyncio
-from typing import Literal
+from contextlib import asynccontextmanager
+from typing import TYPE_CHECKING, Literal
 
 import structlog
 from fast_llms_txt import create_llms_txt_router
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict
+from sqlalchemy import text
 
 from petdata.config import get_settings
-from petdata.modules.db import Database, init_database, migrate
+from petdata.infrastructure.database.session import _get_factory
 from petdata.modules.web.routes import router as web_router
 
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
+
 logger = structlog.get_logger(__name__)
+
+_VERSION = "1.1.0"
 
 
 class HealthResponse(BaseModel):
@@ -28,6 +34,14 @@ class HealthResponse(BaseModel):
     database: Literal["connected", "unavailable"]
 
 
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
+    """Application lifespan. Schema is owned by Alembic, not the app."""
+    logger.info("petdata.startup")
+    yield
+    logger.info("petdata.shutdown")
+
+
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
     settings = get_settings()
@@ -35,7 +49,8 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="Pet Data",
         description="Behavioral observations and adoption data",
-        version="1.1.0",
+        version=_VERSION,
+        lifespan=lifespan,
     )
 
     app.add_middleware(
@@ -46,31 +61,21 @@ def create_app() -> FastAPI:
         allow_headers=["Authorization", "Content-Type"],
     )
 
-    # Initialize database
-    db_path = settings.database_path
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-    init_database(db_path)
-    migrate(db_path)
-    db = Database(db_path)
-
-    # Store db on app state for dependency injection
-    app.state.db = db
-
     @app.get("/health", response_model=HealthResponse)
     async def health() -> HealthResponse:
-        """Health check endpoint."""
+        """Health check endpoint. Verifies database connectivity."""
         db_status: Literal["connected", "unavailable"] = "unavailable"
         try:
-            # Verify database is accessible
-            animals = await asyncio.to_thread(db.list_animals, 1, 0)
-            _ = animals  # just need the call to succeed
-            db_status = "connected"
+            async with _get_factory()() as session:
+                result = await session.execute(text("SELECT 1"))
+                if result.scalar() == 1:
+                    db_status = "connected"
         except Exception:
             logger.warning("health_check_db_failed", exc_info=True)
 
         return HealthResponse(
             status="healthy" if db_status == "connected" else "degraded",
-            version="1.1.0",
+            version=_VERSION,
             database=db_status,
         )
 

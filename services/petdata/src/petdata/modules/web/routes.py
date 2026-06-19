@@ -1,18 +1,19 @@
 """FastAPI routes for Pet Data API.
 
-Wraps the existing sync Database repository using asyncio.to_thread()
-for non-blocking operation. Same pattern as Retriever's Docling processor.
+Endpoints depend on the async repository (``get_repository``), which is bound to
+a request-scoped SQLAlchemy session. The detail endpoint fetches related data
+sequentially on that one session, which is not safe to share across concurrent
+awaits.
 """
 
 from __future__ import annotations
 
-import asyncio
 from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from petdata.modules.db.models import Animal  # noqa: TC001
-from petdata.modules.web.dependencies import get_db
+from petdata.modules.web.dependencies import get_repository
 from petdata.modules.web.schemas import (
     AnimalDetailResponse,
     AnimalListResponse,
@@ -55,10 +56,10 @@ def _animal_to_response(animal: Animal) -> AnimalResponse:
 async def list_animals(
     limit: int = 100,
     offset: int = 0,
-    db: Database = Depends(get_db),  # noqa: B008
+    repo: Database = Depends(get_repository),  # noqa: B008
 ) -> AnimalListResponse:
     """List animals with pagination."""
-    animals = await asyncio.to_thread(db.list_animals, limit, offset)
+    animals = await repo.list_animals(limit, offset)
     return AnimalListResponse(
         animals=[_animal_to_response(a) for a in animals],
         count=len(animals),
@@ -68,18 +69,16 @@ async def list_animals(
 @router.get("/animals/{animal_id}", response_model=AnimalDetailResponse)
 async def get_animal(
     animal_id: str,
-    db: Database = Depends(get_db),  # noqa: B008
+    repo: Database = Depends(get_repository),  # noqa: B008
 ) -> AnimalDetailResponse:
     """Get animal detail with notes, kennel card, and assessments."""
-    animal = await asyncio.to_thread(db.get_animal, animal_id)
+    animal = await repo.get_animal(animal_id)
     if animal is None:
         raise HTTPException(status_code=404, detail="Animal not found")
 
-    kennel_card, notes, assessments = await asyncio.gather(
-        asyncio.to_thread(db.get_kennel_card, animal_id),
-        asyncio.to_thread(db.get_notes_for_animal, animal_id),
-        asyncio.to_thread(db.get_assessments_for_animal, animal_id),
-    )
+    kennel_card = await repo.get_kennel_card(animal_id)
+    notes = await repo.get_notes_for_animal(animal_id)
+    assessments = await repo.get_assessments_for_animal(animal_id)
 
     return AnimalDetailResponse(
         animal=_animal_to_response(animal),
