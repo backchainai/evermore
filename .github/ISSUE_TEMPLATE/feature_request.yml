@@ -1,0 +1,39 @@
+name: Feature request
+description: Propose new functionality or an enhancement.
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: module
+    attributes:
+      label: Module
+      description: Which part of the monorepo would this land in?
+      options:
+        - services/petdata
+        - services/retriever
+        - apps/stacker
+        - services/biowriter (not yet scaffolded)
+        - docs / repo-level
+        - not sure
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What need or gap does this address? Who is affected?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What you would like to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: How we know this is done.
+    validations:
+      required: false

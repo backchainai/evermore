@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      petdata: ${{ steps.filter.outputs.petdata }}
+      retriever: ${{ steps.filter.outputs.retriever }}
+      stacker: ${{ steps.filter.outputs.stacker }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            petdata:
+              - 'services/petdata/**'
+              - '.github/workflows/ci.yml'
+            retriever:
+              - 'services/retriever/**'
+              - '.github/workflows/ci.yml'
+            stacker:
+              - 'apps/stacker/**'
+              - '.github/workflows/ci.yml'
+
+  petdata:
+    needs: changes
+    if: ${{ needs.changes.outputs.petdata == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/petdata
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: services/petdata/uv.lock
+      - run: uv sync --extra dev
+      - run: uv run ruff format --check src/ tests/
+      - run: uv run ruff check src/ tests/
+      - run: uv run mypy src/
+      - run: uvx bandit -r src/ -q
+      - run: uv run pytest --cov=src --cov-report=term-missing
+
+  retriever:
+    needs: changes
+    if: ${{ needs.changes.outputs.retriever == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/retriever
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: services/retriever/uv.lock
+      - run: uv sync
+      - run: uv run ruff check src/ tests/
+      - run: uv run ruff format --check src/ tests/
+      - run: uv run python -m mypy src/ --strict
+      - run: uv run python -m pytest tests/ --ignore=tests/integration
+
+  stacker:
+    needs: changes
+    if: ${{ needs.changes.outputs.stacker == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/stacker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/stacker/package-lock.json
+      - run: cp .env.example .env
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build
+
+  ci-success:
+    needs: [changes, petdata, retriever, stacker]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify no job failed
+        run: |
+          results='${{ needs.petdata.result }} ${{ needs.retriever.result }} ${{ needs.stacker.result }}'
+          echo "job results: $results"
+          for r in $results; do
+            if [ "$r" = "failure" ] || [ "$r" = "cancelled" ]; then
+              echo "A required CI job did not pass."
+              exit 1
+            fi
+          done
+          echo "All triggered CI jobs passed."
