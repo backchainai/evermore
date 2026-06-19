@@ -67,11 +67,10 @@ Method: import each module's committed tree as a clean snapshot (`git archive HE
 ### Phase 3 (done, 2026-06-19): rename petbio -> petdata (code-level) + FOHA scrub
 Done: Python package `petbio` -> `petdata`, all imports, the FastAPI app (title "Pet Data"), config env prefix `PETBIO_` -> `PETDATA_`, `pyproject.toml` name, `uv.lock`, database references, tests, and docs. The stacker portal renamed in lockstep: module id, `/app/petdata` route, `PUBLIC_PETDATA_API_URL`, the `PetDataApi` client. FOHA scrubbed from the working tree (code, tests, docs) to generic "Shelter Management System (SMS)", including the design partner's leaked SMS URL and the `"FOHA ID"` parser field key (-> `"Animal ID"`). Gates green: petdata pytest (248)/ruff/mypy, stacker svelte-check (0 errors).
 
-### Phase 4: GitHub setup and issue migration
-1. Labels, milestones, Project board, templates, branch protection (see "GitHub structure").
-2. Migrate the ~32 epic-children + standalone Evermore issues from the consulting Beads db to GitHub Issues with mapped labels/milestones; close `prof-iqb` and `prof-0e1` as "migrated to GitHub."
-3. File the new backlog (requirements from the design conversation) under module milestones and the `v1` wedge milestone:
-   - Provenance on every Package item; typed highlights mapped to template sections; the highlighter over Docling output; Package builder UI; Composition + live lint/score editor; hover-to-see-evidence; Export (PDF/Word/Drive, re-import deferred); org/user model + magic-link auth + provisioning; subscription gating; one-command local stack; rename `docs/research/extractions` -> `distilled`; distill behavior/welfare papers; time-online metric.
+### Phase 4 (done, 2026-06-19): GitHub setup and issue migration
+Done: labels (standard set + per-module, with `module:petbio` -> `module:petdata`), milestones (Portal foundation, Portal MVP, v1 wedge), the Evermore Project board, issue/PR templates, and branch protection (PR required; `ci-success` is a required status check). Path-filtered CI landed in `.github/workflows/ci.yml` (PR #48): per-service gates for petdata (ruff/mypy/bandit/pytest), retriever (ruff/mypy/unit pytest; integration needs Postgres, deferred), and stacker (svelte-check/build), behind a single `ci-success` gate. The ~32 Evermore issues were migrated from the consulting Beads db to GitHub Issues with mapped labels and milestones.
+
+The v1 wedge backlog is filed under the `v1 wedge: research-backed kennel card` milestone (#38-#47), all added to the Project board: provenance on every Package item, typed highlights mapped to template sections, the highlighter over Docling output, the Package builder UI, the Composition + live lint/score editor, hover-to-see-evidence, Export (PDF/Word/Drive; re-import deferred), the `docs/research/extractions` -> `distilled` rename, distilling the behavior/welfare papers, and the time-online metric. Backlog items already covered by existing issues (org/user auth, subscription gating, one-command local stack) were not refiled.
 
 ### Phase 5: aggressive tech-stack conformance (ADR 0003)
 Recommended order (petdata gates the schema work):
@@ -97,3 +96,4 @@ The research-backed kennel card: generation + live lint/score, on the petdata Pa
 ## Resolved
 - **History preservation:** resolved as clean-snapshot true monorepo (see Phase 2), superseding the `git subtree` recommendation. Granular history stays in the archived `ckrough/*` origins.
 - **FOHA scrub (working tree):** done in Phase 3 (2026-06-19). Code, tests, and docs across `services/petdata` and `apps/stacker` genericized to "Shelter Management System (SMS)"; the design partner's leaked SMS URL and the `"FOHA ID"` field key removed. History scrub is tracked separately under Open items.
+- **GitHub setup and CI:** done in Phase 4 (2026-06-19). Labels/milestones/board/templates/branch-protection in place; path-filtered CI (`ci-success` required check) merged in PR #48; issues migrated and the v1 wedge backlog filed (#38-#47).
