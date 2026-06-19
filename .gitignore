@@ -1,13 +1,6 @@
 # OS / editor
 .DS_Store
 
-# Existing module repositories: still separate git repos pending Phase 2
-# history-preserving consolidation. See docs/plans/repo-restructure-and-rename.md.
-/petbio/
-/platform/
-/retriever/
-/stacker/
-
 # Python
 __pycache__/
 *.py[cod]
