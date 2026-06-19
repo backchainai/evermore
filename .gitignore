@@ -35,5 +35,8 @@ build/
 # Claude Code local session state (logs, worktrees): per-machine, not source
 .claude/
 
+# Ephemeral working memory (engram /working checkpoints): per-session, not source
+.memory/
+
 # Logs
 *.log
