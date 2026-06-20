@@ -1,0 +1,25 @@
+# Ephemeral Postgres for petdata integration tests.
+#
+#     docker compose -f docker-compose.test.yml up -d
+#     uv run pytest
+#     docker compose -f docker-compose.test.yml down
+#
+# Port 5434 is dedicated to petdata so it can run alongside retriever's test
+# Postgres (5433) without colliding. Data lives in tmpfs; the container is
+# disposable.
+services:
+  postgres-test:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: petdata_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d petdata_test"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
