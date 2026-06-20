@@ -124,11 +124,6 @@ exclude_lines = [
     "if __name__ == .__main__.:",
 ]
 
-[tool.bandit]
-# B608: Dynamic SQL construction is safe here - column names come from
-# Pydantic's model_dump() with fixed field names, values are parameterized
-skips = ["B608"]
-
 [tool.semantic_release]
 version_toml = ["pyproject.toml:project.version"]
 branch = "main"

@@ -2,23 +2,24 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from fastapi import Depends
 
-# FastAPI resolves this annotation at runtime for DI and OpenAPI generation.
-from fastapi import Request  # noqa: TC002
+# Resolved at runtime by FastAPI for dependency injection.
+from sqlalchemy.ext.asyncio import AsyncSession  # noqa: TC002
 
-if TYPE_CHECKING:
-    from petdata.modules.db import Database
+from petdata.infrastructure.database.session import get_session
+from petdata.modules.db import Database
 
 
-def get_db(request: Request) -> Database:
-    """Get database instance from app state.
+async def get_repository(
+    session: AsyncSession = Depends(get_session),  # noqa: B008
+) -> Database:
+    """Provide a repository bound to the request-scoped session.
 
     Args:
-        request: FastAPI request with app state.
+        session: Async session yielded by ``get_session``.
 
     Returns:
-        Database instance.
+        Database repository for this request.
     """
-    db: Database = request.app.state.db
-    return db
+    return Database(session)

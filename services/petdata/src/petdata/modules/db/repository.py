@@ -1,181 +1,115 @@
-"""Database repository for CRUD operations.
+# Copyright (C) 2025 Backchain LLC
+# SPDX-License-Identifier: Apache-2.0
 
-Security Note: Dynamic SQL construction uses column names from Pydantic's
-model_dump() which only returns fixed, known field names from the model schema.
-All data values are properly parameterized. The # nosec B608 comments acknowledge
-this pattern is safe in this context. See code review for detailed analysis.
+"""Async database repository for CRUD operations.
+
+The repository speaks the Pydantic contract (``petdata.modules.db.models``) on
+its boundary and persists through the SQLAlchemy 2.0 async ORM
+(``petdata.models.tables``), bridging the two with ``petdata.models.mappers``.
+Each instance is bound to a request-scoped ``AsyncSession`` (see
+``petdata.infrastructure.database.session.get_session``); the session owns the
+transaction and commits or rolls back when the request ends.
 """
 
 from __future__ import annotations
 
-import sqlite3
-from contextlib import contextmanager
-from datetime import datetime
+import datetime
 from typing import TYPE_CHECKING, Any
 
-from petdata.modules.db.models import (
-    Animal,
-    AnimalImage,
-    KennelCard,
-    StaffAssessment,
-    SyncLog,
-    VolunteerNote,
-    WalkRecord,
-)
+from sqlalchemy import delete, select, update
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+from petdata.models import mappers
+from petdata.models import tables as orm
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
-    from pathlib import Path
+    from pydantic import BaseModel
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from petdata.modules.db.models import (
+        Animal,
+        AnimalImage,
+        KennelCard,
+        StaffAssessment,
+        SyncLog,
+        VolunteerNote,
+        WalkRecord,
+    )
+
+# Contract fields whose Pydantic value is an ISO string but whose ORM column is
+# a native ``date`` / ``datetime``. Used to coerce partial-update payloads; the
+# names do not collide across models (birth/intake are dates everywhere, the
+# rest are timestamps everywhere).
+_DATE_FIELDS = frozenset({"birth_date", "intake_date"})
+_DATETIME_FIELDS = frozenset(
+    {
+        "note_date",
+        "recorded_at",
+        "out_time",
+        "in_time",
+        "started_at",
+        "completed_at",
+        "last_synced_at",
+        "created_at",
+        "updated_at",
+    }
+)
 
 
-def _add_timestamps(
-    data: dict[str, Any],
-    *,
-    include_created: bool = True,
-    include_updated: bool = True,
-) -> None:
-    """Add default timestamps to data dict if not present.
+def _to_date(value: str) -> datetime.date:
+    """Parse an ISO date (or datetime) string into a date."""
+    try:
+        return datetime.date.fromisoformat(value)
+    except ValueError:
+        return datetime.datetime.fromisoformat(value).date()
 
-    Mutates data dict in place.
 
-    Args:
-        data: Dictionary of model data to mutate.
-        include_created: Whether to add created_at (False for updates).
-        include_updated: Whether to add updated_at (False for models without it).
+def _coerce(key: str, value: Any) -> Any:
+    """Coerce a contract value to the ORM column's native type."""
+    if value is None:
+        return None
+    if key in _DATETIME_FIELDS and isinstance(value, str):
+        return datetime.datetime.fromisoformat(value)
+    if key in _DATE_FIELDS and isinstance(value, str):
+        return _to_date(value)
+    return value
+
+
+def _changed_values(model: BaseModel) -> dict[str, Any]:
+    """Return the explicitly-set fields of ``model`` as ORM column values.
+
+    Preserves partial-update semantics: only fields the caller set are written,
+    each coerced from the Pydantic contract type to the ORM column type. The
+    primary key is excluded; it identifies the row, it is not a mutation.
     """
-    now = datetime.now().isoformat()
-    if include_created and "created_at" not in data:
-        data["created_at"] = now
-    if include_updated and "updated_at" not in data:
-        data["updated_at"] = now
-
-
-def _build_insert_sql(table_name: str, data: dict[str, Any]) -> str:
-    """Build parameterized INSERT SQL statement.
-
-    Args:
-        table_name: Name of table to insert into.
-        data: Dictionary of column names to values (must not be empty).
-
-    Returns:
-        SQL INSERT statement with named placeholders.
-
-    Raises:
-        ValueError: If data is empty.
-    """
-    if not data:
-        msg = f"Cannot insert into {table_name}: no data provided"
-        raise ValueError(msg)
-    columns = ", ".join(data)
-    placeholders = ", ".join(f":{k}" for k in data)
-    return f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"  # nosec B608
-
-
-def _build_update_sql(table_name: str, data: dict[str, Any], id_key: str = "id") -> str:
-    """Build parameterized UPDATE SQL statement.
-
-    Args:
-        table_name: Name of table to update.
-        data: Dictionary of column names to values (must include id_key).
-        id_key: Name of ID column (default: "id").
-
-    Returns:
-        SQL UPDATE statement with named placeholders.
-
-    Raises:
-        ValueError: If data contains no fields to update (only ID).
-    """
-    set_fields = [k for k in data if k != id_key]
-    if not set_fields:
-        msg = f"Cannot update {table_name}: no fields to update besides {id_key}"
-        raise ValueError(msg)
-    set_clause = ", ".join(f"{k} = :{k}" for k in set_fields)
-    return f"UPDATE {table_name} SET {set_clause} WHERE {id_key} = :{id_key}"  # nosec B608
-
-
-def _build_upsert_sql(table_name: str, data: dict[str, Any], conflict_key: str) -> str:
-    """Build parameterized UPSERT (INSERT ... ON CONFLICT) SQL statement.
-
-    Args:
-        table_name: Name of table to upsert into.
-        data: Dictionary of column names to values.
-        conflict_key: Column name that triggers conflict (e.g., "animal_id").
-
-    Returns:
-        SQL UPSERT statement with named placeholders.
-    """
-    columns = ", ".join(data)
-    placeholders = ", ".join(f":{k}" for k in data)
-    update_clause = ", ".join(f"{k} = excluded.{k}" for k in data if k != conflict_key)
-    sql = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders}) "  # nosec B608
-    sql += f"ON CONFLICT({conflict_key}) DO UPDATE SET {update_clause}"  # nosec B608
-    return sql
+    raw = model.model_dump(exclude_unset=True)
+    raw.pop("id", None)
+    return {key: _coerce(key, value) for key, value in raw.items()}
 
 
 class Database:
-    """Database connection and operations manager."""
+    """Async repository bound to a single request-scoped session."""
 
-    def __init__(self, db_path: Path) -> None:
-        """Initialize database connection.
+    def __init__(self, session: AsyncSession) -> None:
+        """Initialize the repository.
 
         Args:
-            db_path: Path to the SQLite database file.
+            session: Request-scoped async session that owns the transaction.
         """
-        self.db_path = db_path
-
-    @contextmanager
-    def connection(self) -> Iterator[sqlite3.Connection]:
-        """Create a database connection context.
-
-        Yields:
-            SQLite connection with row factory set.
-        """
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA foreign_keys = ON")
-        try:
-            yield conn
-        finally:
-            conn.close()
-
-    @contextmanager
-    def transaction(self) -> Iterator[sqlite3.Connection]:
-        """Create a database transaction context.
-
-        Commits on success, rolls back on exception.
-
-        Yields:
-            SQLite connection with row factory set.
-        """
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA foreign_keys = ON")
-        try:
-            yield conn
-            conn.commit()
-        except Exception:
-            conn.rollback()
-            raise
-        finally:
-            conn.close()
+        self._session = session
 
     # Animal operations
 
-    def insert_animal(self, animal: Animal) -> None:
+    async def insert_animal(self, animal: Animal) -> None:
         """Insert an animal record.
 
         Args:
             animal: Animal to insert.
         """
-        data = animal.model_dump(mode="json", exclude_none=True)
-        _add_timestamps(data)
-        sql = _build_insert_sql("animals", data)
+        self._session.add(mappers.animal_to_row(animal))
+        await self._session.flush()
 
-        with self.transaction() as conn:
-            # Column names from model_dump() are fixed; values are parameterized
-            conn.execute(sql, data)  # nosec B608
-
-    def get_animal(self, animal_id: str) -> Animal | None:
+    async def get_animal(self, animal_id: str) -> Animal | None:
         """Get an animal by ID.
 
         Args:
@@ -184,48 +118,36 @@ class Database:
         Returns:
             Animal if found, None otherwise.
         """
-        with self.connection() as conn:
-            cursor = conn.execute("SELECT * FROM animals WHERE id = ?", (animal_id,))
-            row = cursor.fetchone()
-            return Animal.model_validate(dict(row)) if row else None
+        row = await self._session.get(orm.Animal, animal_id)
+        return mappers.animal_from_row(row) if row else None
 
-    def update_animal(self, animal: Animal) -> None:
+    async def update_animal(self, animal: Animal) -> None:
         """Update an existing animal record.
 
         Args:
             animal: Animal with updated data.
         """
-        data = animal.model_dump(mode="json", exclude_unset=True)
-        _add_timestamps(data, include_created=False)
-        sql = _build_update_sql("animals", data)
+        values = _changed_values(animal)
+        if not values:
+            return
+        await self._session.execute(
+            update(orm.Animal).where(orm.Animal.id == animal.id).values(**values)
+        )
 
-        with self.transaction() as conn:
-            conn.execute(sql, data)  # nosec B608
+    async def delete_animal(self, animal_id: str) -> None:
+        """Delete an animal and all related records.
 
-    def delete_animal(self, animal_id: str) -> None:
-        """Delete an animal and all related records (auto-cascade).
-
-        Deletes all related records first (images, walks, notes, assessments,
-        kennel cards) before deleting the animal, all within a single transaction.
+        Related rows (images, walks, notes, assessments, kennel card) are
+        removed by the ``ON DELETE CASCADE`` foreign keys.
 
         Args:
             animal_id: Animal ID to delete.
         """
-        with self.transaction() as conn:
-            # Delete children first (FK constraints require this order)
-            conn.execute("DELETE FROM animal_images WHERE animal_id = ?", (animal_id,))
-            conn.execute("DELETE FROM walk_records WHERE animal_id = ?", (animal_id,))
-            conn.execute(
-                "DELETE FROM volunteer_notes WHERE animal_id = ?", (animal_id,)
-            )
-            conn.execute(
-                "DELETE FROM staff_assessments WHERE animal_id = ?", (animal_id,)
-            )
-            conn.execute("DELETE FROM kennel_cards WHERE animal_id = ?", (animal_id,))
-            # Delete parent last
-            conn.execute("DELETE FROM animals WHERE id = ?", (animal_id,))
+        await self._session.execute(
+            delete(orm.Animal).where(orm.Animal.id == animal_id)
+        )
 
-    def list_animals(self, limit: int = 100, offset: int = 0) -> list[Animal]:
+    async def list_animals(self, limit: int = 100, offset: int = 0) -> list[Animal]:
         """List animals with pagination.
 
         Args:
@@ -233,17 +155,15 @@ class Database:
             offset: Number of animals to skip.
 
         Returns:
-            List of animals.
+            List of animals ordered by name.
         """
-        with self.connection() as conn:
-            cursor = conn.execute(
-                "SELECT * FROM animals ORDER BY name LIMIT ? OFFSET ?", (limit, offset)
-            )
-            return [Animal.model_validate(dict(row)) for row in cursor.fetchall()]
+        stmt = select(orm.Animal).order_by(orm.Animal.name).limit(limit).offset(offset)
+        result = await self._session.execute(stmt)
+        return [mappers.animal_from_row(row) for row in result.scalars().all()]
 
     # Volunteer note operations
 
-    def insert_volunteer_note(self, note: VolunteerNote) -> int:
+    async def insert_volunteer_note(self, note: VolunteerNote) -> int:
         """Insert a volunteer note.
 
         Args:
@@ -252,44 +172,33 @@ class Database:
         Returns:
             ID of inserted note.
         """
-        data = note.model_dump(mode="json", exclude_none=True, exclude={"id"})
-        _add_timestamps(data, include_updated=False)
-        sql = _build_insert_sql("volunteer_notes", data)
+        row = mappers.volunteer_note_to_row(note)
+        self._session.add(row)
+        await self._session.flush()
+        return row.id
 
-        with self.transaction() as conn:
-            cursor = conn.execute(sql, data)  # nosec B608
-            if cursor.lastrowid is None:
-                msg = "Failed to insert volunteer_notes record"
-                raise RuntimeError(msg)
-            return cursor.lastrowid
-
-    def get_notes_for_animal(
+    async def get_notes_for_animal(
         self, animal_id: str, limit: int = 100
     ) -> list[VolunteerNote]:
-        """Get volunteer notes for an animal, ordered by date descending.
+        """Get volunteer notes for an animal, most recent first.
 
         Args:
             animal_id: Animal ID.
             limit: Maximum number of notes to return.
 
         Returns:
-            List of volunteer notes, most recent first.
+            List of volunteer notes, ordered by note_date descending.
         """
-        with self.connection() as conn:
-            cursor = conn.execute(
-                """
-                SELECT * FROM volunteer_notes
-                WHERE animal_id = ?
-                ORDER BY note_date DESC
-                LIMIT ?
-                """,
-                (animal_id, limit),
-            )
-            return [
-                VolunteerNote.model_validate(dict(row)) for row in cursor.fetchall()
-            ]
+        stmt = (
+            select(orm.VolunteerNote)
+            .where(orm.VolunteerNote.animal_id == animal_id)
+            .order_by(orm.VolunteerNote.note_date.desc())
+            .limit(limit)
+        )
+        result = await self._session.execute(stmt)
+        return [mappers.volunteer_note_from_row(row) for row in result.scalars().all()]
 
-    def get_volunteer_note_by_id(self, note_id: int) -> VolunteerNote | None:
+    async def get_volunteer_note_by_id(self, note_id: int) -> VolunteerNote | None:
         """Get a volunteer note by ID.
 
         Args:
@@ -298,14 +207,10 @@ class Database:
         Returns:
             VolunteerNote if found, None otherwise.
         """
-        with self.connection() as conn:
-            cursor = conn.execute(
-                "SELECT * FROM volunteer_notes WHERE id = ?", (note_id,)
-            )
-            row = cursor.fetchone()
-            return VolunteerNote.model_validate(dict(row)) if row else None
+        row = await self._session.get(orm.VolunteerNote, note_id)
+        return mappers.volunteer_note_from_row(row) if row else None
 
-    def update_volunteer_note(self, note: VolunteerNote) -> None:
+    async def update_volunteer_note(self, note: VolunteerNote) -> None:
         """Update an existing volunteer note.
 
         Args:
@@ -317,28 +222,29 @@ class Database:
         if note.id is None:
             msg = "Cannot update volunteer note without ID"
             raise ValueError(msg)
+        values = _changed_values(note)
+        if not values:
+            return
+        await self._session.execute(
+            update(orm.VolunteerNote)
+            .where(orm.VolunteerNote.id == note.id)
+            .values(**values)
+        )
 
-        data = note.model_dump(mode="json", exclude_unset=True)
-        sql = _build_update_sql("volunteer_notes", data)
-
-        with self.transaction() as conn:
-            conn.execute(sql, data)  # nosec B608
-
-    def delete_notes_for_animal(self, animal_id: str) -> None:
+    async def delete_notes_for_animal(self, animal_id: str) -> None:
         """Delete all volunteer notes for an animal.
 
         Args:
             animal_id: Animal ID.
         """
-        with self.transaction() as conn:
-            conn.execute(
-                "DELETE FROM volunteer_notes WHERE animal_id = ?", (animal_id,)
-            )
+        await self._session.execute(
+            delete(orm.VolunteerNote).where(orm.VolunteerNote.animal_id == animal_id)
+        )
 
     # Kennel card operations
 
-    def upsert_kennel_card(self, card: KennelCard) -> int:
-        """Insert or update a kennel card.
+    async def upsert_kennel_card(self, card: KennelCard) -> int:
+        """Insert or update a kennel card (one per animal).
 
         Args:
             card: KennelCard to upsert.
@@ -346,17 +252,38 @@ class Database:
         Returns:
             ID of upserted card.
         """
-        data = card.model_dump(mode="json", exclude_none=True, exclude={"id"})
-        sql = _build_upsert_sql("kennel_cards", data, conflict_key="animal_id")
+        row = mappers.kennel_card_to_row(card)
+        insert_values: dict[str, Any] = {
+            "animal_id": row.animal_id,
+            "about_text": row.about_text,
+            "dogs_compatibility": row.dogs_compatibility,
+            "dogs_compatibility_notes": row.dogs_compatibility_notes,
+            "cats_compatibility": row.cats_compatibility,
+            "cats_compatibility_notes": row.cats_compatibility_notes,
+            "kids_compatibility": row.kids_compatibility,
+            "kids_compatibility_notes": row.kids_compatibility_notes,
+            "commands_known": row.commands_known,
+            "housebreaking_status": row.housebreaking_status,
+            "things_likes": row.things_likes,
+            "things_dislikes": row.things_dislikes,
+            "last_synced_at": row.last_synced_at,
+        }
+        # Drop unset values so omitted columns keep their defaults and a conflict
+        # does not overwrite existing data with NULL.
+        present = {k: v for k, v in insert_values.items() if v is not None}
+        update_set = {k: v for k, v in present.items() if k != "animal_id"}
+        stmt = (
+            pg_insert(orm.KennelCard)
+            .values(**present)
+            .on_conflict_do_update(index_elements=["animal_id"], set_=update_set)
+            .returning(orm.KennelCard.id)
+        )
+        result = await self._session.execute(stmt)
+        await self._session.flush()
+        card_id: int = result.scalar_one()
+        return card_id
 
-        with self.transaction() as conn:
-            cursor = conn.execute(sql, data)  # nosec B608
-            if cursor.lastrowid is None:
-                msg = "Failed to upsert kennel_cards record"
-                raise RuntimeError(msg)
-            return cursor.lastrowid
-
-    def get_kennel_card(self, animal_id: str) -> KennelCard | None:
+    async def get_kennel_card(self, animal_id: str) -> KennelCard | None:
         """Get kennel card for an animal.
 
         Args:
@@ -365,14 +292,11 @@ class Database:
         Returns:
             KennelCard if found, None otherwise.
         """
-        with self.connection() as conn:
-            cursor = conn.execute(
-                "SELECT * FROM kennel_cards WHERE animal_id = ?", (animal_id,)
-            )
-            row = cursor.fetchone()
-            return KennelCard.model_validate(dict(row)) if row else None
+        stmt = select(orm.KennelCard).where(orm.KennelCard.animal_id == animal_id)
+        row = (await self._session.execute(stmt)).scalar_one_or_none()
+        return mappers.kennel_card_from_row(row) if row else None
 
-    def get_kennel_card_by_id(self, card_id: int) -> KennelCard | None:
+    async def get_kennel_card_by_id(self, card_id: int) -> KennelCard | None:
         """Get a kennel card by ID.
 
         Args:
@@ -381,23 +305,22 @@ class Database:
         Returns:
             KennelCard if found, None otherwise.
         """
-        with self.connection() as conn:
-            cursor = conn.execute("SELECT * FROM kennel_cards WHERE id = ?", (card_id,))
-            row = cursor.fetchone()
-            return KennelCard.model_validate(dict(row)) if row else None
+        row = await self._session.get(orm.KennelCard, card_id)
+        return mappers.kennel_card_from_row(row) if row else None
 
-    def delete_kennel_card_for_animal(self, animal_id: str) -> None:
+    async def delete_kennel_card_for_animal(self, animal_id: str) -> None:
         """Delete kennel card for an animal.
 
         Args:
             animal_id: Animal ID.
         """
-        with self.transaction() as conn:
-            conn.execute("DELETE FROM kennel_cards WHERE animal_id = ?", (animal_id,))
+        await self._session.execute(
+            delete(orm.KennelCard).where(orm.KennelCard.animal_id == animal_id)
+        )
 
     # Staff assessment operations
 
-    def insert_staff_assessment(self, assessment: StaffAssessment) -> int:
+    async def insert_staff_assessment(self, assessment: StaffAssessment) -> int:
         """Insert a staff assessment.
 
         Args:
@@ -406,39 +329,33 @@ class Database:
         Returns:
             ID of inserted assessment.
         """
-        data = assessment.model_dump(mode="json", exclude_none=True, exclude={"id"})
-        sql = _build_insert_sql("staff_assessments", data)
+        row = mappers.staff_assessment_to_row(assessment)
+        self._session.add(row)
+        await self._session.flush()
+        return row.id
 
-        with self.transaction() as conn:
-            cursor = conn.execute(sql, data)  # nosec B608
-            if cursor.lastrowid is None:
-                msg = "Failed to insert staff_assessments record"
-                raise RuntimeError(msg)
-            return cursor.lastrowid
-
-    def get_assessments_for_animal(self, animal_id: str) -> list[StaffAssessment]:
-        """Get staff assessments for an animal.
+    async def get_assessments_for_animal(self, animal_id: str) -> list[StaffAssessment]:
+        """Get staff assessments for an animal, most recent first.
 
         Args:
             animal_id: Animal ID.
 
         Returns:
-            List of staff assessments.
+            List of staff assessments ordered by recorded_at descending.
         """
-        with self.connection() as conn:
-            cursor = conn.execute(
-                """
-                SELECT * FROM staff_assessments
-                WHERE animal_id = ?
-                ORDER BY recorded_at DESC
-                """,
-                (animal_id,),
-            )
-            return [
-                StaffAssessment.model_validate(dict(row)) for row in cursor.fetchall()
-            ]
+        stmt = (
+            select(orm.StaffAssessment)
+            .where(orm.StaffAssessment.animal_id == animal_id)
+            .order_by(orm.StaffAssessment.recorded_at.desc())
+        )
+        result = await self._session.execute(stmt)
+        return [
+            mappers.staff_assessment_from_row(row) for row in result.scalars().all()
+        ]
 
-    def get_staff_assessment_by_id(self, assessment_id: int) -> StaffAssessment | None:
+    async def get_staff_assessment_by_id(
+        self, assessment_id: int
+    ) -> StaffAssessment | None:
         """Get a staff assessment by ID.
 
         Args:
@@ -447,14 +364,10 @@ class Database:
         Returns:
             StaffAssessment if found, None otherwise.
         """
-        with self.connection() as conn:
-            cursor = conn.execute(
-                "SELECT * FROM staff_assessments WHERE id = ?", (assessment_id,)
-            )
-            row = cursor.fetchone()
-            return StaffAssessment.model_validate(dict(row)) if row else None
+        row = await self._session.get(orm.StaffAssessment, assessment_id)
+        return mappers.staff_assessment_from_row(row) if row else None
 
-    def update_staff_assessment(self, assessment: StaffAssessment) -> None:
+    async def update_staff_assessment(self, assessment: StaffAssessment) -> None:
         """Update an existing staff assessment.
 
         Args:
@@ -466,27 +379,30 @@ class Database:
         if assessment.id is None:
             msg = "Cannot update staff assessment without ID"
             raise ValueError(msg)
+        values = _changed_values(assessment)
+        if not values:
+            return
+        await self._session.execute(
+            update(orm.StaffAssessment)
+            .where(orm.StaffAssessment.id == assessment.id)
+            .values(**values)
+        )
 
-        data = assessment.model_dump(mode="json", exclude_unset=True)
-        sql = _build_update_sql("staff_assessments", data)
-
-        with self.transaction() as conn:
-            conn.execute(sql, data)  # nosec B608
-
-    def delete_assessments_for_animal(self, animal_id: str) -> None:
+    async def delete_assessments_for_animal(self, animal_id: str) -> None:
         """Delete all staff assessments for an animal.
 
         Args:
             animal_id: Animal ID.
         """
-        with self.transaction() as conn:
-            conn.execute(
-                "DELETE FROM staff_assessments WHERE animal_id = ?", (animal_id,)
+        await self._session.execute(
+            delete(orm.StaffAssessment).where(
+                orm.StaffAssessment.animal_id == animal_id
             )
+        )
 
     # Walk record operations
 
-    def insert_walk_record(self, record: WalkRecord) -> int:
+    async def insert_walk_record(self, record: WalkRecord) -> int:
         """Insert a walk record.
 
         Args:
@@ -495,42 +411,33 @@ class Database:
         Returns:
             ID of inserted record.
         """
-        data = record.model_dump(mode="json", exclude_none=True, exclude={"id"})
-        _add_timestamps(data, include_updated=False)
-        sql = _build_insert_sql("walk_records", data)
+        row = mappers.walk_record_to_row(record)
+        self._session.add(row)
+        await self._session.flush()
+        return row.id
 
-        with self.transaction() as conn:
-            cursor = conn.execute(sql, data)  # nosec B608
-            if cursor.lastrowid is None:
-                msg = "Failed to insert walk_records record"
-                raise RuntimeError(msg)
-            return cursor.lastrowid
-
-    def get_walks_for_animal(
+    async def get_walks_for_animal(
         self, animal_id: str, limit: int = 100
     ) -> list[WalkRecord]:
-        """Get walk records for an animal.
+        """Get walk records for an animal, most recent first.
 
         Args:
             animal_id: Animal ID.
             limit: Maximum number of records to return.
 
         Returns:
-            List of walk records, most recent first.
+            List of walk records ordered by out_time descending.
         """
-        with self.connection() as conn:
-            cursor = conn.execute(
-                """
-                SELECT * FROM walk_records
-                WHERE animal_id = ?
-                ORDER BY out_time DESC
-                LIMIT ?
-                """,
-                (animal_id, limit),
-            )
-            return [WalkRecord.model_validate(dict(row)) for row in cursor.fetchall()]
+        stmt = (
+            select(orm.WalkRecord)
+            .where(orm.WalkRecord.animal_id == animal_id)
+            .order_by(orm.WalkRecord.out_time.desc())
+            .limit(limit)
+        )
+        result = await self._session.execute(stmt)
+        return [mappers.walk_record_from_row(row) for row in result.scalars().all()]
 
-    def get_walk_record_by_id(self, record_id: int) -> WalkRecord | None:
+    async def get_walk_record_by_id(self, record_id: int) -> WalkRecord | None:
         """Get a walk record by ID.
 
         Args:
@@ -539,14 +446,10 @@ class Database:
         Returns:
             WalkRecord if found, None otherwise.
         """
-        with self.connection() as conn:
-            cursor = conn.execute(
-                "SELECT * FROM walk_records WHERE id = ?", (record_id,)
-            )
-            row = cursor.fetchone()
-            return WalkRecord.model_validate(dict(row)) if row else None
+        row = await self._session.get(orm.WalkRecord, record_id)
+        return mappers.walk_record_from_row(row) if row else None
 
-    def update_walk_record(self, record: WalkRecord) -> None:
+    async def update_walk_record(self, record: WalkRecord) -> None:
         """Update an existing walk record.
 
         Args:
@@ -558,25 +461,28 @@ class Database:
         if record.id is None:
             msg = "Cannot update walk record without ID"
             raise ValueError(msg)
+        values = _changed_values(record)
+        if not values:
+            return
+        await self._session.execute(
+            update(orm.WalkRecord)
+            .where(orm.WalkRecord.id == record.id)
+            .values(**values)
+        )
 
-        data = record.model_dump(mode="json", exclude_unset=True)
-        sql = _build_update_sql("walk_records", data)
-
-        with self.transaction() as conn:
-            conn.execute(sql, data)  # nosec B608
-
-    def delete_walks_for_animal(self, animal_id: str) -> None:
+    async def delete_walks_for_animal(self, animal_id: str) -> None:
         """Delete all walk records for an animal.
 
         Args:
             animal_id: Animal ID.
         """
-        with self.transaction() as conn:
-            conn.execute("DELETE FROM walk_records WHERE animal_id = ?", (animal_id,))
+        await self._session.execute(
+            delete(orm.WalkRecord).where(orm.WalkRecord.animal_id == animal_id)
+        )
 
     # Animal image operations
 
-    def insert_animal_image(self, image: AnimalImage) -> int:
+    async def insert_animal_image(self, image: AnimalImage) -> int:
         """Insert an animal image.
 
         Args:
@@ -585,37 +491,29 @@ class Database:
         Returns:
             ID of inserted image.
         """
-        data = image.model_dump(mode="json", exclude_none=True, exclude={"id"})
-        sql = _build_insert_sql("animal_images", data)
+        row = mappers.animal_image_to_row(image)
+        self._session.add(row)
+        await self._session.flush()
+        return row.id
 
-        with self.transaction() as conn:
-            cursor = conn.execute(sql, data)  # nosec B608
-            if cursor.lastrowid is None:
-                msg = "Failed to insert animal_images record"
-                raise RuntimeError(msg)
-            return cursor.lastrowid
-
-    def get_images_for_animal(self, animal_id: str) -> list[AnimalImage]:
-        """Get images for an animal.
+    async def get_images_for_animal(self, animal_id: str) -> list[AnimalImage]:
+        """Get images for an animal, ordered by display order.
 
         Args:
             animal_id: Animal ID.
 
         Returns:
-            List of animal images, ordered by display order.
+            List of animal images.
         """
-        with self.connection() as conn:
-            cursor = conn.execute(
-                """
-                SELECT * FROM animal_images
-                WHERE animal_id = ?
-                ORDER BY display_order
-                """,
-                (animal_id,),
-            )
-            return [AnimalImage.model_validate(dict(row)) for row in cursor.fetchall()]
+        stmt = (
+            select(orm.AnimalImage)
+            .where(orm.AnimalImage.animal_id == animal_id)
+            .order_by(orm.AnimalImage.display_order)
+        )
+        result = await self._session.execute(stmt)
+        return [mappers.animal_image_from_row(row) for row in result.scalars().all()]
 
-    def get_animal_image_by_id(self, image_id: int) -> AnimalImage | None:
+    async def get_animal_image_by_id(self, image_id: int) -> AnimalImage | None:
         """Get an animal image by ID.
 
         Args:
@@ -624,14 +522,10 @@ class Database:
         Returns:
             AnimalImage if found, None otherwise.
         """
-        with self.connection() as conn:
-            cursor = conn.execute(
-                "SELECT * FROM animal_images WHERE id = ?", (image_id,)
-            )
-            row = cursor.fetchone()
-            return AnimalImage.model_validate(dict(row)) if row else None
+        row = await self._session.get(orm.AnimalImage, image_id)
+        return mappers.animal_image_from_row(row) if row else None
 
-    def update_animal_image(self, image: AnimalImage) -> None:
+    async def update_animal_image(self, image: AnimalImage) -> None:
         """Update an existing animal image.
 
         Args:
@@ -643,25 +537,28 @@ class Database:
         if image.id is None:
             msg = "Cannot update animal image without ID"
             raise ValueError(msg)
+        values = _changed_values(image)
+        if not values:
+            return
+        await self._session.execute(
+            update(orm.AnimalImage)
+            .where(orm.AnimalImage.id == image.id)
+            .values(**values)
+        )
 
-        data = image.model_dump(mode="json", exclude_unset=True)
-        sql = _build_update_sql("animal_images", data)
-
-        with self.transaction() as conn:
-            conn.execute(sql, data)  # nosec B608
-
-    def delete_images_for_animal(self, animal_id: str) -> None:
+    async def delete_images_for_animal(self, animal_id: str) -> None:
         """Delete all images for an animal.
 
         Args:
             animal_id: Animal ID.
         """
-        with self.transaction() as conn:
-            conn.execute("DELETE FROM animal_images WHERE animal_id = ?", (animal_id,))
+        await self._session.execute(
+            delete(orm.AnimalImage).where(orm.AnimalImage.animal_id == animal_id)
+        )
 
     # Sync log operations
 
-    def insert_sync_log(self, log: SyncLog) -> int:
+    async def insert_sync_log(self, log: SyncLog) -> int:
         """Insert a sync log entry.
 
         Args:
@@ -670,33 +567,31 @@ class Database:
         Returns:
             ID of inserted log.
         """
-        data = log.model_dump(mode="json", exclude_none=True, exclude={"id"})
-        sql = _build_insert_sql("sync_log", data)
+        row = mappers.sync_log_to_row(log)
+        self._session.add(row)
+        await self._session.flush()
+        return row.id
 
-        with self.transaction() as conn:
-            cursor = conn.execute(sql, data)  # nosec B608
-            if cursor.lastrowid is None:
-                msg = "Failed to insert sync_log record"
-                raise RuntimeError(msg)
-            return cursor.lastrowid
-
-    def update_sync_log(self, log: SyncLog) -> None:
+    async def update_sync_log(self, log: SyncLog) -> None:
         """Update a sync log entry.
 
         Args:
-            log: SyncLog with updated data.
+            log: SyncLog with updated data (must have ID).
+
+        Raises:
+            ValueError: If log.id is None.
         """
         if log.id is None:
             msg = "Cannot update sync log without ID"
             raise ValueError(msg)
+        values = _changed_values(log)
+        if not values:
+            return
+        await self._session.execute(
+            update(orm.SyncLog).where(orm.SyncLog.id == log.id).values(**values)
+        )
 
-        data = log.model_dump(mode="json", exclude_unset=True)
-        sql = _build_update_sql("sync_log", data)
-
-        with self.transaction() as conn:
-            conn.execute(sql, data)  # nosec B608
-
-    def get_latest_sync(self, table_name: str) -> SyncLog | None:
+    async def get_latest_sync(self, table_name: str) -> SyncLog | None:
         """Get the most recent completed sync for a table.
 
         Args:
@@ -705,40 +600,37 @@ class Database:
         Returns:
             Most recent completed SyncLog if found, None otherwise.
         """
-        with self.connection() as conn:
-            cursor = conn.execute(
-                """
-                SELECT * FROM sync_log
-                WHERE table_name = ? AND status = 'completed'
-                ORDER BY completed_at DESC
-                LIMIT 1
-                """,
-                (table_name,),
+        stmt = (
+            select(orm.SyncLog)
+            .where(
+                orm.SyncLog.table_name == table_name,
+                orm.SyncLog.status == "completed",
             )
-            row = cursor.fetchone()
-            return SyncLog.model_validate(dict(row)) if row else None
+            .order_by(orm.SyncLog.completed_at.desc())
+            .limit(1)
+        )
+        row = (await self._session.execute(stmt)).scalar_one_or_none()
+        return mappers.sync_log_from_row(row) if row else None
 
-    def delete_sync_log(self, log_id: int) -> None:
+    async def delete_sync_log(self, log_id: int) -> None:
         """Delete a sync log entry.
 
         Args:
             log_id: Sync log ID to delete.
         """
-        with self.transaction() as conn:
-            conn.execute("DELETE FROM sync_log WHERE id = ?", (log_id,))
+        await self._session.execute(delete(orm.SyncLog).where(orm.SyncLog.id == log_id))
 
-    def delete_sync_logs_before(self, table_name: str, before_date: str) -> None:
+    async def delete_sync_logs_before(self, table_name: str, before_date: str) -> None:
         """Delete old sync logs for a table (cleanup operation).
 
         Args:
             table_name: Name of the table.
             before_date: Delete logs completed before this ISO timestamp.
         """
-        with self.transaction() as conn:
-            conn.execute(
-                """
-                DELETE FROM sync_log
-                WHERE table_name = ? AND completed_at < ?
-                """,
-                (table_name, before_date),
+        cutoff = datetime.datetime.fromisoformat(before_date)
+        await self._session.execute(
+            delete(orm.SyncLog).where(
+                orm.SyncLog.table_name == table_name,
+                orm.SyncLog.completed_at < cutoff,
             )
+        )
