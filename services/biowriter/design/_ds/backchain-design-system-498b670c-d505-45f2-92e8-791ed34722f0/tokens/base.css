@@ -1,0 +1,81 @@
+/* =============================================================
+ * BASE — global element defaults the component specs rely on.
+ * Canvas, default body color/font, link underline-on-hover,
+ * focus ring, touch targets, reduced motion.
+ * ============================================================= */
+
+* ,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-canvas);
+  color: var(--color-body);
+  font-family: var(--font-content);
+  font-size: var(--text-body);
+  line-height: var(--line-height-normal);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Headings carry charcoal (the heading role), not body gray. */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  color: var(--color-heading);
+  font-family: var(--font-content);
+  line-height: var(--line-height-tight);
+}
+
+p { margin: 0; }
+
+code, pre, kbd, samp {
+  font-family: var(--font-mono);
+}
+
+/* Links: color transition + underline only on hover.
+ * Button-styled anchors opt out with .no-underline. */
+a {
+  color: var(--color-link);
+  text-decoration: none;
+  transition: color var(--duration-default) var(--ease-in-out);
+}
+a:hover { color: var(--color-link-hover); text-decoration-line: underline; }
+a.no-underline:hover { text-decoration: none; }
+
+button {
+  font-family: inherit;
+  transition: color var(--duration-default) var(--ease-in-out),
+              background-color var(--duration-default) var(--ease-in-out),
+              border-color var(--duration-default) var(--ease-in-out),
+              opacity var(--duration-default) var(--ease-in-out),
+              transform var(--duration-fast) var(--ease-out);
+}
+
+/* Focus ring — keyboard only. */
+:focus-visible {
+  outline: 2px solid var(--color-focus-ring, currentColor);
+  outline-offset: 2px;
+}
+:focus:not(:focus-visible) { outline: none; }
+
+::selection {
+  background: color-mix(in srgb, var(--color-coral) 30%, transparent);
+  color: var(--color-heading);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

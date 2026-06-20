@@ -1,0 +1,61 @@
+/* =============================================================
+ * SPACING, RADIUS, ELEVATION, MOTION, LAYOUT, Z-INDEX — Backchain
+ * Geometric and "carved": modest radii, flat cards, warm
+ * slate-tinted shadows reserved for floating UI only.
+ * ============================================================= */
+
+:root {
+  /* --- Spacing scale --- */
+  --space-xs:  0.5rem;  /* 8px */
+  --space-sm:  1rem;    /* 16px */
+  --space-md:  1.5rem;  /* 24px */
+  --space-lg:  2rem;    /* 32px */
+  --space-xl:  3rem;    /* 48px */
+  --space-2xl: 4rem;    /* 64px */
+  --space-3xl: 6rem;    /* 96px */
+
+  /* --- Border radius (modest; large radii fight the aesthetic) --- */
+  --radius-none: 0;
+  --radius-sm:   2px;    /* inputs, small buttons */
+  --radius-md:   4px;    /* cards, primary buttons */
+  --radius-lg:   8px;    /* modals, large containers */
+  --radius-pill: 9999px; /* tags, pills (sparingly) */
+
+  /* --- Border width --- */
+  --border-hairline: 1px;
+  --border-standard: 2px;
+  --border-heavy:    4px;
+
+  /* --- Elevation — floating UI ONLY, never content cards.
+   *     Slate-tinted, not pure black (industrial light). --- */
+  --elevation-flat: none;
+  --elevation-sm:   0 1px 2px rgba(47, 69, 91, 0.06);
+  --elevation-md:   0 2px 8px rgba(47, 69, 91, 0.08), 0 1px 2px rgba(47, 69, 91, 0.04);  /* dropdowns */
+  --elevation-lg:   0 8px 24px rgba(47, 69, 91, 0.10), 0 2px 6px rgba(47, 69, 91, 0.06); /* popovers */
+  --elevation-xl:   0 16px 48px rgba(47, 69, 91, 0.14), 0 4px 12px rgba(47, 69, 91, 0.08); /* modals */
+
+  /* --- Motion — weighty, intentional, unhurried --- */
+  --duration-fast:    150ms; /* @kind other */
+  --duration-default: 200ms; /* @kind other */
+  --duration-slow:    300ms; /* @kind other */
+  --duration-xslow:   400ms; /* @kind other */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1); /* @kind other */
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1); /* @kind other */
+
+  /* --- Z-index layers --- */
+  --z-base:     0;    /* @kind other */
+  --z-raised:   10;   /* @kind other */
+  --z-dropdown: 100;  /* @kind other */
+  --z-sticky:   200;  /* @kind other */
+  --z-overlay:  1000; /* @kind other */
+  --z-modal:    1100; /* @kind other */
+  --z-toast:    1200; /* @kind other */
+  --z-tooltip:  1300; /* @kind other */
+
+  /* --- Layout --- */
+  --content-max-width: 65ch; /* @kind other */ /* body line-length cap */
+  --layout-max-width:  72rem; /* @kind spacing */ /* page container — 1152px */
+  --header-height-sm:  6rem; /* @kind spacing */ /* 96px */
+  --header-height-lg:  7rem; /* @kind spacing */ /* 112px */
+  --touch-target-min:  48px; /* @kind spacing */ /* WCAG 2.5.8 enhanced */
+}
