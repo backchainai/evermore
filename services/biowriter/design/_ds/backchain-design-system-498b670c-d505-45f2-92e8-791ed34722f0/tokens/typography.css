@@ -1,0 +1,40 @@
+/* =============================================================
+ * TYPOGRAPHY TOKENS — Backchain
+ * Three-font system. Differentiation between brands is COLOR,
+ * not typeface. Outfit is brand/logo-only; Inter carries all
+ * web content; JetBrains Mono for code.
+ * Type should feel "carved, not typed": large, unhurried,
+ * generous letter-spacing on headlines.
+ * ============================================================= */
+
+:root {
+  /* --- Font families --- */
+  --font-brand:   'Outfit', system-ui, sans-serif;      /* wordmarks, lockups, logo-adjacent only */
+  --font-content: 'Inter', system-ui, sans-serif;       /* all standard content */
+  --font-mono:    'JetBrains Mono', ui-monospace, monospace; /* code */
+
+  /* --- Fluid type scale (clamp: mobile → desktop) --- */
+  --text-display: clamp(2.25rem, calc(1.5rem + 3.75vw), 3.75rem);     /* 36 → 60px — page hero */
+  --text-h1:      clamp(1.875rem, calc(1.5rem + 1.875vw), 2.25rem);   /* 30 → 36px — page H1 */
+  --text-h2:      clamp(1.5rem, calc(1.25rem + 1.25vw), 2rem);        /* 24 → 32px — section H2 */
+  --text-h3:      clamp(1.25rem, calc(1.125rem + 0.625vw), 1.5rem);   /* 20 → 24px — card title */
+  --text-h4:      clamp(1.125rem, calc(1.0625rem + 0.3125vw), 1.25rem); /* 18 → 20px */
+  --text-body:    1rem;       /* 16px — paragraph (applied in gray) */
+  --text-small:   0.875rem;   /* 14px — captions, form labels */
+  --text-xs:      0.75rem;    /* 12px — eyebrow labels (uppercase, wide track) */
+
+  /* --- Weights --- */
+  --weight-light:     300;  /* captions */
+  --weight-regular:   400;  /* body */
+  --weight-medium:    500;  /* H3/H4, labels, eyebrows */
+  --weight-semibold:  600;  /* H1/H2 */
+  --weight-bold:      700;  /* display hero, wordmark */
+  --weight-extrabold: 800;  /* wordmark heavy */
+
+  /* --- Line height & tracking --- */
+  --line-height-tight:  1.2;    /* headlines */
+  --line-height-snug:   1.375;  /* captions, stat labels */
+  --line-height-normal: 1.625;  /* body copy */
+  --letter-spacing-tight: -0.02em; /* large headlines */
+  --letter-spacing-wide:   0.05em; /* eyebrows, nav, all-caps labels */
+}

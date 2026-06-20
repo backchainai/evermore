@@ -1,0 +1,117 @@
+/* =============================================================
+ * COLOR TOKENS — Backchain
+ * Raw seven-color palette (shared) + Backchain light-theme
+ * semantic aliases. Never pure black or pure white.
+ * Rule: deep coral for anything interactive, coral for anything
+ * decorative (coral fails WCAG as text).
+ * ============================================================= */
+
+:root {
+  /* --- Raw palette (the only seven brand colors) --- */
+  --color-cream:      #F5F0E8; /* aged paper, sandblasted concrete */
+  --color-slate:      #2F455B; /* gunmetal, cast iron, foundry darkness */
+  --color-charcoal:   #41423D; /* wrought iron, steel beams */
+  --color-coral:      #E07A5F; /* decorative only — fails WCAG for text */
+  --color-coral-deep: #A35945; /* interactive — 4.55:1 on cream */
+  --color-off-white:  #FAFAF8; /* card surfaces on light canvas */
+  --color-gray:       #50636F; /* secondary text, borders, dark-canvas cards */
+
+  /* --- Status (form states) --- */
+  --color-error:   #C0392B;
+  --color-success: #27AE60;
+
+  /* --- Alpha scale (hairline borders, muted text) --- */
+  --alpha-05: 0.05; /* @kind other */ /* subtle surfaces on dark canvas */
+  --alpha-10: 0.10; /* @kind other */ /* hairline borders on light cards */
+  --alpha-20: 0.20; /* @kind other */ /* header/footer dividers */
+  --alpha-30: 0.30; /* @kind other */ /* default input borders */
+  --alpha-40: 0.40; /* @kind other */ /* secondary button resting border */
+  --alpha-70: 0.70; /* @kind other */ /* secondary body text on dark canvas */
+  --alpha-80: 0.80; /* @kind other */ /* primary body text on dark canvas */
+}
+
+/* =============================================================
+ * BACKCHAIN — light theme default (cream canvas).
+ * This is the default scope: tokens apply at :root so consumers
+ * need no wrapper. Add [data-brand="backchain"] only for
+ * multi-brand pages.
+ *
+ * Text-role convention (NOT "darkest text wins"):
+ *   Headings / labels / emphasis → charcoal  (--color-heading)
+ *   Default body paragraphs      → gray      (--color-body)
+ *   Eyebrows / stats             → deep coral (--color-label-accent)
+ * ============================================================= */
+:root,
+[data-brand="backchain"],
+.brand-backchain {
+  --color-canvas:           var(--color-cream);
+  --color-canvas-inverted:  var(--color-slate);
+  --color-surface:          var(--color-off-white);
+  --color-surface-inverted: var(--color-slate);
+
+  /* Text roles */
+  --color-heading:        var(--color-charcoal);
+  --color-body:           var(--color-gray);
+  --color-text:           var(--color-charcoal);   /* emphasis / legacy alias */
+  --color-text-secondary: var(--color-gray);
+  --color-label-accent:   var(--color-coral-deep);
+  --color-text-on-dark:   var(--color-cream);
+
+  /* Interactive */
+  --color-primary:    var(--color-coral);       /* decorative accent, non-text */
+  --color-cta:        var(--color-coral-deep);  /* CTAs, interactive text */
+  --color-cta-text:   var(--color-cream);
+  --color-link:       var(--color-charcoal);
+  --color-link-hover: var(--color-coral-deep);
+
+  /* Structure */
+  --color-border:     var(--color-gray);
+  --color-focus-ring: var(--color-charcoal);
+
+  /* Pre-mixed hairlines (so consumers don't re-derive color-mix) */
+  --border-card:        color-mix(in srgb, var(--color-gray) 10%, transparent);
+  --border-card-hover:  color-mix(in srgb, var(--color-gray) 20%, transparent);
+  --border-divider:     color-mix(in srgb, var(--color-gray) 20%, transparent);
+  --border-input:       color-mix(in srgb, var(--color-gray) 30%, transparent);
+  --border-btn-2:       color-mix(in srgb, var(--color-gray) 40%, transparent);
+}
+
+/* =============================================================
+ * DARK SECTION — slate canvas (Backchain's inverted sections,
+ * and the Chris Krough personal brand default). Apply via
+ * [data-brand="chris-krough"] or .on-slate on a dark band.
+ * Cards composite as alpha cream rather than solid gray.
+ * ============================================================= */
+[data-brand="chris-krough"],
+.brand-chris-krough,
+.on-slate {
+  --color-canvas:           var(--color-slate);
+  --color-canvas-inverted:  var(--color-cream);
+  --color-surface:          color-mix(in srgb, var(--color-cream) 5%, transparent);
+  --color-surface-inverted: var(--color-off-white);
+
+  /* Text roles — inverted for dark canvas */
+  --color-heading:        var(--color-cream);
+  --color-body:           color-mix(in srgb, var(--color-cream) 80%, transparent);
+  --color-text:           var(--color-cream);
+  --color-text-secondary: color-mix(in srgb, var(--color-cream) 70%, transparent);
+  --color-label-accent:   var(--color-coral-deep);
+  --color-text-on-light:  var(--color-charcoal);
+
+  /* Interactive */
+  --color-primary:    var(--color-coral);
+  --color-cta:        var(--color-coral-deep);
+  --color-cta-text:   var(--color-cream);
+  --color-link:       var(--color-cream);
+  --color-link-hover: var(--color-coral-deep);
+
+  /* Structure */
+  --color-border:     var(--color-cream);
+  --color-focus-ring: var(--color-cream);
+
+  --border-card:       color-mix(in srgb, var(--color-cream) 10%, transparent);
+  --border-card-hover: color-mix(in srgb, var(--color-cream) 20%, transparent);
+  --border-divider:    color-mix(in srgb, var(--color-cream) 20%, transparent);
+  --border-input:      color-mix(in srgb, var(--color-cream) 30%, transparent);
+  --border-btn-2:      color-mix(in srgb, var(--color-cream) 40%, transparent);
+}
