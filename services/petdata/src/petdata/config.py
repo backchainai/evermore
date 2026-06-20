@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -16,8 +14,6 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
     )
-
-    database_path: Path = Path("data/petdata.db")
 
     # Supabase Postgres connection (postgres:// or postgresql:// URL). Empty by
     # default so the package imports without a configured database; the async

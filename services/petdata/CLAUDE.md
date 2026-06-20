@@ -2,46 +2,48 @@
 
 ## Repository Overview
 
-petdata is an automated adoption profile generator for animal shelters, built for nonprofit animal shelters. The project extracts animal data from shelter management systems, analyzes behavioral trends using time-decay algorithms, and generates evidence-based adoption profiles using LLMs.
+petdata is an automated adoption profile generator for nonprofit animal shelters. It extracts animal data from a shelter's Shelter Management System (SMS), analyzes behavioral trends using time-decay algorithms, and generates evidence-based adoption profiles using LLMs.
 
-**Current Phase:** Phase 1 complete (data extraction and storage)
-**Next Phase:** Time-decay behavioral analysis
+**Current Phase:** Phase 1 complete (data extraction and storage on Supabase Postgres).
+**Next Phase:** Time-decay behavioral analysis.
 
 ## Project Status
 
 ### Phase 1: Data Extraction (✓ Complete)
 
-- 7 Pydantic data models with computed properties and validation
-- SQLite schema with foreign keys, indexes, and cascade deletes
-- Migration system with version tracking, checksum verification, and idempotent SQL
-- Repository pattern with full CRUD operations and transaction management
-- 187 passing tests (unit + integration)
+- 7 Pydantic domain models with computed properties and validation
+- Supabase Postgres + pgvector accessed through async SQLAlchemy 2.0 (asyncpg)
+- Alembic owns the schema (foreign keys, indexes, cascade deletes, a `tenant_id` column on every table for row-level security)
+- Async repository pattern with full CRUD operations over a request-scoped session
+- Unit suite plus a Postgres-backed integration suite
 - Quality tooling: ruff, mypy (strict mode), bandit, pytest with coverage
 
 ### Phase 2: Behavioral Analysis (Next)
 
 - Time-decay algorithm for volunteer ratings (exponential decay)
-- Behavioral trend detection over shelter stay
-- Weight recent observations (last 3 months) more heavily
+- Behavioral trend detection over the shelter stay
+- Recent observations (last 3 months) weighted more heavily
 - Aggregate scoring with confidence levels
 
 ### Phase 3: Profile Generation (Planned)
 
-- LLM-generated adoption profiles (Claude/GPT integration)
+- LLM-generated adoption profiles
 - Evidence-based behavioral descriptions from analysis
 - Shelter-approved content guidelines and templates
 
 ## Tech Stack
 
 **Core:**
-- Python 3.13 (strict type checking with mypy)
-- Pydantic 2.9+ (data modeling and validation)
-- SQLite (Phase 1 database)
-- pydantic-settings (environment-based configuration)
+- Python 3.14 (strict type checking with mypy)
+- Pydantic 2.9+ and pydantic-settings (domain models, wire contracts, configuration)
+- SQLAlchemy 2.0 async with asyncpg (ORM and engine)
+- Alembic (schema migrations)
+- Supabase Postgres with the pgvector extension
 
 **Development:**
-- uv (package manager - ALWAYS use `uv run` prefix)
-- pytest + pytest-cov (testing framework)
+- uv (package manager: ALWAYS use the `uv run` prefix)
+- Docker (local Postgres + pgvector via `docker-compose.test.yml`)
+- pytest + pytest-asyncio + pytest-cov (testing)
 - ruff (linting and formatting)
 - mypy --strict (type checking)
 - bandit (security scanning)
@@ -52,193 +54,148 @@ petdata is an automated adoption profile generator for animal shelters, built fo
 
 ```
 src/petdata/
-├── config.py                      # Settings via pydantic-settings
+├── config.py                      # Settings via pydantic-settings (PETDATA_ prefix)
+├── main.py                        # FastAPI application factory (create_app)
+├── models/                        # SQLAlchemy ORM layer
+│   ├── base.py                    # Declarative Base + async engine/session factory
+│   ├── tables.py                  # 7 ORM tables (petdata_ prefix, tenant_id column)
+│   └── mappers.py                 # ORM row <-> Pydantic domain model mapping
+├── infrastructure/
+│   └── database/session.py        # FastAPI async session dependency (get_session)
 └── modules/
-    └── db/                        # Phase 1: Data layer
-        ├── models.py              # 7 Pydantic models (Animal, VolunteerNote, etc.)
-        ├── schema.py              # SQLite table definitions
-        ├── migrate.py             # Migration engine with version tracking
-        ├── repository.py          # Database class with CRUD operations
-        └── migrations/            # Numbered SQL migration files
+    ├── db/
+    │   ├── models.py              # 7 Pydantic domain models (Animal, VolunteerNote, ...)
+    │   └── repository.py          # Async Database class with CRUD operations
+    ├── api/                       # SMS extraction HTTP client
+    └── web/                       # API routes, request/response schemas, dependencies
+
+alembic/                           # Migration environment (schema source of truth)
+alembic.ini
+docker-compose.test.yml            # Local pgvector Postgres (port 5434)
 
 tests/
-├── conftest.py                    # Shared fixtures
-├── unit/                          # Fast, isolated tests
-│   └── db/                        # Model, migration, schema tests
-└── integration/                   # Tests with real SQLite database
-    └── db/                        # Repository, migration flow tests
+├── unit/                          # Fast, isolated tests (no database)
+└── integration/                   # Postgres-backed tests
+    └── db/                        # Repository round-trips, Alembic upgrade/downgrade
 ```
 
 ## Build/Test Commands
 
-**CRITICAL:** Always use `uv run` prefix (enforced by pre_tool_use_uv.py hook)
+**CRITICAL:** Always use the `uv run` prefix (enforced by the `pre_tool_use_uv.py` hook). Install dev tooling with `uv sync --extra dev`.
+
+### Local database
+
+The integration suite and a locally-run API both need Postgres. `docker-compose.test.yml` provides an ephemeral pgvector container on port 5434:
 
 ```bash
-# Run tests
-uv run pytest                                        # All tests
-uv run pytest tests/unit/                            # Unit tests only
-uv run pytest tests/integration/                     # Integration tests only
-uv run pytest --cov=src --cov-report=term-missing    # With coverage
+docker compose -f docker-compose.test.yml up -d   # start Postgres + pgvector
+uv run alembic upgrade head                        # apply the schema
+# ... run tests or the app ...
+docker compose -f docker-compose.test.yml down     # stop and discard
+```
 
-# Quality gates (must all pass before commit)
+### Tests
+
+```bash
+uv run pytest                                        # All tests
+uv run pytest tests/unit/                            # Unit tests only (no DB)
+uv run pytest tests/integration/                     # Integration tests (need Postgres)
+uv run pytest --cov=src --cov-report=term-missing    # With coverage
+```
+
+Integration tests are marked `@pytest.mark.integration` and skip automatically when no Postgres is reachable. Override the connection string with `TEST_DATABASE_URL` (default `postgresql+asyncpg://postgres:postgres@localhost:5434/petdata_test`).
+
+### Quality gates (must all pass before commit)
+
+```bash
 uv run ruff format src/ tests/                       # Auto-format
 uv run ruff check src/ tests/                        # Lint
 uv run bandit -r src/                                # Security scan
-uv run mypy src/                                     # Type check (strict mode)
-
-# All quality gates at once
-uv run ruff format src/ tests/ && \
-uv run ruff check src/ tests/ && \
-uv run bandit -r src/ && \
-uv run mypy src/ && \
+uv run python -m mypy src/                           # Type check (strict mode)
 uv run pytest tests/ --cov=src --cov-report=term-missing
 ```
 
+Note: locally, prefer `uv run python -m mypy src/` so the project's pinned mypy runs rather than a globally-installed one. CI uses `uv run mypy src/` on a clean runner.
+
 ## Coding Conventions
 
-### Data Models (Pydantic)
+### Domain models (Pydantic) and ORM tables (SQLAlchemy)
 
-**Mutability Pattern (ADR-002):**
-Models use `validate_assignment=True` for the repository pattern:
+The data layer keeps two representations, mapped by `models/mappers.py`:
 
-1. Fetch: `animal = db.get_animal(id)`
-2. Modify: `animal.weight_lbs = 70.0`
-3. Persist: `db.update_animal(animal)`
+- **Pydantic domain models** (`modules/db/models.py`): the wire/domain contract. Models use `validate_assignment=True` for the fetch/modify/persist pattern, so validators run on field assignment.
+- **SQLAlchemy ORM tables** (`models/tables.py`): the persistence layer. Tables carry the `petdata_` prefix and a `tenant_id` column (default tenant `00000000-0000-0000-0000-000000000001`) for Postgres row-level security.
 
-**Why mutable?**
-- Validators run on field assignment (JSON parsing, SQLite bool conversion)
-- `exclude_unset=True` enables partial update tracking
-- 18+ mutation sites in codebase, no hashability requirement
+The repository converts between them via `to_row` / `from_row` in `mappers.py`; callers work in Pydantic models and never touch ORM rows directly.
 
-**Model Features:**
-- Type-safe field validation with Pydantic Field constraints
+**Model features:**
+- Type-safe field validation with Pydantic `Field` constraints
 - Computed properties (`age_years`, `days_in_shelter`, `is_adoptable`)
-- JSON field handling (tags stored as TEXT, parsed to `list[str]`)
-- SQLite boolean conversion (0/1 → False/True)
+- List/JSON fields map to Postgres JSONB
 
-### Repository Pattern
+### Repository pattern (async)
 
-**CRUD Operations:**
-All database access goes through `Database` class methods:
-- `insert_X(model)` - Create new record
-- `get_X(id)` - Fetch single record
-- `update_X(model)` - Update existing record
-- `delete_X(id)` - Remove record
-- `list_Xs()` - Query multiple records
-- `get_Xs_for_animal(animal_id)` - Fetch related records
+All database access goes through the async `Database` class, constructed with an `AsyncSession`:
 
-**Usage Pattern:**
+- `insert_X(model)` - create a record
+- `get_X(id)` - fetch a single record
+- `update_X(model)` - update an existing record (raises `ValueError` if the model has no id)
+- `delete_X(id)` - remove a record
+- `list_Xs()` / `get_Xs_for_animal(animal_id)` - query multiple records
+
+**Usage:**
 ```python
-from petdata.modules.db import Database, Animal
-from pathlib import Path
+from sqlalchemy.ext.asyncio import AsyncSession
 
-db = Database(Path("data/petdata.db"))
+from petdata.modules.db import Animal, Database
 
-# Create
-animal = Animal(id="A-12345", name="Buddy")
-db.insert_animal(animal)
 
-# Read
-animal = db.get_animal("A-12345")
+async def example(session: AsyncSession) -> None:
+    db = Database(session)
 
-# Update (mutable pattern)
-animal.weight_lbs = 70.0
-db.update_animal(animal)
+    # Create
+    await db.insert_animal(Animal(id="A-12345", name="Buddy"))
 
-# Delete
-db.delete_animal("A-12345")
+    # Read
+    animal = await db.get_animal("A-12345")
+
+    # Update (mutable Pydantic pattern)
+    if animal is not None:
+        animal.weight_lbs = 70.0
+        await db.update_animal(animal)
+
+    # Delete (cascades to child rows)
+    await db.delete_animal("A-12345")
 ```
 
-**Context Managers:**
-- `with db.connection()` - Read-only operations
-- `with db.transaction()` - Write operations with automatic rollback on error
+In the FastAPI app, inject the session via the `get_session` dependency (`infrastructure/database/session.py`), which commits on success and rolls back on error. The async engine is built lazily on first request from `PETDATA_DATABASE_URL`, so importing the app needs no live database.
 
-**SQL Construction:**
-- Column names from `model_dump()` (fixed, known fields)
-- All values are parameterized (no SQL injection risk)
-- `# nosec B608` comments acknowledge safe pattern
+### Migrations (Alembic)
 
-### Migration System
+Alembic owns the schema; the application does not create tables at startup.
 
-**Migration Files:**
-- Numbered format: `001_create_tables.sql`, `002_add_indexes.sql`
-- Idempotent: Use `IF NOT EXISTS` clauses
-- Checksum verification prevents tampering
-- Apply in sequence: gaps or duplicates raise errors
-
-**Public API:**
-```python
-from petdata.modules.db import init_database, migrate
-
-init_database(db_path)           # Create migration_history table
-migrate(db_path)                 # Apply pending migrations
-get_current_version(db_path)     # Query schema version
-get_pending_migrations(db_path)  # List unapplied migrations
+```bash
+uv run alembic upgrade head            # apply all pending migrations
+uv run alembic downgrade -1            # roll back one revision
+uv run alembic revision --autogenerate -m "describe change"   # author a migration
 ```
 
-**Exception Hierarchy:**
-```
-MigrationError (base)
-├── MigrationValidationError
-│   ├── MigrationGapError
-│   ├── MigrationDuplicateError
-│   └── MigrationChecksumError
-└── MigrationExecutionError
-```
+`alembic/env.py` resolves the database URL at runtime from petdata settings (`PETDATA_DATABASE_URL`) and runs migrations through an async engine. The `sqlalchemy.url` in `alembic.ini` is an unused placeholder.
 
-### Type Hints
+### Type hints
 
-**Required everywhere (mypy --strict enforced):**
-- All function signatures must have types
-- Return types required (including `-> None`)
-- Use `from __future__ import annotations` for forward references
-- Type checking disabled in tests via `mypy.ini` override
-
-**Example:**
-```python
-from __future__ import annotations
-
-def process_animal(db: Database, animal_id: str) -> Animal | None:
-    """Get and process an animal record."""
-    return db.get_animal(animal_id)
-```
+Required everywhere (mypy --strict enforced): typed signatures and return types (including `-> None`). Use `from __future__ import annotations` for forward references. SQLAlchemy resolves `Mapped[...]` annotations at runtime, so imports used only in mapped-class annotations stay at module scope (see the ruff `flake8-type-checking` config in `pyproject.toml`).
 
 ### Testing
 
-**Structure:**
-- `tests/unit/` - Fast, isolated tests (mock external dependencies)
-- `tests/integration/` - Tests with real SQLite database
+- `tests/unit/` - fast, isolated tests with no database
+- `tests/integration/` - Postgres-backed tests; `db_engine` / `session` fixtures (in `tests/conftest.py`) create the schema per test and skip when no DB is reachable
 
-**Naming:** `test_<function>_<scenario>_<expected>`
+**Naming:** `test_<function>_<scenario>_<expected>`. **Coverage:** non-trivial functions must have tests.
 
-**Coverage:** 80% minimum, non-trivial functions must have tests
+### Error handling
 
-**Fixtures:**
-- Define shared fixtures in `conftest.py`
-- Use fixture scoping appropriately (function/module/session)
-
-**Example:**
-```python
-def test_calculate_age_with_valid_birth_date_returns_years():
-    """Test age calculation with valid birth date."""
-    birth_date = date(2020, 1, 15)
-    animal = Animal(id="A-001", birth_date=birth_date)
-    assert animal.age_years == 6  # Computed property
-```
-
-### Error Handling
-
-**Custom Exception Hierarchy:**
-```python
-MigrationError (base)
-├── MigrationValidationError
-│   ├── MigrationGapError
-│   ├── MigrationDuplicateError
-│   └── MigrationChecksumError
-└── MigrationExecutionError
-```
-
-**Always chain exceptions:**
+Chain exceptions to preserve context:
 ```python
 try:
     result = risky_operation()
@@ -249,59 +206,45 @@ except SpecificError as e:
 
 ## Architecture Principles
 
-### Layered Architecture
+### Layered architecture
 
 ```
-Data Models (Pydantic)
+Pydantic domain models
+    ↓ (mappers)
+SQLAlchemy ORM tables
     ↓
-Repository Pattern (CRUD)
+Async repository (CRUD)
     ↓
-SQLite (Schema + Migrations)
+Postgres (schema owned by Alembic)
 ```
 
-**Dependencies flow downward:**
-- Models are pure data (no database knowledge)
-- Repository knows about models and database
-- Schema defined separately from models (loose coupling)
+Dependencies flow downward: domain models are pure data; the repository knows about models and sessions; the schema lives in Alembic migrations.
 
-### Configuration Management
+### Configuration management
 
-**pydantic-settings pattern:**
 ```python
 from petdata.config import get_settings
 
 settings = get_settings()
-db_path = settings.database_path
+url = settings.database_url.get_secret_value()
 ```
 
-**Environment variables:**
-- Prefix: `PETDATA_`
-- Source: `.env` file or environment
-- Type validation via Pydantic
+Environment variables use the `PETDATA_` prefix, loaded from `.env` or the environment. `PETDATA_DATABASE_URL` is the async connection URL (`postgres://` and `postgresql://` are normalized to `postgresql+asyncpg://`); `PETDATA_DATABASE_REQUIRE_SSL` enforces SSL in production. See `.env.example` for the full set.
 
-### Database Design
+### Database design
 
-**Schema Characteristics:**
-- Foreign keys enabled (`PRAGMA foreign_keys = ON`)
-- Cascade deletes (delete animal → delete all related records)
-- Indexes on lookup fields (`animal_id` in child tables)
-- JSON fields stored as TEXT (Pydantic handles serialization)
-- Timestamps in ISO format
-- Boolean as INTEGER (SQLite convention)
-
-**Sync Tracking:**
-- `last_synced_at` on entity tables
-- `sync_log` table tracks operations (full/incremental)
+- Foreign keys with cascade deletes (delete an animal, delete its related records)
+- Indexes on lookup fields (`animal_id` in child tables); both decay-critical volunteer-note indexes are in the initial migration
+- `tenant_id` on every table for row-level security
+- pgvector extension enabled for embedding columns
+- List fields stored as JSONB; timestamps as timezone-aware columns
+- `SyncLog` tracks extraction operations (full/incremental)
 
 ## Documentation Standards
 
-### Google-Style Docstrings
+### Google-style docstrings
 
-Required for:
-- All public functions
-- Non-trivial private functions (>3 lines of logic)
-- All classes
-
+Required for public functions, non-trivial private functions, and classes:
 ```python
 def process_data(input_data: str, options: list[str]) -> str:
     """Process input data with the given options.
@@ -320,25 +263,4 @@ def process_data(input_data: str, options: list[str]) -> str:
 
 ### Architecture Decision Records
 
-**When to create ADR:**
-- Technology choices (database, framework, library)
-- Data schema design decisions
-- Architectural pattern choices
-- API design decisions
-
-**Format:** See `docs/adr/000-template.md`
-
-**Location:** `docs/adr/{number}-{slug}.md`
-
-## Related Documentation
-
-- [Architecture](docs/design/architecture.md) - System design overview
-- [Phase 1 Design](docs/design/phase1-data-extraction.md) - Data extraction design
-- [Development Standards](docs/design/development-standards.md) - Git, testing, quality
-- [ADRs](docs/adr/) - Architecture decisions
-
-## Subdirectory Context
-
-No subdirectory CLAUDE.md files exist yet. Create when needed:
-- `src/petdata/modules/db/CLAUDE.md` - Database layer specifics (if patterns become complex)
-- `tests/CLAUDE.md` - Testing utilities and fixtures (if shared test code grows)
+Create an ADR for technology choices, schema design decisions, architectural patterns, and API design decisions. The Postgres migration is recorded in the monorepo ADRs (`docs/adr/`, ADR 0003 tech stack and ADR 0004 petdata Postgres migration).

@@ -9,6 +9,7 @@ when_to_use:
 - Reviewing code quality requirements
 dependencies:
 - architecture.md
+- ../adr/
 ---
 # Development Standards
 
@@ -58,27 +59,28 @@ chore: update dependencies
 ### Required Checks (CI enforced)
 
 ```bash
-# Linting
-ruff check src/ tests/ --fix
-ruff format src/ tests/
+# Linting and formatting
+uv run ruff check src/ tests/
+uv run ruff format src/ tests/
 
-# Type checking (strict mode)
-mypy src/ --strict
+# Type checking (strict mode, configured in pyproject.toml)
+uv run mypy src/
 
-# Tests with coverage
-pytest --cov=src --cov-report=term-missing --cov-fail-under=80
+# Security scan
+uv run bandit -r src/
 
-# Security audit
-pip-audit
+# Tests with coverage (needs local Postgres; see architecture.md)
+uv run pytest --cov=src --cov-report=term-missing
 ```
 
 ### All Checks (run before PR)
 
 ```bash
-ruff check src/ tests/ --fix && \
-ruff format src/ tests/ && \
-mypy src/ --strict && \
-pytest --cov=src --cov-fail-under=80
+uv run ruff format src/ tests/ && \
+uv run ruff check src/ tests/ && \
+uv run bandit -r src/ && \
+uv run mypy src/ && \
+uv run pytest --cov=src --cov-report=term-missing
 ```
 
 ## Type Hints
@@ -173,7 +175,7 @@ except SpecificError as e:
 
 ### Required
 
-- `pip-audit` in CI (vulnerability scanning)
+- `bandit` in CI (static security scanning)
 - Secrets in environment variables only
 - Input validation on all endpoints
 
@@ -240,4 +242,4 @@ How was this tested?
 ## Related Documents
 
 - [Architecture](architecture.md)
-- [ADRs](decisions/)
+- [ADRs](../adr/)

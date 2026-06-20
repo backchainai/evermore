@@ -2,349 +2,137 @@
 
 ## Summary
 
-Design and implement a data extraction system for an Adalo-based shelter management system (SMS), storing animal data in SQLite with full behavioral rating history for future time-decay analysis.
+Extract animal data from a shelter's Shelter Management System (SMS) and store it in Postgres with full behavioral-rating history, so Phase 2 can run time-decay analysis over the observations.
+
+The SMS is treated as a generic upstream source. Connection details (base URL, table identifiers, session credentials) are supplied through `PETDATA_` environment variables and never hard-coded; see `.env.example`.
 
 ---
 
-## API Investigation Findings
+## Source SMS API
 
-### Adalo Database API Structure
+The reference SMS exposes a table-oriented REST API.
 
-**Base URL Pattern:**
+**Base URL pattern** (configured via `PETDATA_ADALO_BASE_URL`):
 ```
-https://database-red.adalo.com/databases/{database_id}/tables/{table_id}
+https://<sms-host>/databases/{database_id}/tables/{table_id}
 ```
 
-**Discovered Identifiers:**
-- Database ID: `bjql6w9oy6hlarewbcr9fwh2i`
-- App ID: `f6441ecb-77db-48f5-8f46-eab2faf6520d`
+**Tables consumed** (table identifiers via `PETDATA_ADALO_TABLE_*`):
 
-**Table IDs Identified:**
-| Table | ID | Purpose |
-|-------|-----|---------|
-| Animals | `t_0sslo1men4fkuiap2eis82riv` | Dog/cat records with basic info |
-| Volunteer Notes | `t_9yomkzwe9lsdlgwvkbwa9uoai` | Notes with behavioral ratings |
-| Walk Records | `t_0cd59s41203wo2dbdr8bwtoa4` | Walk check-in/out records |
+| Logical table | Purpose |
+|---------------|---------|
+| Animals | Dog/cat records with basic info |
+| Volunteer Notes | Notes with behavioral ratings |
+| Walk Records | Walk check-in/out records |
 
-**Query Parameters:**
-- `column_filter`: Base64-encoded JSON array `[[{"field":"column_id","value":"X","type":"=="}]]`
-- `sort`: Column ID with `-` prefix for descending (e.g., `-created_at`)
-- `limit`: Pagination limit (default 20)
-- `include`: Relationship includes like `belongsTo~{column_id}`
-- `imageMeta=true`, `evaluateBindings=true`: Standard flags
+**Query parameters:**
+- `column_filter`: Base64-encoded JSON filter array
+- `sort`: column id with `-` prefix for descending (e.g. `-created_at`)
+- `limit`: pagination limit
+- `include`: relationship includes
+- `imageMeta=true`, `evaluateBindings=true`: standard flags
 
-**Authentication:**
-- Cookie-based session authentication
-- Extract cookies from authenticated browser session
-- No visible JWT tokens in localStorage/sessionStorage
+**Authentication:** cookie-based session authentication. Session cookies are captured from an authenticated browser session and supplied via `PETDATA_COOKIES`.
 
 ---
 
-## Data Model (Observed from UI)
+## Data Model
 
-### Animal Record
+Field examples below are illustrative placeholders, not real records.
+
+### Animal record
 | Field | Example | Notes |
 |-------|---------|-------|
-| ID | A-55833 | Unique identifier |
-| Name | Eros | Display name |
-| AKA | Dame | Alternate name |
-| Breed | Sheep Dog | Breed string |
-| Weight | 43 lbs | Numeric with unit |
-| Birth Date | 6/24/2024 | Date |
-| Intake Date | 12/7/2025 | Date |
-| Location | Line 5, 5H | Kennel location |
+| ID | A-00000 | Unique identifier |
+| Name | (name) | Display name |
+| AKA | (alt name) | Alternate name |
+| Breed | (breed) | Breed string |
+| Weight | 40 lbs | Numeric with unit |
+| Birth Date | 2024-06-24 | Date |
+| Intake Date | 2025-12-07 | Date |
+| Location | (kennel) | Kennel location |
 | Color Category | Green/Yellow/Orange/Senior/Designated | Status tier |
-| Behavior Mod Tags | Shy, Jumpy and Mouthy, Touch Sensitivity | Comma-separated |
+| Behavior Mod Tags | (tag, tag) | List, stored as JSONB |
 | In Kennel Status | Boolean | Current presence |
 | Foster Care | Boolean | Foster status |
-| Photo URL | Adalo imgix URL | Profile image |
+| Photo URL | (url) | Profile image |
 
-### Volunteer Note Record
+### Volunteer note record
 | Field | Example | Notes |
 |-------|---------|-------|
-| Animal ID | A-55833 | Foreign key |
-| Volunteer Name | Chris Krough | String |
-| Date/Time | 12/23/2025 5:37 PM | Timestamp |
-| Note Text | "High energy and alert..." | Free text |
-| Strong on Leash | 1-5 | Star rating |
-| Leash Reactivity | 1-5 | Star rating |
-| Shy / Fearful | 1-5 | Star rating |
-| Jumpy / Mouthy | 1-5 | Star rating |
+| Animal ID | A-00000 | Foreign key |
+| Volunteer Name | (volunteer) | String |
+| Date/Time | 2025-12-23T17:37:00 | Timestamp, key for time-decay |
+| Note Text | (free text) | Observation |
+| Strong on Leash | 0-5 | Rating |
+| Leash Reactivity | 0-5 | Rating |
+| Shy / Fearful | 0-5 | Rating |
+| Jumpy / Mouthy | 0-5 | Rating |
 
-### Kennel Card Fields (Structured)
-- About This Animal (bio text)
-- How Am I With Dogs (status + explanation)
-- How Am I With Cats (status + explanation)
-- How Am I With Kids (status + explanation)
-- Commands Known
-- Housebreaking/Crating Status
-- Things I Like
-- Things I Dislike
-- Public Profile URL (example.org/pet/{slug}/)
+### Kennel card (structured)
+About text, "how am I with dogs/cats/kids" (status + explanation), commands known, housebreaking/crating status, things I like, things I dislike, public profile URL.
 
-### Behavioral Staff Notes
-- Structured tags: Cat Test Complete, Good with Dogs, Good with Kids, etc.
-- Free-form notes about incidents/observations
+### Staff assessment
+Structured tags (cat-test complete, good with dogs, good with kids, etc.) plus free-form notes about incidents and observations.
 
 ---
 
-## SQLite Schema Design
+## Storage (Postgres)
 
-### Core Tables
+Phase 1 stores extracted data in Supabase Postgres, accessed through async SQLAlchemy. The schema is owned by Alembic.
 
-```sql
--- Animals table
-CREATE TABLE animals (
-    id TEXT PRIMARY KEY,                    -- A-55833
-    name TEXT NOT NULL,
-    aka TEXT,
-    breed TEXT,
-    weight_lbs REAL,
-    birth_date DATE,
-    intake_date DATE,
-    location TEXT,
-    color_category TEXT,                    -- Green/Yellow/Orange/Senior/Designated
-    behavior_mod_tags TEXT,                 -- JSON array
-    is_in_kennel BOOLEAN,
-    is_foster_care BOOLEAN,
-    photo_url TEXT,
-    public_profile_url TEXT,
-    adalo_record_id TEXT,                   -- Original Adalo ID
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_synced_at TIMESTAMP
-);
+- The ORM tables in `src/petdata/models/tables.py` are the canonical definition.
+- The initial migration `alembic/versions/001_initial_schema.py` is the schema source of truth; apply it with `uv run alembic upgrade head`.
 
--- Kennel card structured data
-CREATE TABLE kennel_cards (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    animal_id TEXT NOT NULL REFERENCES animals(id),
-    about_text TEXT,
-    dogs_compatibility TEXT,                -- Unknown/Good/Bad + explanation
-    dogs_compatibility_notes TEXT,
-    cats_compatibility TEXT,
-    cats_compatibility_notes TEXT,
-    kids_compatibility TEXT,
-    kids_compatibility_notes TEXT,
-    commands_known TEXT,
-    housebreaking_status TEXT,
-    things_likes TEXT,
-    things_dislikes TEXT,
-    last_synced_at TIMESTAMP,
-    UNIQUE(animal_id)
-);
+Schema highlights:
 
--- Staff behavioral assessments
-CREATE TABLE staff_assessments (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    animal_id TEXT NOT NULL REFERENCES animals(id),
-    assessment_tags TEXT,                   -- JSON array of tags
-    notes TEXT,
-    recorded_at TIMESTAMP,
-    last_synced_at TIMESTAMP
-);
+- Every table carries the `petdata_` prefix and a `tenant_id` column for row-level security.
+- `petdata_animals` is the parent; child tables (`petdata_volunteer_notes`, `petdata_walk_records`, `petdata_staff_assessments`, `petdata_kennel_cards`, `petdata_animal_images`) reference it with `ON DELETE CASCADE`.
+- `petdata_volunteer_notes` carries the decay-critical indexes `idx_volunteer_notes_animal_date` (per-animal recency) and `idx_volunteer_notes_date` (global recency), plus `CHECK` constraints keeping each rating in 0..5.
+- List fields (behavior-mod tags, assessment tags) are JSONB; timestamps are timezone-aware.
+- `petdata_sync_log` records each extraction run (full/incremental, counts, status).
 
--- Volunteer notes with ratings (CRITICAL for time-decay)
-CREATE TABLE volunteer_notes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    animal_id TEXT NOT NULL REFERENCES animals(id),
-    adalo_record_id TEXT UNIQUE,            -- For deduplication
-    volunteer_name TEXT NOT NULL,
-    note_date TIMESTAMP NOT NULL,           -- Key for time-decay
-    note_text TEXT,
-    rating_strong_on_leash INTEGER CHECK (rating_strong_on_leash BETWEEN 0 AND 5),
-    rating_leash_reactivity INTEGER CHECK (rating_leash_reactivity BETWEEN 0 AND 5),
-    rating_shy_fearful INTEGER CHECK (rating_shy_fearful BETWEEN 0 AND 5),
-    rating_jumpy_mouthy INTEGER CHECK (rating_jumpy_mouthy BETWEEN 0 AND 5),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_synced_at TIMESTAMP
-);
-
--- Walk records
-CREATE TABLE walk_records (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    animal_id TEXT NOT NULL REFERENCES animals(id),
-    adalo_record_id TEXT UNIQUE,
-    volunteer_name TEXT,
-    out_time TIMESTAMP,
-    in_time TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Sync tracking
-CREATE TABLE sync_log (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    sync_type TEXT NOT NULL,                -- full/incremental
-    table_name TEXT NOT NULL,
-    started_at TIMESTAMP NOT NULL,
-    completed_at TIMESTAMP,
-    records_processed INTEGER DEFAULT 0,
-    records_created INTEGER DEFAULT 0,
-    records_updated INTEGER DEFAULT 0,
-    status TEXT DEFAULT 'running',          -- running/completed/failed
-    error_message TEXT
-);
-
--- Animal images
-CREATE TABLE animal_images (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    animal_id TEXT NOT NULL REFERENCES animals(id),
-    image_url TEXT NOT NULL,
-    display_order INTEGER,
-    last_synced_at TIMESTAMP
-);
-```
-
-### Indexes for Time-Decay Queries
-
-```sql
--- Critical indexes for decay algorithm (Phase 2)
-CREATE INDEX idx_volunteer_notes_animal_date
-    ON volunteer_notes(animal_id, note_date DESC);
-
-CREATE INDEX idx_volunteer_notes_date
-    ON volunteer_notes(note_date DESC);
-
-CREATE INDEX idx_animals_color_category
-    ON animals(color_category);
-
-CREATE INDEX idx_animals_last_synced
-    ON animals(last_synced_at);
-
-CREATE INDEX idx_volunteer_notes_last_synced
-    ON volunteer_notes(last_synced_at);
-```
+A `last_synced_at` column on the entity tables and a source record id (for deduplication) support incremental sync.
 
 ---
 
 ## Data Extraction Strategy
 
-### Initial Full Sync
+### Initial full sync
 
-1. **Authenticate**: Capture cookies from browser session
-2. **Fetch all animals**: Paginate through animals table (limit=50, offset)
-3. **For each animal**:
-   - Fetch volunteer notes (filter by animal ID)
-   - Fetch walk records
-   - Parse kennel card from animal record
-4. **Store with timestamps**: Record `last_synced_at` for each record
+1. Authenticate by supplying captured session cookies.
+2. Paginate through the animals table.
+3. For each animal, fetch volunteer notes (filtered by animal id), walk records, and parse the kennel card from the animal record.
+4. Record `last_synced_at` on each stored record.
 
-### Incremental Updates
+### Incremental updates
 
-1. **Query by updated_at**: If Adalo provides `updated_at` field
-2. **Fallback**: Compare fetched records against stored `adalo_record_id`
-3. **Notes are append-only**: New notes won't modify existing ones
+1. Query by `updated_at` when the SMS provides it.
+2. Otherwise, compare fetched records against the stored source record id.
+3. Notes are append-only: new notes do not modify existing ones.
 
-### Rate Limiting
+### Rate limiting
 
-- **Default delay**: 500ms between requests
-- **Configurable**: Environment variable `PETDATA_REQUEST_DELAY_MS`
-- **Batch size**: 50 records per request (configurable)
-- **Retry logic**: Exponential backoff on 429/5xx errors
+- Default delay 500ms between requests (`PETDATA_REQUEST_DELAY_MS`).
+- Exponential backoff on 429/5xx (`PETDATA_RETRY_*`, `PETDATA_API_TIMEOUT_SECONDS`).
 
-### Error Recovery
+### Error recovery
 
-- **Checkpoint system**: Store last successful offset in sync_log
-- **Resume capability**: Continue from checkpoint on restart
-- **Transaction batches**: Commit every N records to avoid data loss
+- The sync log records progress so a run can resume after a failure.
+- Commit in batches to bound data loss.
 
 ---
 
-## Implementation Plan
+## Implementation
 
-### Files to Create
+The extraction client lives in `src/petdata/modules/api/` (`auth.py`, `client.py`, `parser.py`); storage in `src/petdata/models/` (ORM) and `src/petdata/modules/db/` (Pydantic domain models, async repository); the API surface in `src/petdata/modules/web/`.
 
-```
-src/petdata/
-    __init__.py
-    config.py              # Configuration and constants
-    db/
-        __init__.py
-        schema.py          # SQLite schema creation
-        models.py          # Data models (dataclasses)
-        repository.py      # Database operations
-    api/
-        __init__.py
-        client.py          # Adalo API client
-        auth.py            # Cookie-based authentication
-        parser.py          # Response parsing
-    sync/
-        __init__.py
-        extractor.py       # Data extraction orchestration
-        incremental.py     # Incremental sync logic
-    cli.py                 # Command-line interface
-```
-
-### Implementation Order
-
-1. **Database Layer** (schema.py, models.py, repository.py)
-   - Create SQLite schema
-   - Define dataclasses for entities
-   - Implement CRUD operations
-
-2. **API Client** (client.py, auth.py, parser.py)
-   - Cookie extraction from browser
-   - HTTP client with rate limiting
-   - Response parsing into models
-
-3. **Sync Engine** (extractor.py, incremental.py)
-   - Full sync orchestration
-   - Incremental update logic
-   - Error handling and recovery
-
-4. **CLI** (cli.py)
-   - `petdata sync --full`: Initial sync
-   - `petdata sync --incremental`: Update only
-   - `petdata status`: Show sync status
+Verification for an extraction run: confirm API connectivity with a single animal fetch, run a small-limit sync first, verify note counts against the SMS UI, and run the sync twice to confirm no duplicate records.
 
 ---
 
-## Open Questions
+## Related Documents
 
-1. **Updated timestamps**: Does Adalo provide `updated_at` on records? Need to verify in API response.
-
-2. **Historical notes**: Are all historical volunteer notes accessible, or only recent ones?
-
-3. **Rate limits**: What are Adalo's actual rate limits? Start conservative.
-
-4. **Cookie expiration**: How long do session cookies last? May need refresh mechanism.
-
-5. **Image storage**: Should we download and store images locally, or just URLs?
-
----
-
-## Verification Plan
-
-1. **Schema creation**: `uv run python -c "from petdata.db.schema import create_tables; ..."`
-
-2. **API connectivity**: Test single animal fetch with captured cookies
-
-3. **Full sync test**: Run against production with small limit first
-
-4. **Data integrity**: Verify note counts match UI
-
-5. **Incremental test**: Run sync twice, verify no duplicates
-
----
-
-## Success Criteria
-
-- [ ] SQLite schema created and documented
-- [ ] API client fetches animal and note data successfully
-- [ ] Full sync completes for all dogs
-- [ ] Volunteer notes stored with timestamps and ratings
-- [ ] Incremental sync identifies new/changed records
-- [ ] No duplicate records after multiple syncs
-- [ ] Rate limiting prevents API overload
-
----
-
-## Related Issues
-
-| ID | Title | Priority | Depends On |
-|----|-------|----------|------------|
-| petdata-11o | Set up SQLite database schema | P1 | - |
-| petdata-jf5 | Implement Adalo API client | P1 | petdata-11o |
-| petdata-ic4 | Create full sync extraction engine | P2 | petdata-jf5 |
-| petdata-ucw | Add incremental sync capability | P2 | petdata-ic4 |
-| petdata-w78 | Build CLI interface for sync commands | P3 | petdata-ic4 |
+- [Architecture](architecture.md) - system design and patterns
+- [Development Standards](development-standards.md) - git, testing, quality
+- [ADR-002: Mutable Models](../adr/002-mutable-pydantic-models.md)

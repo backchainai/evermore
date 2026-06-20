@@ -20,10 +20,10 @@ petdata extracts animal data from shelter management systems, analyzes behaviora
 ### Phase 1: Data Extraction and Storage (✓ Complete)
 
 - **7 Pydantic data models:** Animal, VolunteerNote, KennelCard, StaffAssessment, WalkRecord, AnimalImage, SyncLog
-- **SQLite database** with foreign keys, indexes, and migration-based schema management
-- **Repository pattern** with full CRUD operations and transaction support
-- **Migration system** with version tracking, checksum verification, and idempotent SQL
-- **Comprehensive test coverage:** 187 passing tests (unit + integration)
+- **Supabase Postgres + pgvector** accessed through async SQLAlchemy 2.0 (asyncpg), with foreign keys, indexes, and cascade deletes
+- **Repository pattern** with full async CRUD operations over a request-scoped session
+- **Alembic migrations** own the schema (`uv run alembic upgrade head`)
+- **Comprehensive test coverage:** unit suite plus a Postgres-backed integration suite
 - **Quality tooling:** ruff, mypy (strict mode), bandit, pytest with coverage
 
 ### Phase 2: Behavioral Analysis (Planned)
@@ -44,8 +44,9 @@ petdata extracts animal data from shelter management systems, analyzes behaviora
 
 ### Prerequisites
 
-- Python 3.13
+- Python 3.14
 - [uv](https://docs.astral.sh/uv/) (Python package manager)
+- Docker (for the local Postgres + pgvector container)
 
 ### Installation
 
@@ -54,28 +55,44 @@ petdata extracts animal data from shelter management systems, analyzes behaviora
 git clone https://github.com/backchainai/evermore.git
 cd evermore/services/petdata
 
-# Install dependencies
-uv sync
+# Install dependencies (including dev tooling)
+uv sync --extra dev
 
-# Run the application
-uv run petdata
+# Configure the environment
+cp .env.example .env        # adjust PETDATA_DATABASE_URL if needed
 ```
+
+### Local database (one command)
+
+petdata stores data in Supabase Postgres with the pgvector extension. For local
+development and tests, `docker-compose.test.yml` brings up an ephemeral pgvector
+container on port 5434:
+
+```bash
+docker compose -f docker-compose.test.yml up -d   # start local Postgres + pgvector
+uv run alembic upgrade head                        # apply the schema
+```
+
+The default `PETDATA_DATABASE_URL` in `.env.example` points at this container.
+Stop and discard it with `docker compose -f docker-compose.test.yml down`.
 
 ## Usage
 
 ```bash
-# Example command
-uv run petdata --help
+# Run the API (schema must already be migrated; see Local database above)
+uv run uvicorn petdata.main:app --reload
 ```
 
 ## Configuration
 
-Configuration is handled via environment variables (prefix: `PETDATA_`):
+Configuration is handled via environment variables (prefix: `PETDATA_`). See
+`.env.example` for the full set; the database options are:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `PETDATA_DATABASE_PATH` | SQLite database file location | `data/petdata.db` |
-| `PETDATA_REQUEST_DELAY_MS` | API request throttling delay (ms) | `500` |
+| `PETDATA_DATABASE_URL` | Async Postgres connection URL (`postgres://`/`postgresql://` accepted) | `` (empty) |
+| `PETDATA_DATABASE_REQUIRE_SSL` | Enforce SSL on the connection (set `true` in production) | `false` |
+| `PETDATA_REQUEST_DELAY_MS` | Extraction API request throttling delay (ms) | `500` |
 
 ## HTTP API
 
@@ -105,12 +122,18 @@ curl http://localhost:8000/llms.txt
 git clone https://github.com/backchainai/evermore.git
 cd evermore/services/petdata
 
-# Install dependencies
-uv sync
+# Install dependencies (including dev tooling)
+uv sync --extra dev
 
-# Run tests
+# Start local Postgres + pgvector and run tests
+docker compose -f docker-compose.test.yml up -d
 uv run pytest
 ```
+
+The integration suite (`tests/integration/db/`) requires the local Postgres
+container above and skips automatically when no database is reachable, so the
+unit suite still runs on a bare checkout. Override the connection string with
+`TEST_DATABASE_URL`.
 
 ### Quality Gates
 
@@ -129,19 +152,27 @@ uv run pytest tests/ --cov=src --cov-report=term-missing  # Tests + coverage
 ```
 src/petdata/
 ├── config.py                      # pydantic-settings configuration
+├── main.py                        # FastAPI application factory
+├── models/                        # SQLAlchemy ORM layer
+│   ├── base.py                    # Declarative base + async engine/session factory
+│   ├── tables.py                  # 7 ORM tables (petdata_ prefix, tenant_id for RLS)
+│   └── mappers.py                 # ORM row <-> Pydantic domain model mapping
+├── infrastructure/
+│   └── database/session.py        # FastAPI async session dependency
 └── modules/
-    └── db/                        # Phase 1: Data layer
-        ├── models.py              # 7 Pydantic models
-        ├── schema.py              # SQLite table definitions
-        ├── migrate.py             # Migration engine with version tracking
-        ├── repository.py          # Database class with CRUD operations
-        └── migrations/            # Numbered SQL migration files
+    ├── db/
+    │   ├── models.py              # 7 Pydantic domain models
+    │   └── repository.py          # Async Database class with CRUD operations
+    ├── api/                       # SMS extraction client
+    └── web/                       # API routes and schemas
+
+alembic/                           # Migration environment (schema source of truth)
+alembic.ini
 
 tests/
-├── unit/                          # Fast, isolated tests
-│   └── db/                        # Model, migration, schema tests
-└── integration/                   # Tests with real SQLite database
-    └── db/                        # Repository, migration flow tests
+├── unit/                          # Fast, isolated tests (no database)
+└── integration/                   # Postgres-backed tests
+    └── db/                        # Repository round-trips, Alembic upgrade/downgrade
 ```
 
 ## Documentation

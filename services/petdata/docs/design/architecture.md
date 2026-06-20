@@ -9,336 +9,245 @@ when_to_use:
 - Understanding how components fit together
 dependencies:
 - development-standards.md
-- decisions/
+- ../adr/
 ---
 # petdata Architecture
 
-Automated adoption profile generator for animal shelters
+Automated adoption profile generator for nonprofit animal shelters.
 
 ## System Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    PHASE 1: DATA LAYER (✓ Complete)            │
-│                                                                  │
-│  [Adalo API] → [Extraction] → [SQLite] → [Repository Pattern]  │
-│                                    ↓                             │
-│              [7 Pydantic Models + Computed Properties]          │
+│                 PHASE 1: DATA LAYER (✓ Complete)                  │
+│                                                                   │
+│  [SMS API] → [Extraction] → [Postgres] → [Async Repository]      │
+│                                  ↓                                │
+│            [7 Pydantic domain models + computed properties]       │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│              PHASE 2: BEHAVIORAL ANALYSIS (Planned)             │
-│                                                                  │
-│  [Volunteer Ratings] → [Time-Decay Algorithm] → [Trends]       │
+│              PHASE 2: BEHAVIORAL ANALYSIS (Planned)               │
+│                                                                   │
+│  [Volunteer ratings] → [Time-decay algorithm] → [Trends]         │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│            PHASE 3: PROFILE GENERATION (Planned)                │
-│                                                                  │
-│  [Animal Data + Analysis] → [LLM] → [Adoption Profiles]        │
+│            PHASE 3: PROFILE GENERATION (Planned)                  │
+│                                                                   │
+│  [Animal data + analysis] → [LLM] → [Adoption profiles]          │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+"SMS" is the shelter's Shelter Management System, the upstream source petdata extracts from.
 
 ## Architecture Style: Layered Architecture
 
-**Current Implementation (Phase 1):**
-
 ```
 ┌──────────────────────────────────────┐
-│   Pydantic Models (Data Layer)      │  ← Animal, VolunteerNote, etc.
-│   - Validation and computed props   │
+│   Pydantic domain models             │  ← Animal, VolunteerNote, etc.
+│   - Validation and computed props    │
+└──────────────────────────────────────┘
+                ↕ (mappers.py)
+┌──────────────────────────────────────┐
+│   SQLAlchemy ORM tables              │  ← petdata_ prefix, tenant_id
 └──────────────────────────────────────┘
                 ↓
 ┌──────────────────────────────────────┐
-│   Repository Pattern (Access Layer) │  ← Database class with CRUD
-│   - Context managers for txns       │
+│   Async repository (access layer)    │  ← Database class, AsyncSession
 └──────────────────────────────────────┘
                 ↓
 ┌──────────────────────────────────────┐
-│   SQLite Storage (Persistence)      │  ← Schema + Migrations
-│   - Foreign keys, indexes           │
+│   Postgres (persistence)            │  ← schema owned by Alembic
+│   - pgvector, FKs, indexes, RLS      │
 └──────────────────────────────────────┘
 ```
 
 **Why this approach:**
-- Clear separation: data models ≠ database schema (loose coupling)
-- Repository encapsulates all SQL (models stay pure)
-- Migration system enables safe schema evolution
-- Testable: models validate in-memory, repository tested with real DB
-- Dependencies flow downward: Models don't know about database
+- Two representations: the Pydantic domain model (wire/domain contract) is kept separate from the ORM table (persistence), bridged by `mappers.py`. Callers work in domain models and never touch ORM rows.
+- The repository encapsulates all query construction, so domain models stay pure.
+- Alembic owns schema evolution; the application never creates tables at startup.
+- Testable: domain models validate in memory; the repository is exercised against a real Postgres.
+- Dependencies flow downward: domain models do not know about the database.
 
 ## Tech Stack
 
-### Backend (Python 3.13)
+### Backend (Python 3.14)
 
 | Component | Choice | Rationale |
 |-----------|--------|-----------|
-| Data Models | Pydantic 2.9+ | Type-safe validation, JSON serialization, computed properties |
+| Domain models | Pydantic 2.9+ | Type-safe validation, JSON serialization, computed properties |
 | Configuration | pydantic-settings | Environment-based config with type validation |
-| Database | SQLite | Simple, file-based, sufficient for Phase 1 (migrate to Postgres later if needed) |
-| Package Manager | uv | Fast, modern, deterministic dependency resolution |
-| Testing | pytest + pytest-cov | Industry standard, excellent fixture system, coverage tracking |
-| Linting | ruff | Fast, modern, replaces 10+ tools (black, isort, flake8, etc.) |
-| Type Checking | mypy --strict | Catch type errors at dev time, strict mode enforced |
-| Security | bandit | Static security analysis for Python code |
+| ORM / engine | SQLAlchemy 2.0 async + asyncpg | Async access to Postgres with typed `Mapped[...]` models |
+| Database | Supabase Postgres + pgvector | Shared Evermore datastore; pgvector for embeddings; tenant isolation via RLS |
+| Migrations | Alembic | Versioned, autogenerated schema migrations |
+| Web | FastAPI + Uvicorn | Async API surface, `/llms.txt` discovery |
+| Package manager | uv | Fast, deterministic dependency resolution |
+| Testing | pytest + pytest-asyncio + pytest-cov | Async fixtures, coverage tracking |
+| Linting | ruff | Fast, replaces black/isort/flake8 |
+| Type checking | mypy --strict | Catch type errors at dev time |
+| Security | bandit | Static security analysis |
 
-**No web framework yet:** Phase 1 is data layer only. API layer comes in Phase 2/3 if needed.
-
-
+Per the Evermore tech-stack standard (ADR 0003), every table shares one Supabase Postgres instance and is namespaced with the `petdata_` prefix.
 
 ## Project Structure
 
 ```
 petdata/
-├── src/
-│   └── petdata/
-│       ├── __init__.py
-│       ├── config.py                 # pydantic-settings configuration
-│       │
-│       └── modules/
-│           └── db/                   # Phase 1: Database layer
-│               ├── __init__.py
-│               ├── models.py         # 7 Pydantic models
-│               ├── schema.py         # SQLite table definitions
-│               ├── migrate.py        # Migration engine
-│               ├── repository.py     # Database class (CRUD)
-│               └── migrations/       # Numbered SQL files
-│                   └── 001_initial_schema.sql
+├── src/petdata/
+│   ├── __init__.py
+│   ├── config.py                  # pydantic-settings configuration (PETDATA_ prefix)
+│   ├── main.py                    # FastAPI application factory (create_app)
+│   ├── models/                    # SQLAlchemy ORM layer
+│   │   ├── base.py                # Declarative Base + async engine/session factory
+│   │   ├── tables.py              # 7 ORM tables (petdata_ prefix, tenant_id)
+│   │   └── mappers.py             # ORM row <-> Pydantic domain model mapping
+│   ├── infrastructure/
+│   │   └── database/session.py    # FastAPI async session dependency (get_session)
+│   └── modules/
+│       ├── db/
+│       │   ├── models.py          # 7 Pydantic domain models
+│       │   └── repository.py      # Async Database class (CRUD)
+│       ├── api/                   # SMS extraction client (auth, client, parser)
+│       └── web/                   # Routes, request/response schemas, dependencies
+│
+├── alembic/                       # Migration environment (schema source of truth)
+│   └── versions/001_initial_schema.py
+├── alembic.ini
+├── docker-compose.test.yml        # Local pgvector Postgres (port 5434)
 │
 ├── tests/
-│   ├── conftest.py                   # Shared fixtures
-│   ├── unit/                         # Fast, isolated tests
-│   │   └── db/
-│   │       ├── test_models.py        # Model validation, computed props
-│   │       ├── test_migrate.py       # Migration engine logic
-│   │       ├── test_migrations.py    # SQL migration file validation
-│   │       ├── test_repository_helpers.py
-│   │       └── test_schema.py        # Schema SQL parsing
-│   └── integration/                  # Tests with real database
-│       └── db/
-│           ├── test_repository.py    # Full CRUD with SQLite
-│           └── test_migration_flow.py # End-to-end migration
+│   ├── conftest.py                # Async DB fixtures (skip when no Postgres)
+│   ├── unit/                      # Fast, isolated tests (no database)
+│   └── integration/               # Postgres-backed tests
+│       ├── api/                   # Extraction client
+│       ├── db/                    # Repository round-trips, Alembic upgrade/downgrade
+│       └── web/                   # /llms.txt and API routes
 │
 ├── docs/
-│   ├── adr/                          # Architecture Decision Records
-│   │   ├── 000-template.md
-│   │   ├── 001-example.md
-│   │   └── 002-mutable-pydantic-models.md
-│   └── design/
-│       ├── architecture.md           # This file
-│       ├── concept.md                # Original project brief
-│       ├── phase1-data-extraction.md # Phase 1 design doc
-│       └── development-standards.md  # Git, testing, quality standards
+│   ├── adr/                       # Architecture Decision Records
+│   └── design/                    # This file, concept, phase1, development-standards
 │
-├── pyproject.toml                    # Project metadata, tool config
-├── uv.lock                           # Locked dependencies
-├── README.md                         # Project overview
-├── CLAUDE.md                         # AI assistant guide
-├── CONTRIBUTING.md                   # Contribution guidelines
-├── LICENSE                           # MIT license
-├── CHANGELOG.md                      # Release history
-└── TODO.md                           # Future work roadmap
+├── pyproject.toml
+├── uv.lock
+├── README.md
+├── CLAUDE.md
+├── CONTRIBUTING.md
+├── LICENSE                        # Apache-2.0
+├── CHANGELOG.md
+└── TODO.md
 ```
 
 ## Key Design Patterns
 
-### Repository Pattern
+### Async repository pattern
 
-All database access goes through `Database` class:
-
-```python
-from petdata.modules.db import Database, Animal
-from pathlib import Path
-
-db = Database(Path("data/petdata.db"))
-
-# Create
-animal = Animal(id="A-12345", name="Buddy")
-db.insert_animal(animal)
-
-# Read
-animal = db.get_animal("A-12345")
-
-# Update (mutable pattern)
-animal.weight_lbs = 70.0
-db.update_animal(animal)
-
-# Delete
-db.delete_animal("A-12345")
-```
-
-**Benefits:**
-- Encapsulates SQL (models stay clean)
-- Transaction management via context managers
-- Easy to mock for unit tests
-- Single place to optimize queries
-
-### Mutable Pydantic Models (ADR-002)
-
-Models use `validate_assignment=True` for ergonomic updates:
+All database access goes through the async `Database` class, constructed with an `AsyncSession`:
 
 ```python
-# Fetch
-animal = db.get_animal("A-12345")
+from sqlalchemy.ext.asyncio import AsyncSession
 
-# Modify (validators run on assignment)
-animal.weight_lbs = 70.0
+from petdata.modules.db import Animal, Database
 
-# Persist (only sends changed fields)
-db.update_animal(animal)
+
+async def example(session: AsyncSession) -> None:
+    db = Database(session)
+
+    await db.insert_animal(Animal(id="A-12345", name="Buddy"))
+
+    animal = await db.get_animal("A-12345")
+    if animal is not None:
+        animal.weight_lbs = 70.0       # validators run on assignment
+        await db.update_animal(animal)  # only changed fields are written
+
+    await db.delete_animal("A-12345")   # cascades to child rows
 ```
 
-**Why mutable?**
-- Validators run on field assignment (e.g., JSON parsing for tags)
-- `exclude_unset=True` tracks partial updates
-- Matches repository pattern (fetch-modify-persist)
+In the FastAPI app, inject the session via the `get_session` dependency, which commits on success and rolls back on error.
 
-**Trade-off:** Not hashable (can't use as dict keys). Acceptable because models are internal-only, no concurrency requirement.
+### Mutable Pydantic models (ADR-002)
 
-### Migration-Based Schema Evolution
+Domain models use `validate_assignment=True` (not `frozen=True`) so validators run on field assignment and `exclude_unset=True` can track partial updates for the fetch/modify/persist cycle. The trade-off is that models are not hashable, which is acceptable for internal-only use.
 
-Numbered SQL files applied in sequence:
+### Schema evolution via Alembic
 
-```sql
--- migrations/001_create_tables.sql
-CREATE TABLE IF NOT EXISTS animals (...);
+Alembic owns the schema. `alembic/env.py` resolves the database URL at runtime from petdata settings (`PETDATA_DATABASE_URL`) and runs migrations through an async engine.
 
--- migrations/002_add_indexes.sql
-CREATE INDEX IF NOT EXISTS idx_animal_id ON volunteer_notes(animal_id);
-```
-
-**Features:**
-- Version tracking in `migration_history` table
-- Checksum verification prevents tampering
-- Gap detection (can't skip migrations)
-- Duplicate detection (can't run same migration twice)
-- Idempotent SQL (safe to re-run)
-
-**Commands:**
-```python
-from petdata.modules.db import init_database, migrate
-
-init_database(db_path)  # One-time setup
-migrate(db_path)        # Apply pending migrations
-get_current_version(db_path)  # Check version
+```bash
+uv run alembic upgrade head                                 # apply pending migrations
+uv run alembic revision --autogenerate -m "describe change" # author a migration
+uv run alembic downgrade -1                                  # roll back one revision
 ```
 
 ### Configuration via pydantic-settings
 
-Environment variables override defaults:
-
 ```python
-# config.py
-class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="PETDATA_")
-
-    database_path: Path = Path("data/petdata.db")
-    request_delay_ms: int = 500
-
-# Usage
 from petdata.config import get_settings
+
 settings = get_settings()
+url = settings.database_url.get_secret_value()
 ```
 
-**Environment:**
-```bash
-export PETDATA_DATABASE_PATH=/custom/path/db.sqlite
-export PETDATA_REQUEST_DELAY_MS=1000
-```
+Environment variables use the `PETDATA_` prefix. `PETDATA_DATABASE_URL` is the async connection URL (`postgres://` / `postgresql://` are normalized to `postgresql+asyncpg://`); `PETDATA_DATABASE_REQUIRE_SSL` enforces SSL in production. See `.env.example` for the full set.
 
 ## Data Model Design
 
-### 7 Pydantic Models
+### 7 domain models
 
-**Core Entities:**
-1. **Animal** - Dog/cat record with basic info, computed properties
-2. **KennelCard** - Structured bio (compatibility, commands, preferences)
-3. **VolunteerNote** - Observations with 4 behavioral ratings (0-5 scale)
-4. **StaffAssessment** - Professional evaluations with structured tags
-5. **WalkRecord** - Walk check-in/out timestamps
-6. **AnimalImage** - Photo URLs with display order
-7. **SyncLog** - Extraction operation tracking
+1. **Animal** - dog/cat record with basic info and computed properties
+2. **KennelCard** - structured bio (compatibility, commands, preferences)
+3. **VolunteerNote** - observations with 4 behavioral ratings (0-5 scale)
+4. **StaffAssessment** - professional evaluations with structured tags
+5. **WalkRecord** - walk check-in/out timestamps
+6. **AnimalImage** - photo URLs with display order
+7. **SyncLog** - extraction operation tracking
 
-**Model Features:**
-- Type-safe field validation with Pydantic Field constraints
+**Model features:**
+- Type-safe field validation with Pydantic `Field` constraints
 - Computed properties (`age_years`, `days_in_shelter`, `is_adoptable`)
-- JSON field handling (tags stored as TEXT, parsed to `list[str]`)
-- SQLite boolean conversion (0/1 → False/True)
+- List fields map to Postgres JSONB
 - Partial update tracking via `exclude_unset=True`
 
-### SQLite Schema
+### Postgres schema
 
-**Characteristics:**
-- Foreign keys enabled (`PRAGMA foreign_keys = ON`)
-- Cascade deletes (delete animal → delete all related records)
-- Indexes on lookup fields (`animal_id` in child tables)
-- JSON fields as TEXT (Pydantic handles serialization)
-- Timestamps in ISO format
-- Boolean as INTEGER (SQLite convention)
+The ORM tables in `models/tables.py` are the canonical definition; the initial Alembic migration (`alembic/versions/001_initial_schema.py`) is the schema source of truth. Characteristics:
+
+- Foreign keys with `ON DELETE CASCADE` (delete an animal, delete its related rows)
+- Indexes on lookup fields (`animal_id` in child tables); both decay-critical volunteer-note indexes (`idx_volunteer_notes_animal_date`, `idx_volunteer_notes_date`) are present
+- `tenant_id` on every table, with inert RLS policies that activate once the JWT tenant claim is wired in
+- List fields stored as JSONB; timestamps as timezone-aware columns
+- `CHECK` constraints keep volunteer ratings in 0..5
 
 **Relationships:**
 ```
-animals (1) ──→ (N) volunteer_notes
-            ──→ (N) walk_records
-            ──→ (N) staff_assessments
-            ──→ (1) kennel_cards
-            ──→ (N) animal_images
+petdata_animals (1) ──→ (N) petdata_volunteer_notes
+                    ──→ (N) petdata_walk_records
+                    ──→ (N) petdata_staff_assessments
+                    ──→ (1) petdata_kennel_cards
+                    ──→ (N) petdata_animal_images
 ```
-
-### Design Decisions (ADRs)
-
-**ADR-002: Keep Pydantic Models Mutable**
-- Decision: Use `validate_assignment=True`, not `frozen=True`
-- Rationale: Validators need to run on assignment, repository pattern relies on mutability
-- Trade-off: Not hashable, but acceptable (internal use only)
 
 ## Testing Strategy
 
-### Test Structure
+**Unit tests** (`tests/unit/`): fast, isolated, no database. Model validation, computed properties, ORM/mapper logic, parser/auth helpers.
 
-**Unit Tests** (`tests/unit/`):
-- Fast, isolated, no real database
-- Test model validation, computed properties
-- Test migration engine logic
-- Test SQL parsing and helper functions
-
-**Integration Tests** (`tests/integration/`):
-- Test with real SQLite database
-- Test full CRUD operations
-- Test end-to-end migration flow
-- Test foreign key constraints, cascades
-
-**Coverage:** 187 tests, 80%+ coverage on business logic
-
-### Test Database Management
-
-Integration tests use temporary databases:
-
-```python
-@pytest.fixture
-def temp_db():
-    with tempfile.TemporaryDirectory() as tmpdir:
-        db_path = Path(tmpdir) / "test.db"
-        init_database(db_path)
-        migrate(db_path)
-        yield Database(db_path)
-```
+**Integration tests** (`tests/integration/`): run against a real Postgres. The `db_engine` / `session` fixtures create the schema per test and skip automatically when no database is reachable, so the unit suite still runs on a bare checkout. Bring up a local Postgres with `docker compose -f docker-compose.test.yml up -d`; override the connection string with `TEST_DATABASE_URL`.
 
 ## Quality Gates
 
 All must pass before commit (enforced by CI):
 
 ```bash
-uv run ruff format src/ tests/        # Auto-format
-uv run ruff check src/ tests/         # Lint
-uv run bandit -r src/                 # Security scan
-uv run mypy src/ --strict             # Type check
-uv run pytest --cov=src --cov-fail-under=80  # Tests + coverage
+uv run ruff format src/ tests/
+uv run ruff check src/ tests/
+uv run bandit -r src/
+uv run mypy src/
+uv run pytest --cov=src --cov-report=term-missing
 ```
 
 ## Future Architecture (Planned)
 
-### Phase 2: Behavioral Analysis Module
+### Phase 2: behavioral analysis module
 
 ```
 modules/
@@ -348,31 +257,23 @@ modules/
     └── scoring.py     # Aggregate scoring system
 ```
 
-**Inputs:** VolunteerNote history (ratings + timestamps)
-**Outputs:** Time-weighted behavioral scores, trend indicators
+**Inputs:** VolunteerNote history (ratings + timestamps). **Outputs:** time-weighted behavioral scores, trend indicators.
 
-### Phase 3: Profile Generation Module
+### Phase 3: profile generation module
 
 ```
 modules/
 └── profiles/
-    ├── generator.py   # LLM integration (Claude/GPT)
+    ├── generator.py   # LLM integration via Cloudflare AI Gateway
     ├── templates.py   # Profile structure templates
     └── evidence.py    # Evidence collection from data
 ```
 
-**Inputs:** Animal data + behavioral analysis
-**Outputs:** Human-readable adoption profiles
-
-**Web Layer (Optional):**
-If API needed:
-- FastAPI for REST API
-- Pydantic for request/response schemas
-- Depends() for dependency injection
+**Inputs:** animal data + behavioral analysis. **Outputs:** human-readable adoption profiles.
 
 ## Related Documents
 
-- [Phase 1 Design](phase1-data-extraction.md) - Detailed Phase 1 design
-- [Development Standards](development-standards.md) - Git, testing, quality
+- [Phase 1 Design](phase1-data-extraction.md) - detailed Phase 1 design
+- [Development Standards](development-standards.md) - git, testing, quality
 - [ADR-002: Mutable Models](../adr/002-mutable-pydantic-models.md)
-- [TODO](../../TODO.md) - Future work roadmap
+- [TODO](../../TODO.md) - future work roadmap
