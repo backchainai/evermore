@@ -135,16 +135,27 @@
               </div>
             </div>
             {{ activeMessage }}
-            <sc-if value="{{ activeNotApplied }}" hint-placeholder-val="{{ true }}">
-              <div style="display:flex; align-items:center; gap:10px; margin-top:12px;">
-                <x-import component-from-global-scope="BackchainDesignSystem_498b67.Button" hint-size="84px,40px" variant="primary" size="sm" onClick="{{ onApply }}">Apply</x-import>
-                <x-import component-from-global-scope="BackchainDesignSystem_498b67.Button" hint-size="68px,32px" variant="tertiary" size="sm" onClick="{{ onModify }}">Modify</x-import>
+            <sc-if value="{{ actionsOpen }}" hint-placeholder-val="{{ true }}">
+              <div data-comment-anchor="b10a03a21d-div" style="display:flex; align-items:flex-start; gap:8px; margin-top:12px;">
+                <div style="flex:1; display:flex; flex-direction:column; align-items:stretch; gap:6px;">
+                  <button onClick="{{ onAcceptAI }}" style="height:36px; width:100%; border-radius:4px; border:1px solid #1A7AC2; background:#1A7AC2; color:#FFFFFF; font-family:var(--font-content); font-size:13px; font-weight:500; cursor:pointer; transition:opacity 0.2s;" style-hover="opacity:0.9;">Accept</button>
+                  <span style="font-size:10px; line-height:1.3; color:rgba(80,99,111,0.6); text-align:center;">AI writes it</span>
+                </div>
+                <div style="flex:1; display:flex; flex-direction:column; align-items:stretch; gap:6px;">
+                  <button onClick="{{ onAcceptEdit }}" style="height:36px; width:100%; border-radius:4px; border:1px solid rgba(80,99,111,0.4); background:#FFFFFF; color:#1F3B54; font-family:var(--font-content); font-size:13px; font-weight:500; cursor:pointer; transition:border-color 0.2s;" style-hover="border-color:#1F3B54;">Edit</button>
+                  <span style="font-size:10px; line-height:1.3; color:rgba(80,99,111,0.6); text-align:center;">You'll edit it</span>
+                </div>
+                <div style="flex:1; display:flex; flex-direction:column; align-items:stretch; gap:6px;">
+                  <button onClick="{{ onIgnore }}" style="height:36px; width:100%; border-radius:4px; border:1px solid rgba(80,99,111,0.22); background:transparent; color:#50636F; font-family:var(--font-content); font-size:13px; font-weight:500; cursor:pointer; transition:background-color 0.2s;" style-hover="background:rgba(80,99,111,0.06);">Reject</button>
+                  <span style="font-size:10px; line-height:1.3; color:rgba(80,99,111,0.6); text-align:center;">Dismiss</span>
+                </div>
               </div>
             </sc-if>
-            <sc-if value="{{ activeApplied }}" hint-placeholder-val="{{ false }}">
+            <sc-if value="{{ actionsResolved }}" hint-placeholder-val="{{ false }}">
               <div style="display:flex; align-items:center; gap:8px; margin-top:12px; font-size:12.5px; color:#50636F;">
-                <span style="color:#27AE60; font-weight:600;">✓</span>
-                Applied. Use Next to keep going.
+                <span style="{{ statusIconStyle }}">{{ statusIcon }}</span>
+                <span style="flex:1;">{{ statusText }}</span>
+                <a href="#" onClick="{{ onUndo }}" style="font-size:11.5px; color:#1A7AC2; text-decoration:none;" style-hover="text-decoration:underline;">Undo</a>
               </div>
             </sc-if>
             <div style="margin-top:11px; padding-top:10px; border-top:1px solid rgba(80,99,111,0.10);">
@@ -158,31 +169,29 @@
       </div>
 
       <!-- composer: bound to the suggestion shown above -->
-      <div style="flex:none; padding:11px 16px 16px; border-top:1px solid rgba(80,99,111,0.10);">
-        <div style="display:flex; align-items:center; gap:7px; margin-bottom:9px; font-size:11.5px; color:#50636F;">
-          <span style="color:#1A7AC2; font-size:14px; line-height:1;">↳</span>
+      <div style="flex:none; padding:8px 14px 11px; border-top:1px solid rgba(80,99,111,0.10);">
+        <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px; font-size:11px; color:#50636F;">
+          <span style="color:#1A7AC2; font-size:13px; line-height:1;">↳</span>
           <span>Replying to</span>
           <span style="display:inline-flex; align-items:center; gap:6px; background:rgba(239,142,31,0.12); border:1px solid rgba(239,142,31,0.32); color:#1F3B54; padding:2px 9px 2px 4px; border-radius:9999px; line-height:1.4; font-weight:500;">
             <span style="{{ replyBadgeStyle }}">{{ replyBadgeText }}</span>{{ activeLabel }}
           </span>
         </div>
-        <div style="border:1px solid rgba(80,99,111,0.18); border-radius:6px; background:#FFFFFF; padding:10px 10px 8px;">
+        <div style="border:1px solid rgba(80,99,111,0.18); border-radius:6px; background:#FFFFFF; padding:8px 9px 7px;">
           <sc-if value="{{ hasChips }}" hint-placeholder-val="{{ true }}">
-            <div style="margin-bottom:9px;">
-              <div style="font-size:9.5px; text-transform:uppercase; letter-spacing:0.06em; color:rgba(80,99,111,0.7); margin-bottom:6px;">Attached traits</div>
-              <div style="display:flex; flex-wrap:wrap; gap:6px;">
-                <sc-for list="{{ chips }}" as="chip" hint-placeholder-count="2">
-                  <span style="display:inline-flex; align-items:center; gap:5px; background:rgba(26,122,194,0.10); border:1px solid rgba(26,122,194,0.28); color:#1F3B54; font-size:12px; padding:3px 5px 3px 10px; border-radius:9999px; line-height:1.4;">
-                    {{ chip.label }}
-                    <button onClick="{{ chip.onRemove }}" title="Remove" style="width:16px; height:16px; border:none; background:transparent; color:#1A7AC2; font-size:14px; line-height:1; display:flex; align-items:center; justify-content:center; cursor:pointer; border-radius:9999px;" style-hover="background:rgba(26,122,194,0.14);">×</button>
-                  </span>
-                </sc-for>
-              </div>
+            <div style="display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid rgba(80,99,111,0.08);">
+              <span style="font-size:9.5px; text-transform:uppercase; letter-spacing:0.06em; color:rgba(80,99,111,0.7); margin-right:1px;">Traits</span>
+              <sc-for list="{{ chips }}" as="chip" hint-placeholder-count="2">
+                <span style="display:inline-flex; align-items:center; gap:4px; background:rgba(26,122,194,0.10); border:1px solid rgba(26,122,194,0.28); color:#1F3B54; font-size:11.5px; padding:2px 4px 2px 9px; border-radius:9999px; line-height:1.4;">
+                  {{ chip.label }}
+                  <button onClick="{{ chip.onRemove }}" title="Remove" style="width:15px; height:15px; border:none; background:transparent; color:#1A7AC2; font-size:13px; line-height:1; display:flex; align-items:center; justify-content:center; cursor:pointer; border-radius:9999px;" style-hover="background:rgba(26,122,194,0.14);">×</button>
+                </span>
+              </sc-for>
             </div>
           </sc-if>
           <div contentEditable="true" style="font-size:13px; line-height:1.5; color:rgba(80,99,111,0.55); min-height:20px; outline:none;">Reply, or ask for a different angle…</div>
-          <div style="display:flex; align-items:center; justify-content:flex-end; margin-top:9px;">
-            <button onClick="{{ onSend }}" title="Send" style="width:32px; height:32px; border-radius:4px; background:#1A7AC2; color:#FFFFFF; border:none; display:flex; align-items:center; justify-content:center; font-size:15px; cursor:pointer;" style-hover="opacity:0.9;">→</button>
+          <div style="display:flex; align-items:center; justify-content:flex-end; margin-top:7px;">
+            <button onClick="{{ onSend }}" title="Send" style="width:28px; height:28px; border-radius:4px; background:#1A7AC2; color:#FFFFFF; border:none; display:flex; align-items:center; justify-content:center; font-size:15px; cursor:pointer;" style-hover="opacity:0.9;">→</button>
           </div>
         </div>
       </div>
@@ -356,10 +365,10 @@ class Component extends DCLogic {
     ],
     citations: [
       { label: 'Opening line',     message: "Her bio leads with how she looks instead of what she does. Want me to rewrite the opening around her settling next to you while you work?", applied: false },
-      { label: 'Vague claim',      message: "“Asks for very little” is vague. Naming one concrete need (a daily walk, a warm spot) makes her easier to picture.", applied: false },
+      { label: 'Vague claim',      message: "\u201CAsks for very little\u201D is vague. Naming one concrete need (a daily walk, a warm spot) makes her easier to picture.", applied: false },
       { label: 'Lead with proof',  message: "House-trained and crate-comfortable is your strongest line. Adopters scan for it, so it can move up.", applied: false },
       { label: 'Medical clarity',  message: "Keep the medical facts as one scannable line: heartworm negative, spayed, vaccines current.", applied: false },
-      { label: 'Set expectations', message: "“Untested with cats” is honest and helpful. Pair it with what she is good with so it does not read as a warning.", applied: false },
+      { label: 'Set expectations', message: "\u201CUntested with cats\u201D is honest and helpful. Pair it with what she is good with so it does not read as a warning.", applied: false },
       { label: 'Concrete detail',  message: "Her age and size belong near the top where adopters filter, not buried in the closing paragraph.", applied: false },
       { label: 'Closing ask',      message: "Strong closer. Consider naming the next step (book a meet-and-greet) so the reader knows what to do.", applied: false },
     ],
@@ -393,21 +402,25 @@ class Component extends DCLogic {
   jump(i) { this.setState({ activeIndex: i }); }
   prevCite() { this.setState(s => ({ activeIndex: Math.max(0, s.activeIndex - 1) })); }
   nextCite() { this.setState(s => ({ activeIndex: Math.min(s.citations.length - 1, s.activeIndex + 1) })); }
-  applyCite() {
+  setStatus(status) {
     this.setState(s => {
-      const citations = s.citations.map((c, idx) => idx === s.activeIndex ? { ...c, applied: true } : c);
+      const citations = s.citations.map((c, idx) => idx === s.activeIndex ? { ...c, status } : c);
+      const isOpen = (c) => !c.status || c.status === 'open';
       let ni = s.activeIndex;
-      for (let k = s.activeIndex + 1; k < citations.length; k++) { if (!citations[k].applied) { ni = k; break; } }
-      if (ni === s.activeIndex) { for (let k = 0; k < citations.length; k++) { if (!citations[k].applied) { ni = k; break; } } }
+      for (let k = s.activeIndex + 1; k < citations.length; k++) { if (isOpen(citations[k])) { ni = k; break; } }
+      if (ni === s.activeIndex) { for (let k = 0; k < citations.length; k++) { if (isOpen(citations[k])) { ni = k; break; } } }
       return { citations, activeIndex: ni };
     });
+  }
+  undoStatus() {
+    this.setState(s => ({ citations: s.citations.map((c, idx) => idx === s.activeIndex ? { ...c, status: 'open' } : c) }));
   }
 
   renderVals() {
     const cits = this.state.citations;
     const ai = this.state.activeIndex;
     const total = cits.length;
-    const appliedCount = cits.filter(c => c.applied).length;
+    const appliedCount = cits.filter(c => c.status && c.status !== 'open').length;
 
     // toggle (channel) styles
     const active = { padding: '6px 13px', borderRadius: '4px', border: 'none', background: '#1A7AC2', color: '#FFFFFF', fontSize: '13px', fontWeight: 500, fontFamily: 'var(--font-content)', cursor: 'pointer', whiteSpace: 'nowrap' };
@@ -422,7 +435,12 @@ class Component extends DCLogic {
 
     // ---- active bubble ----
     const activeCit = cits[ai];
+    const activeStatus = activeCit.status || 'open';
     const badgeBase = { flex: 'none', width: '18px', height: '18px', borderRadius: '9999px', fontSize: '11px', fontWeight: 600, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFFFFF' };
+    const activeBadge = activeStatus === 'ai' ? { bg: '#27AE60', text: '\u2713' }
+      : activeStatus === 'edit' ? { bg: '#1A7AC2', text: '\u270e' }
+      : activeStatus === 'ignored' ? { bg: '#9AA7AE', text: '\u00d7' }
+      : { bg: '#EF8E1F', text: String(ai + 1) };
 
     // ---- bio paragraphs with inline citation markers ----
     const rawParas = [
@@ -443,13 +461,22 @@ class Component extends DCLogic {
     const buildPart = (seg) => {
       if (seg.sp) return { plain: true, cited: false, text: ' ' };
       const idx = seg.c, num = idx + 1;
-      const isActive = idx === ai, applied = cits[idx].applied;
-      const text = (idx === 0) ? (applied ? seg.done : seg.orig) : seg.text;
+      const isActive = idx === ai;
+      const st = cits[idx].status || 'open';
+      const text = (idx === 0) ? (st === 'ai' ? seg.done : seg.orig) : seg.text;
       let markerStyle, markerText, spanStyle;
-      if (applied) {
+      if (st === 'ai') {
         markerStyle = { ...markerBase, background: '#27AE60', color: '#FFFFFF', border: '1px solid #27AE60', fontSize: '9px' };
-        markerText = '✓';
+        markerText = '\u2713';
         spanStyle = { ...spanBase, color: '#50636F' };
+      } else if (st === 'edit') {
+        markerStyle = { ...markerBase, background: '#1A7AC2', color: '#FFFFFF', border: '1px solid #1A7AC2', fontSize: '9px' };
+        markerText = '\u270e';
+        spanStyle = { ...spanBase, background: 'rgba(26,122,194,0.12)', boxShadow: 'inset 2px 0 0 #1A7AC2', padding: '1px 5px', color: '#1F3B54' };
+      } else if (st === 'ignored') {
+        markerStyle = { ...markerBase, background: 'transparent', color: 'rgba(80,99,111,0.5)', border: '1px solid rgba(80,99,111,0.3)', fontSize: '11px' };
+        markerText = '\u00d7';
+        spanStyle = { ...spanBase, color: 'rgba(80,99,111,0.5)' };
       } else if (isActive) {
         markerStyle = { ...markerBase, background: '#EF8E1F', color: '#FFFFFF', border: '1px solid #EF8E1F' };
         markerText = String(num);
@@ -526,16 +553,21 @@ class Component extends DCLogic {
       // active bubble
       activeLabel: activeCit.label,
       activeMessage: activeCit.message,
-      activeApplied: activeCit.applied,
-      activeNotApplied: !activeCit.applied,
-      activeBadgeStyle: activeCit.applied ? { ...badgeBase, background: '#27AE60' } : { ...badgeBase, background: '#EF8E1F' },
-      activeBadgeText: activeCit.applied ? '✓' : String(ai + 1),
-      replyBadgeStyle: activeCit.applied ? { ...badgeBase, width: '16px', height: '16px', fontSize: '9px', background: '#27AE60' } : { ...badgeBase, width: '16px', height: '16px', fontSize: '10px', background: '#EF8E1F' },
-      replyBadgeText: activeCit.applied ? '✓' : String(ai + 1),
-      onApply: () => this.applyCite(),
-      onModify: () => {},
+      actionsOpen: activeStatus === 'open',
+      actionsResolved: activeStatus !== 'open',
+      statusIcon: activeBadge.text,
+      statusIconStyle: { flex: 'none', width: '18px', height: '18px', borderRadius: '9999px', fontSize: activeStatus === 'ignored' ? '12px' : '10px', fontWeight: 600, lineHeight: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: activeStatus === 'ignored' ? 'rgba(80,99,111,0.6)' : '#FFFFFF', background: activeStatus === 'ignored' ? 'transparent' : activeBadge.bg, border: activeStatus === 'ignored' ? '1px solid rgba(80,99,111,0.3)' : 'none' },
+      statusText: activeStatus === 'ai' ? 'BioWriter rewrote this. Use Next to continue.' : activeStatus === 'edit' ? "Accepted \u2014 yours to edit in the card." : 'Ignored. The card is unchanged.',
+      onUndo: (e) => { if (e && e.preventDefault) e.preventDefault(); this.undoStatus(); },
+      activeBadgeStyle: { ...badgeBase, background: activeStatus === 'ignored' ? '#9AA7AE' : activeBadge.bg },
+      activeBadgeText: activeBadge.text,
+      replyBadgeStyle: { ...badgeBase, width: '16px', height: '16px', fontSize: activeStatus === 'open' ? '10px' : '9px', background: activeStatus === 'ignored' ? '#9AA7AE' : activeBadge.bg },
+      replyBadgeText: activeBadge.text,
+      onAcceptAI: () => this.setStatus('ai'),
+      onAcceptEdit: () => this.setStatus('edit'),
+      onIgnore: () => this.setStatus('ignored'),
       researchOpen: this.state.researchOpen,
-      researchCaret: this.state.researchOpen ? '▾' : '▸',
+      researchCaret: this.state.researchOpen ? '\u25be' : '\u25b8',
       onToggleResearch: (e) => { if (e && e.preventDefault) e.preventDefault(); this.setState(s => ({ researchOpen: !s.researchOpen })); },
       activeResearch: [
         'Best Friends Animal Society, 2019 — behavior-led bios get more inquiries than looks-led ones.',
