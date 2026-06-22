@@ -27,14 +27,14 @@ class Settings(BaseSettings):
     allowed_origins: list[str] = ["http://localhost:5173"]
     debug: bool = False
 
-    # Adalo API configuration
+    # Source Shelter Management System (SMS) extraction API. Values are empty by
+    # default and supplied per-deployment via PETDATA_SMS_* env vars (see
+    # .env.example); never hard-code a shelter's production endpoints here.
     cookies: str = ""
-    adalo_base_url: str = (
-        "https://database-red.adalo.com/databases/bjql6w9oy6hlarewbcr9fwh2i/tables"
-    )
-    adalo_table_animals: str = "t_0sslo1men4fkuiap2eis82riv"
-    adalo_table_volunteer_notes: str = "t_9yomkzwe9lsdlgwvkbwa9uoai"
-    adalo_table_walk_records: str = "t_0cd59s41203wo2dbdr8bwtoa4"
+    sms_base_url: str = ""
+    sms_table_animals: str = ""
+    sms_table_volunteer_notes: str = ""
+    sms_table_walk_records: str = ""
 
     # HTTP client configuration
     retry_max_attempts: int = 3

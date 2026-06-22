@@ -20,7 +20,7 @@ class TestParseAnimalResponse:
         raw = {
             "records": [
                 {
-                    "id": "adalo123",
+                    "id": "sms123",
                     "Animal ID": "A-001",
                     "Name": "Buddy",
                     "AKA": "Bud",
@@ -35,7 +35,7 @@ class TestParseAnimalResponse:
         assert len(animals) == 1
         assert animals[0].id == "A-001"
         assert animals[0].name == "Buddy"
-        assert animals[0].adalo_record_id == "adalo123"
+        assert animals[0].source_record_id == "sms123"
 
     def test_empty_records_list_returns_empty_list(self):
         """parse_animal_response returns empty list for no records."""
@@ -60,7 +60,7 @@ class TestParseAnimalResponse:
         raw = {
             "records": [
                 {
-                    "id": "adalo123",
+                    "id": "sms123",
                     "Animal ID": None,  # None ID will fail (str required)
                     "Name": None,  # None name will fail (str required)
                 }
@@ -74,7 +74,7 @@ class TestParseAnimalResponse:
         raw = {
             "records": [
                 {
-                    "id": "adalo123",
+                    "id": "sms123",
                     "Animal ID": "A-002",
                     "Name": "Max",
                     "AKA": None,
@@ -93,9 +93,9 @@ class TestParseAnimalResponse:
         """parse_animal_response handles multiple records."""
         raw = {
             "records": [
-                {"id": "adalo1", "Animal ID": "A-001", "Name": "Buddy"},
-                {"id": "adalo2", "Animal ID": "A-002", "Name": "Max"},
-                {"id": "adalo3", "Animal ID": "A-003", "Name": "Luna"},
+                {"id": "sms1", "Animal ID": "A-001", "Name": "Buddy"},
+                {"id": "sms2", "Animal ID": "A-002", "Name": "Max"},
+                {"id": "sms3", "Animal ID": "A-003", "Name": "Luna"},
             ]
         }
         animals = parse_animal_response(raw)

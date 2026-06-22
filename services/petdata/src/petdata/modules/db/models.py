@@ -60,7 +60,7 @@ class Animal(BaseModel):
         validate_assignment=True,
     )
 
-    id: str  # A-55833 format
+    id: str  # A-00000 format
     name: str
     aka: str | None = None
     breed: str | None = None
@@ -74,7 +74,7 @@ class Animal(BaseModel):
     is_foster_care: bool | None = None
     photo_url: str | None = None
     public_profile_url: str | None = None
-    adalo_record_id: str | None = None
+    source_record_id: str | None = None
     created_at: str | None = None
     updated_at: str | None = None
     last_synced_at: str | None = None
@@ -198,7 +198,7 @@ class VolunteerNote(BaseModel):
 
     id: int | None = None
     animal_id: str = ""
-    adalo_record_id: str | None = None
+    source_record_id: str | None = None
     volunteer_name: str = ""
     note_date: str = ""  # ISO format timestamp
     note_text: str | None = None
@@ -253,7 +253,7 @@ class WalkRecord(BaseModel):
 
     id: int | None = None
     animal_id: str = ""
-    adalo_record_id: str | None = None
+    source_record_id: str | None = None
     volunteer_name: str | None = None
     out_time: str | None = None
     in_time: str | None = None

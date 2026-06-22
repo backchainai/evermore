@@ -1,6 +1,6 @@
-"""Response parsers for Adalo API to Pydantic models.
+"""Response parsers for SMS API to Pydantic models.
 
-IMPORTANT: Adalo field names are placeholders and must be verified against
+IMPORTANT: SMS field names are placeholders and must be verified against
 real API responses before production use.
 """
 
@@ -15,14 +15,14 @@ from petdata.modules.db.models import Animal, VolunteerNote, WalkRecord
 
 
 def parse_animal_response(raw_data: dict[str, Any]) -> list[Animal]:
-    """Parse Adalo animals API response to Animal models.
+    """Parse SMS animals API response to Animal models.
 
-    Handles Adalo-specific field mappings:
-    - "id" field in Adalo → "adalo_record_id" in model
+    Handles SMS-specific field mappings:
+    - "id" field in SMS → "source_record_id" in model
     - Custom field names to model field names
 
     Args:
-        raw_data: Raw JSON response from Adalo API with {"records": [...]} structure.
+        raw_data: Raw JSON response from SMS API with {"records": [...]} structure.
 
     Returns:
         List of validated Animal models. Empty list if no records.
@@ -46,10 +46,10 @@ def parse_animal_response(raw_data: dict[str, Any]) -> list[Animal]:
         animals: list[Animal] = []
         for record in records:
             # CRITICAL: These field names are PLACEHOLDERS - verify with real API
-            # Map Adalo fields to Animal model fields
+            # Map SMS fields to Animal model fields
             animal_data = {
-                "id": record.get("Animal ID", ""),  # Custom field in Adalo
-                "adalo_record_id": record.get("id", ""),  # Adalo internal ID
+                "id": record.get("Animal ID", ""),  # Custom field in SMS
+                "source_record_id": record.get("id", ""),  # SMS internal ID
                 "name": record.get("Name", ""),
                 "aka": record.get("AKA"),
                 "breed": record.get("Breed"),
@@ -60,7 +60,7 @@ def parse_animal_response(raw_data: dict[str, Any]) -> list[Animal]:
                 "color_category": record.get("Color Category"),
                 "behavior_mod_tags": record.get(
                     "Behavior Mod Tags"
-                ),  # Adalo returns as list
+                ),  # SMS returns as list
                 "is_in_kennel": record.get("In Kennel"),
                 "is_foster_care": record.get("Foster Care"),
                 "photo_url": record.get("Photo URL"),
@@ -92,10 +92,10 @@ def parse_animal_response(raw_data: dict[str, Any]) -> list[Animal]:
 
 
 def parse_volunteer_note_response(raw_data: dict[str, Any]) -> list[VolunteerNote]:
-    """Parse Adalo volunteer notes API response to VolunteerNote models.
+    """Parse SMS volunteer notes API response to VolunteerNote models.
 
     Args:
-        raw_data: Raw JSON response from Adalo API with {"records": [...]} structure.
+        raw_data: Raw JSON response from SMS API with {"records": [...]} structure.
 
     Returns:
         List of validated VolunteerNote models. Empty list if no records.
@@ -121,9 +121,9 @@ def parse_volunteer_note_response(raw_data: dict[str, Any]) -> list[VolunteerNot
         notes: list[VolunteerNote] = []
         for record in records:
             # CRITICAL: These field names are PLACEHOLDERS - verify with real API
-            # Map Adalo fields to VolunteerNote model fields
+            # Map SMS fields to VolunteerNote model fields
             note_data = {
-                "adalo_record_id": record.get("id", ""),
+                "source_record_id": record.get("id", ""),
                 "animal_id": record.get("Animal ID", ""),  # Relationship field
                 "volunteer_name": record.get("Volunteer Name", ""),
                 "note_date": record.get("Note Date", ""),
@@ -156,10 +156,10 @@ def parse_volunteer_note_response(raw_data: dict[str, Any]) -> list[VolunteerNot
 
 
 def parse_walk_record_response(raw_data: dict[str, Any]) -> list[WalkRecord]:
-    """Parse Adalo walk records API response to WalkRecord models.
+    """Parse SMS walk records API response to WalkRecord models.
 
     Args:
-        raw_data: Raw JSON response from Adalo API with {"records": [...]} structure.
+        raw_data: Raw JSON response from SMS API with {"records": [...]} structure.
 
     Returns:
         List of validated WalkRecord models. Empty list if no records.
@@ -184,7 +184,7 @@ def parse_walk_record_response(raw_data: dict[str, Any]) -> list[WalkRecord]:
         for record in records:
             # CRITICAL: These field names are PLACEHOLDERS - verify with real API
             walk_data = {
-                "adalo_record_id": record.get("id", ""),
+                "source_record_id": record.get("id", ""),
                 "animal_id": record.get("Animal ID", ""),
                 "volunteer_name": record.get("Volunteer Name"),
                 "out_time": record.get("Out Time"),

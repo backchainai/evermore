@@ -1,4 +1,4 @@
-"""Integration tests for AdaloClient with mocked HTTP."""
+"""Integration tests for SMSClient with mocked HTTP."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import pytest
 import respx
 from httpx import Response
 
-from petdata.modules.api.client import AdaloClient
+from petdata.modules.api.client import SMSClient
 from petdata.modules.api.exceptions import (
     APIRateLimitError,
     APIResponseParseError,
@@ -16,11 +16,15 @@ from petdata.modules.api.exceptions import (
 
 @pytest.fixture
 def _mock_cookies(monkeypatch):
-    """Mock PETDATA_COOKIES environment variable."""
+    """Set placeholder SMS extraction config (cookies + endpoints) via env."""
     monkeypatch.setenv("PETDATA_COOKIES", "session=test123")
+    monkeypatch.setenv("PETDATA_SMS_BASE_URL", "https://sms.example.com/tables")
+    monkeypatch.setenv("PETDATA_SMS_TABLE_ANIMALS", "tbl_animals")
+    monkeypatch.setenv("PETDATA_SMS_TABLE_VOLUNTEER_NOTES", "tbl_volunteer_notes")
+    monkeypatch.setenv("PETDATA_SMS_TABLE_WALK_RECORDS", "tbl_walk_records")
 
 
-class TestAdaloClientRetry:
+class TestSMSClientRetry:
     """Tests for retry logic with exponential backoff."""
 
     @respx.mock
@@ -28,11 +32,8 @@ class TestAdaloClientRetry:
         """Client retries on 429 with exponential backoff."""
         mock_sleep = mocker.patch("time.sleep")
         # Disable rate limiting to isolate retry backoff
-        mocker.patch.object(AdaloClient, "_enforce_rate_limit", return_value=None)
-        url = (
-            "https://database-red.adalo.com/databases/"
-            "bjql6w9oy6hlarewbcr9fwh2i/tables/t_0sslo1men4fkuiap2eis82riv"
-        )
+        mocker.patch.object(SMSClient, "_enforce_rate_limit", return_value=None)
+        url = "https://sms.example.com/tables/tbl_animals"
 
         # First two calls return 429, third succeeds
         respx.get(url).mock(
@@ -43,7 +44,7 @@ class TestAdaloClientRetry:
             ]
         )
 
-        with AdaloClient() as client:
+        with SMSClient() as client:
             result = client.fetch_animals(limit=10)
             assert result == {"records": []}
 
@@ -53,17 +54,14 @@ class TestAdaloClientRetry:
     @respx.mock
     def test_retry_exhausted_raises_rate_limit_error(self, _mock_cookies):
         """Client raises APIRateLimitError after max attempts."""
-        url = (
-            "https://database-red.adalo.com/databases/"
-            "bjql6w9oy6hlarewbcr9fwh2i/tables/t_0sslo1men4fkuiap2eis82riv"
-        )
+        url = "https://sms.example.com/tables/tbl_animals"
 
         # All calls return 429
         respx.get(url).mock(return_value=Response(429))
 
         with (
             pytest.raises(APIRateLimitError, match="Rate limit exceeded after 3"),
-            AdaloClient() as client,
+            SMSClient() as client,
         ):
             client.fetch_animals(limit=10)
 
@@ -72,11 +70,8 @@ class TestAdaloClientRetry:
         """Client retries on 5xx errors."""
         mock_sleep = mocker.patch("time.sleep")
         # Disable rate limiting to isolate retry backoff
-        mocker.patch.object(AdaloClient, "_enforce_rate_limit", return_value=None)
-        url = (
-            "https://database-red.adalo.com/databases/"
-            "bjql6w9oy6hlarewbcr9fwh2i/tables/t_0sslo1men4fkuiap2eis82riv"
-        )
+        mocker.patch.object(SMSClient, "_enforce_rate_limit", return_value=None)
+        url = "https://sms.example.com/tables/tbl_animals"
 
         # First call returns 500, second succeeds
         respx.get(url).mock(
@@ -86,7 +81,7 @@ class TestAdaloClientRetry:
             ]
         )
 
-        with AdaloClient() as client:
+        with SMSClient() as client:
             result = client.fetch_animals(limit=10)
             assert result == {"records": []}
 
@@ -96,52 +91,43 @@ class TestAdaloClientRetry:
     @respx.mock
     def test_retry_exhausted_raises_server_error(self, _mock_cookies):
         """Client raises APIServerError after max attempts on 5xx."""
-        url = (
-            "https://database-red.adalo.com/databases/"
-            "bjql6w9oy6hlarewbcr9fwh2i/tables/t_0sslo1men4fkuiap2eis82riv"
-        )
+        url = "https://sms.example.com/tables/tbl_animals"
 
         # All calls return 500
         respx.get(url).mock(return_value=Response(500, text="Internal error"))
 
         with (
             pytest.raises(APIServerError, match="Server error 500"),
-            AdaloClient() as client,
+            SMSClient() as client,
         ):
             client.fetch_animals(limit=10)
 
     @respx.mock
     def test_server_error_includes_status_and_body(self, _mock_cookies):
         """APIServerError includes status_code and response_body."""
-        url = (
-            "https://database-red.adalo.com/databases/"
-            "bjql6w9oy6hlarewbcr9fwh2i/tables/t_0sslo1men4fkuiap2eis82riv"
-        )
+        url = "https://sms.example.com/tables/tbl_animals"
 
         respx.get(url).mock(return_value=Response(502, text="Bad gateway"))
 
-        with pytest.raises(APIServerError) as exc_info, AdaloClient() as client:
+        with pytest.raises(APIServerError) as exc_info, SMSClient() as client:
             client.fetch_animals(limit=10)
 
         assert exc_info.value.status_code == 502
         assert "Bad gateway" in (exc_info.value.response_body or "")
 
 
-class TestAdaloClientRateLimiting:
+class TestSMSClientRateLimiting:
     """Tests for rate limiting enforcement."""
 
     @respx.mock
     def test_rate_limiting_enforces_delay(self, _mock_cookies, mocker):
         """Client enforces minimum delay between requests."""
         mock_sleep = mocker.patch("time.sleep")
-        url = (
-            "https://database-red.adalo.com/databases/"
-            "bjql6w9oy6hlarewbcr9fwh2i/tables/t_0sslo1men4fkuiap2eis82riv"
-        )
+        url = "https://sms.example.com/tables/tbl_animals"
 
         respx.get(url).mock(return_value=Response(200, json={"records": []}))
 
-        with AdaloClient() as client:
+        with SMSClient() as client:
             client.fetch_animals(limit=10)
             # Second request immediately - should enforce full 500ms delay
             client.fetch_animals(limit=10)
@@ -162,14 +148,11 @@ class TestAdaloClientRateLimiting:
         _mock_time = mocker.patch("time.time", side_effect=time_values)
         mock_sleep = mocker.patch("time.sleep")
 
-        url = (
-            "https://database-red.adalo.com/databases/"
-            "bjql6w9oy6hlarewbcr9fwh2i/tables/t_0sslo1men4fkuiap2eis82riv"
-        )
+        url = "https://sms.example.com/tables/tbl_animals"
 
         respx.get(url).mock(return_value=Response(200, json={"records": []}))
 
-        with AdaloClient() as client:
+        with SMSClient() as client:
             client.fetch_animals(limit=10)
             client.fetch_animals(limit=10)
 
@@ -177,20 +160,17 @@ class TestAdaloClientRateLimiting:
         mock_sleep.assert_not_called()
 
 
-class TestAdaloClientContextManager:
+class TestSMSClientContextManager:
     """Tests for context manager support."""
 
     @respx.mock
     def test_context_manager_closes_client(self, _mock_cookies):
         """Context manager closes httpx.Client on exit."""
-        url = (
-            "https://database-red.adalo.com/databases/"
-            "bjql6w9oy6hlarewbcr9fwh2i/tables/t_0sslo1men4fkuiap2eis82riv"
-        )
+        url = "https://sms.example.com/tables/tbl_animals"
 
         respx.get(url).mock(return_value=Response(200, json={"records": []}))
 
-        with AdaloClient() as client:
+        with SMSClient() as client:
             assert client._client is not None
             client.fetch_animals(limit=10)
 
@@ -200,34 +180,28 @@ class TestAdaloClientContextManager:
     @respx.mock
     def test_explicit_close_works(self, _mock_cookies):
         """Explicit close() method works."""
-        url = (
-            "https://database-red.adalo.com/databases/"
-            "bjql6w9oy6hlarewbcr9fwh2i/tables/t_0sslo1men4fkuiap2eis82riv"
-        )
+        url = "https://sms.example.com/tables/tbl_animals"
 
         respx.get(url).mock(return_value=Response(200, json={"records": []}))
 
-        client = AdaloClient()
+        client = SMSClient()
         with client:
             client.fetch_animals(limit=10)
 
         client.close()  # Should not raise
 
 
-class TestAdaloClientFetchMethods:
+class TestSMSClientFetchMethods:
     """Tests for fetch_animals, fetch_volunteer_notes, fetch_walk_records."""
 
     @respx.mock
     def test_fetch_animals_includes_query_params(self, _mock_cookies):
         """fetch_animals includes correct query parameters."""
-        url = (
-            "https://database-red.adalo.com/databases/"
-            "bjql6w9oy6hlarewbcr9fwh2i/tables/t_0sslo1men4fkuiap2eis82riv"
-        )
+        url = "https://sms.example.com/tables/tbl_animals"
 
         route = respx.get(url).mock(return_value=Response(200, json={"records": []}))
 
-        with AdaloClient() as client:
+        with SMSClient() as client:
             client.fetch_animals(limit=50, offset=100)
 
         # Verify query params
@@ -240,14 +214,11 @@ class TestAdaloClientFetchMethods:
     @respx.mock
     def test_fetch_volunteer_notes_uses_correct_table(self, _mock_cookies):
         """fetch_volunteer_notes uses correct table ID."""
-        url = (
-            "https://database-red.adalo.com/databases/"
-            "bjql6w9oy6hlarewbcr9fwh2i/tables/t_9yomkzwe9lsdlgwvkbwa9uoai"
-        )
+        url = "https://sms.example.com/tables/tbl_volunteer_notes"
 
         route = respx.get(url).mock(return_value=Response(200, json={"records": []}))
 
-        with AdaloClient() as client:
+        with SMSClient() as client:
             client.fetch_volunteer_notes(limit=25)
 
         assert route.called
@@ -255,14 +226,11 @@ class TestAdaloClientFetchMethods:
     @respx.mock
     def test_fetch_walk_records_uses_correct_table(self, _mock_cookies):
         """fetch_walk_records uses correct table ID."""
-        url = (
-            "https://database-red.adalo.com/databases/"
-            "bjql6w9oy6hlarewbcr9fwh2i/tables/t_0cd59s41203wo2dbdr8bwtoa4"
-        )
+        url = "https://sms.example.com/tables/tbl_walk_records"
 
         route = respx.get(url).mock(return_value=Response(200, json={"records": []}))
 
-        with AdaloClient() as client:
+        with SMSClient() as client:
             client.fetch_walk_records(limit=10)
 
         assert route.called
@@ -270,14 +238,11 @@ class TestAdaloClientFetchMethods:
     @respx.mock
     def test_authentication_headers_injected(self, _mock_cookies):
         """Client injects Cookie and Accept headers."""
-        url = (
-            "https://database-red.adalo.com/databases/"
-            "bjql6w9oy6hlarewbcr9fwh2i/tables/t_0sslo1men4fkuiap2eis82riv"
-        )
+        url = "https://sms.example.com/tables/tbl_animals"
 
         route = respx.get(url).mock(return_value=Response(200, json={"records": []}))
 
-        with AdaloClient() as client:
+        with SMSClient() as client:
             client.fetch_animals(limit=10)
 
         last_request = route.calls.last.request
@@ -287,16 +252,13 @@ class TestAdaloClientFetchMethods:
     @respx.mock
     def test_invalid_json_response_raises_error(self, _mock_cookies):
         """Client raises APIResponseParseError for invalid JSON."""
-        url = (
-            "https://database-red.adalo.com/databases/"
-            "bjql6w9oy6hlarewbcr9fwh2i/tables/t_0sslo1men4fkuiap2eis82riv"
-        )
+        url = "https://sms.example.com/tables/tbl_animals"
 
         respx.get(url).mock(return_value=Response(200, text="not json"))
 
         with (
             pytest.raises(APIResponseParseError, match="Failed to parse JSON"),
-            AdaloClient() as client,
+            SMSClient() as client,
         ):
             client.fetch_animals(limit=10)
 
@@ -309,11 +271,8 @@ class TestRetryAfterHeader:
         """Client respects Retry-After header for 429 responses."""
         mock_sleep = mocker.patch("time.sleep")
         # Disable rate limiting to isolate Retry-After behavior
-        mocker.patch.object(AdaloClient, "_enforce_rate_limit", return_value=None)
-        url = (
-            "https://database-red.adalo.com/databases/"
-            "bjql6w9oy6hlarewbcr9fwh2i/tables/t_0sslo1men4fkuiap2eis82riv"
-        )
+        mocker.patch.object(SMSClient, "_enforce_rate_limit", return_value=None)
+        url = "https://sms.example.com/tables/tbl_animals"
 
         # First call returns 429 with Retry-After: 5, second succeeds
         respx.get(url).mock(
@@ -323,7 +282,7 @@ class TestRetryAfterHeader:
             ]
         )
 
-        with AdaloClient() as client:
+        with SMSClient() as client:
             client.fetch_animals(limit=10)
 
         # Should sleep 5 seconds (from Retry-After header)
