@@ -22,16 +22,17 @@ This is a design artifact (a clickable comp), not the production BioWriter app. 
   - `tokens/` : `fonts.css`, `colors.css`, `typography.css`, `spacing.css`, `base.css`.
   - `_ds_bundle.js` : compiled React component primitives (Button, Card, etc.) exposed on `window.BackchainDesignSystem_498b67`, referenced by the comps via `<x-import>`.
   - `readme.md` : the design system's own documentation (verbatim from source).
+  - `assets/fonts/` : the three variable font masters (Inter, Outfit, JetBrains Mono) with their OFL licenses, referenced by `tokens/fonts.css`.
 
 ## Viewing the comps
 
 The `.dc.html` files load `support.js` and `_ds_bundle.js` over relative paths and need React/ReactDOM/Babel at runtime, so they render in the Claude Design environment (or any host that provides those globals). Opening the file directly with `file://` will not fully render without that runtime; view it in the source project for an exact preview.
 
-## Not imported (Claude Design `get_file` 256 KiB cap)
+## Fonts
 
-The MCP `get_file` method caps responses at 256 KiB, so two binary classes in the source project could not be pulled intact and are intentionally absent:
+The three variable font masters live in `_ds/.../assets/fonts/` and resolve the `@font-face` rules in `tokens/fonts.css` (`Inter-Variable.ttf`, `Outfit-Variable.ttf`, `JetBrainsMono-Variable.ttf`), so the comps render in Inter and Outfit rather than falling back to `system-ui`. Each ships next to its SIL Open Font License (`*-OFL.txt`); all three are OFL 1.1 and redistributable. They were vendored from the Backchain brand assets rather than pulled over the MCP, because the Claude Design `get_file` method caps responses at 256 KiB and the Inter master alone is ~854 KiB.
 
-- **Variable fonts** (`_ds/.../assets/fonts/Inter-Variable.ttf`, `Outfit-Variable.ttf`, `JetBrainsMono-Variable.ttf`). `tokens/fonts.css` still references them; until they are supplied (Inter, Outfit, and JetBrains Mono are open-source, e.g. via `@fontsource`), the comps fall back to `system-ui`. The token system is otherwise complete.
-- **`uploads/pasted-1781910063581-0.png`** : a design-time reference paste (a 2440x1036 screenshot), not referenced by either comp. It returned truncated and was dropped.
+## Not imported
 
-Two design-tool metadata files in the source project (`_ds_manifest.json`, `_adherence.oxlintrc.json`) describe the full Backchain component library (`components/`, `ui_kits/`, `guidelines/`) that is not part of this token-only embedded bundle; they reference paths absent from this import and were omitted.
+- **`uploads/pasted-1781910063581-0.png`** : a design-time reference paste (a 2440x1036 screenshot), not referenced by either comp. It exceeds the 256 KiB `get_file` cap and is not needed for the comps.
+- **`_ds_manifest.json` / `_adherence.oxlintrc.json`** : design-tool metadata describing the full Backchain component library (`components/`, `ui_kits/`, `guidelines/`) that is not part of this token-only embedded bundle; they reference paths absent from this import.
