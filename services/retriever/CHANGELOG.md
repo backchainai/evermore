@@ -4,9 +4,19 @@
 
 ## [Unreleased] — Stack Migration
 
+### Changed
+- **LLM gateway consolidation** (`services/retriever/`)
+  - All outbound model calls (chat, embeddings, moderation) route through one OpenAI-compatible LLM gateway via the shared `build_gateway_client` helper; moderation no longer calls OpenAI directly
+  - Chat provider is now the generic `OpenAICompatProvider`; the chat model is pinned to the confirmed live gateway slug `anthropic/claude-sonnet-4.6`
+  - LLM secret surface drops to a single BYOK token, `LLM_GATEWAY_TOKEN`, on a configurable auth header (`llm_gateway_auth_header`, default `cf-aig-authorization`); provider keys live in the gateway. The `OPENROUTER_API_KEY` and `OPENAI_API_KEY` settings are retired
+  - `llm_gateway_base_url` replaces `ai_gateway_base_url`; Cloudflare AI Gateway is the default, portable to any OpenAI-compatible endpoint via `LLM_GATEWAY_URL`
+  - The gateway is required and there is no no-gateway fallback: with no gateway configured, `llm_gateway_base_url` raises `ValueError` and the app fails fast
+  - See ADR `docs/adr/0007-llm-gateway-consolidation.md`
+
 ### Added
+- `LLM_GATEWAY_URL` and `LLM_GATEWAY_AUTH_HEADER` settings for pointing at any OpenAI-compatible gateway and customizing the BYOK auth header
 - **Phase 5 — LLM Gateway (Cloudflare AI Gateway)** (`backend/`)
-  - `retriever.infrastructure.llm` — `OpenRouterProvider` routes all LLM calls through `settings.ai_gateway_base_url` (Cloudflare AI Gateway when configured, OpenRouter otherwise)
+  - `retriever.infrastructure.llm` — `OpenAICompatProvider` routes all LLM calls through `settings.llm_gateway_base_url` (the OpenAI-compatible LLM gateway; Cloudflare AI Gateway by default)
   - `FallbackLLMProvider` — model degradation fallback with automatic retry on primary failure
   - `LLMProvider` Protocol — swappable backends without changing business logic
   - `retriever.infrastructure.embeddings` — `OpenAIEmbeddingProvider` routes embedding calls through AI Gateway

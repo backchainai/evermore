@@ -14,22 +14,59 @@ def test_settings_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     assert "http://localhost:5173" in settings.allowed_origins_list
 
 
-def test_ai_gateway_base_url_fallback() -> None:
-    """ai_gateway_base_url falls back to OpenRouter when CF not configured."""
-    settings = Settings(cloudflare_account_id="", cloudflare_gateway_id="")
-    assert settings.ai_gateway_base_url == "https://openrouter.ai/api/v1"
+def test_llm_gateway_base_url_raises_when_unconfigured() -> None:
+    """llm_gateway_base_url raises when no gateway is configured (no fallback)."""
+    settings = Settings(
+        llm_gateway_url="",
+        cloudflare_account_id="",
+        cloudflare_gateway_id="",
+    )
+    with pytest.raises(ValueError, match="No LLM gateway configured"):
+        _ = settings.llm_gateway_base_url
 
 
-def test_ai_gateway_base_url_with_cloudflare() -> None:
-    """ai_gateway_base_url returns CF gateway URL when both IDs are set."""
+def test_llm_gateway_base_url_with_cloudflare() -> None:
+    """llm_gateway_base_url returns the CF compat gateway URL when both IDs are set."""
     settings = Settings(
         cloudflare_account_id="acct123",
         cloudflare_gateway_id="gw456",
     )
-    url = settings.ai_gateway_base_url
+    url = settings.llm_gateway_base_url
     assert "gateway.ai.cloudflare.com" in url
     assert "acct123" in url
     assert "gw456" in url
+    # One base URL serves chat, embeddings, and moderation via the compat endpoint.
+    assert url.endswith("/compat")
+    assert "/openai" not in url
+
+
+def test_llm_gateway_url_overrides_everything() -> None:
+    """An explicit llm_gateway_url is returned verbatim, ignoring the CF IDs."""
+    override = "https://my-gateway.example.com/v1"
+    settings = Settings(
+        llm_gateway_url=override,
+        cloudflare_account_id="acct123",
+        cloudflare_gateway_id="gw456",
+    )
+    assert settings.llm_gateway_base_url == override
+
+
+def test_llm_gateway_auth_header_default() -> None:
+    """llm_gateway_auth_header defaults to the Cloudflare AI Gateway header."""
+    settings = Settings(_env_file=None)  # type: ignore[call-arg]
+    assert settings.llm_gateway_auth_header == "cf-aig-authorization"
+
+
+def test_llm_gateway_token_default() -> None:
+    """llm_gateway_token is an empty SecretStr by default."""
+    settings = Settings(_env_file=None)  # type: ignore[call-arg]
+    assert settings.llm_gateway_token.get_secret_value() == ""
+
+
+def test_fallback_llm_model_default() -> None:
+    """fallback_llm_model defaults to the cheap Haiku slug."""
+    settings = Settings(_env_file=None)  # type: ignore[call-arg]
+    assert settings.fallback_llm_model == "anthropic/claude-haiku-3"
 
 
 def test_get_settings_returns_cached_instance() -> None:

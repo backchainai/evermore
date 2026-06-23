@@ -41,7 +41,7 @@ Retriever can be adapted for any organization with documentation that users need
 - Python 3.13+ with [uv](https://docs.astral.sh/uv/)
 - Docker
 - [Supabase CLI](https://supabase.com/docs/guides/cli)
-- API keys: [OpenRouter](https://openrouter.ai/keys) (LLM) and [OpenAI](https://platform.openai.com/api-keys) (embeddings/moderation)
+- An LLM gateway token: chat, embeddings, and moderation route through one OpenAI-compatible gateway (Cloudflare AI Gateway by default), which holds the provider keys (BYOK)
 
 ### Get Running
 
@@ -88,12 +88,14 @@ API documentation is available at `/docs` (OpenAPI/Swagger).
 
 ## Configuration
 
-See `.env.example` for all configuration options. Required API keys:
+See `.env.example` for all configuration options. LLM access:
 
 | Variable | Description |
 |----------|-------------|
-| `OPENROUTER_API_KEY` | LLM provider API key |
-| `OPENAI_API_KEY` | Embeddings and moderation API key |
+| `LLM_GATEWAY_TOKEN` | Single BYOK token for the OpenAI-compatible LLM gateway (chat, embeddings, moderation), the only LLM secret the app needs. With Cloudflare, also set `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_GATEWAY_ID` to derive the gateway URL. |
+| `LLM_GATEWAY_URL` | Optional override pointing at any OpenAI-compatible gateway instead of the Cloudflare default. |
+
+The gateway is required: all outbound model calls route through it, and the app fails fast at startup if no gateway is configured. Provider keys (OpenAI, Anthropic) live in the gateway (BYOK), not in app config.
 
 Auth is handled by Supabase (local via `supabase start`, production via Supabase project). See [CONTRIBUTING.md](CONTRIBUTING.md) for full environment setup.
 
@@ -137,7 +139,7 @@ For best results:
 
 **Tech Stack:**
 - **Backend:** Python 3.13+, FastAPI, SQLAlchemy 2.0 async, Pydantic 2.x
-- **LLM:** OpenRouter via Cloudflare AI Gateway
+- **LLM:** One OpenAI-compatible LLM gateway (Cloudflare AI Gateway by default), `OpenAICompatProvider` for chat
 - **Vector DB:** Supabase Postgres + pgvector (HNSW cosine + GIN full-text)
 - **Auth:** Supabase Auth / JWKS
 - **Observability:** structlog + OpenTelemetry + Langfuse

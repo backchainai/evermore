@@ -9,8 +9,8 @@ from typing import Protocol
 class LLMProvider(Protocol):
     """Protocol for LLM provider implementations.
 
-    This allows swapping between different LLM backends (OpenRouter, direct
-    Anthropic, local models) without changing business logic.
+    This allows swapping between different LLM backends (an OpenAI-compatible
+    gateway, direct Anthropic, local models) without changing business logic.
     """
 
     async def complete(

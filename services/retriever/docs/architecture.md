@@ -44,9 +44,9 @@ Separate backend and frontend deployables with managed infrastructure. See [ADR-
 ┌──────────────────────────────┐                 │
 │      FastAPI Backend         │─────────────────┘
 │      (Cloud Run)             │
-│                              │───▶ Cloudflare AI Gateway
-│  Auth, RAG, Documents,       │       → OpenRouter (LLM)
-│  Messages, Observability     │       → OpenAI (Embeddings)
+│                              │───▶ LLM gateway (Cloudflare by default)
+│  Auth, RAG, Documents,       │       → chat / embeddings /
+│  Messages, Observability     │         moderation (OpenAI-compatible)
 └──────────────────────────────┘
 ```
 
@@ -58,9 +58,9 @@ Separate backend and frontend deployables with managed infrastructure. See [ADR-
 |-----------|--------|-----------|
 | Framework | FastAPI + Pydantic 2.x | Async, modern, auto-generated OpenAPI |
 | ORM | SQLAlchemy 2.0 async + asyncpg | Async Postgres, Alembic migrations |
-| LLM | OpenRouter via Cloudflare AI Gateway | Multi-model, OpenAI-compatible API |
+| LLM | One OpenAI-compatible LLM gateway (Cloudflare by default) | Multi-model, single token, swappable via `LLM_GATEWAY_URL` |
 | LLM Abstraction | Protocol-based provider interface | Swap providers without code changes |
-| Embeddings | OpenAI `text-embedding-3-small` via AI Gateway | Cost-effective, high quality |
+| Embeddings | OpenAI `text-embedding-3-small` via the LLM gateway | Cost-effective, high quality |
 | Vector DB | Supabase Postgres + pgvector | HNSW cosine + GIN full-text, managed |
 | Auth | Supabase Auth / JWKS (RS256 JWT) via PyJWT | Server-verified tokens, RLS |
 | Observability | structlog (JSON) + OpenTelemetry + Langfuse | GCP Cloud Trace / Jaeger / console |
@@ -109,14 +109,14 @@ retriever/
 
 ```
 retriever/
-├── config.py               # pydantic-settings; ai_gateway_base_url computed field
+├── config.py               # pydantic-settings; llm_gateway_base_url computed field
 ├── main.py                 # FastAPI app, /health (DB+pgvector checks), CORS
 ├── models/                 # SQLAlchemy 2.0 async: User, Message, Document
 ├── infrastructure/
 │   ├── cache/              # PgSemanticCache (pgvector cosine similarity)
 │   ├── database/           # async session factory (asyncpg)
 │   ├── embeddings/         # OpenAIEmbeddingProvider (via AI Gateway)
-│   ├── llm/                # OpenRouterProvider + FallbackLLMProvider (via AI Gateway)
+│   ├── llm/                # OpenAICompatProvider + FallbackLLMProvider (via LLM gateway)
 │   ├── observability/      # structlog JSON + OTel (GCP/OTLP/console) + Langfuse + RequestIdMiddleware
 │   └── vectordb/           # PgVectorStore (HNSW cosine + GIN full-text)
 └── modules/
@@ -165,7 +165,7 @@ src/
 
 ### LLM Provider Abstraction
 
-Protocol-based interface for swappable LLM providers. Providers receive `base_url` at construction time from `settings.ai_gateway_base_url`:
+Protocol-based interface for swappable LLM providers. Providers receive `base_url` at construction time from `settings.llm_gateway_base_url`:
 
 ```python
 class LLMProvider(Protocol):
@@ -177,11 +177,12 @@ class LLMProvider(Protocol):
     ) -> str: ...
 ```
 
-Construction pattern:
+Construction pattern (inject a gateway-configured client built by `build_gateway_client`):
 ```python
-provider = OpenRouterProvider(
-    api_key=settings.openrouter_api_key,
-    base_url=settings.ai_gateway_base_url,  # routes via Cloudflare if configured
+provider = OpenAICompatProvider(
+    default_model=settings.default_llm_model,
+    timeout_seconds=settings.llm_timeout_seconds,
+    client=build_gateway_client(settings, timeout_seconds=settings.llm_timeout_seconds),
 )
 ```
 
@@ -205,8 +206,8 @@ module_name/
 | Pattern | Implementation |
 |---------|---------------|
 | Database | Async session factory with asyncpg, Alembic migrations |
-| Embeddings | OpenAI-compatible provider routed through AI Gateway |
-| LLM Gateway | `ai_gateway_base_url` computed field: Cloudflare if configured, OpenRouter fallback |
+| Embeddings | OpenAI-compatible provider routed through the LLM gateway |
+| LLM Gateway | `llm_gateway_base_url`: `LLM_GATEWAY_URL` override, else derive the Cloudflare URL from `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_GATEWAY_ID`; gateway required, raises `ValueError` when neither is set |
 | Observability | Auto-selected OTel exporter: GCP Cloud Trace → OTLP/gRPC (Jaeger) → Console → no-op |
 | Vector DB | PgVectorStore with HNSW cosine index + GIN full-text for hybrid retrieval |
 | Semantic Cache | PgSemanticCache using pgvector cosine similarity for query deduplication |
@@ -214,7 +215,7 @@ module_name/
 
 ### Configuration
 
-Use `pydantic-settings` for all configuration. Environment variables override defaults. Computed fields derive values from primitives (e.g., `ai_gateway_base_url` from `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_GATEWAY_ID`).
+Use `pydantic-settings` for all configuration. Environment variables override defaults. Computed fields derive values from primitives (e.g., `llm_gateway_base_url` from `LLM_GATEWAY_URL`, or `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_GATEWAY_ID`).
 
 ## Related Documents
 

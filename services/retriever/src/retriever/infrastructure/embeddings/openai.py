@@ -17,7 +17,6 @@ from tenacity import (
 )
 
 from retriever.infrastructure.embeddings.exceptions import (
-    EmbeddingConfigurationError,
     EmbeddingProviderError,
     EmbeddingRateLimitError,
     EmbeddingTimeoutError,
@@ -50,10 +49,9 @@ class OpenAIEmbeddingProvider:
 
     def __init__(
         self,
-        api_key: str,
         *,
+        client: AsyncOpenAI,
         model: str = "openai/text-embedding-3-small",
-        base_url: str = "https://openrouter.ai/api/v1",
         timeout_seconds: float = 30.0,
         circuit_breaker_fail_max: int = 5,
         circuit_breaker_timeout: float = 60.0,
@@ -61,26 +59,18 @@ class OpenAIEmbeddingProvider:
         """Initialize the embedding provider.
 
         Args:
-            api_key: API key for the provider.
+            client: Pre-built AsyncOpenAI client pointed at the LLM gateway.
+                The injected client owns the base URL, timeout, and auth
+                header, so embeddings carry the gateway auth header like chat
+                and moderation.
             model: Embedding model to use.
-            base_url: Base URL (injected from settings.ai_gateway_base_url).
-            timeout_seconds: Request timeout in seconds.
+            timeout_seconds: Request timeout in seconds, used only for the
+                timeout messages reported on APITimeoutError; the injected
+                client owns the transport-level timeout.
             circuit_breaker_fail_max: Open circuit after this many failures.
             circuit_breaker_timeout: Time in seconds before attempting recovery.
-
-        Raises:
-            EmbeddingConfigurationError: If API key is missing.
         """
-        if not api_key:
-            raise EmbeddingConfigurationError(
-                "API key is required", provider=self.PROVIDER_NAME
-            )
-
-        self._client = AsyncOpenAI(
-            api_key=api_key,
-            base_url=base_url,
-            timeout=timeout_seconds,
-        )
+        self._client = client
         self._model = model
         self._timeout = timeout_seconds
 

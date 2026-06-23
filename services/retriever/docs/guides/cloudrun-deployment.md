@@ -7,9 +7,9 @@ Deploy Retriever to Google Cloud Run with Secret Manager.
 - Google Cloud account with billing enabled
 - `gcloud` CLI configured and authenticated
 - Docker installed
-- API keys ready:
-  - OpenRouter API key ([get here](https://openrouter.ai/keys))
-  - OpenAI API key ([get here](https://platform.openai.com/api-keys))
+- LLM gateway ready:
+  - Cloudflare AI Gateway configured with BYOK provider keys (OpenAI, Anthropic) stored in the gateway
+  - Cloudflare account ID and gateway ID, plus the gateway BYOK token (`LLM_GATEWAY_TOKEN`)
 
 ## Data Persistence
 
@@ -48,8 +48,7 @@ gcloud artifacts repositories create retriever \
 
 ```bash
 # Create secrets with placeholder values
-echo -n "placeholder" | gcloud secrets create retriever-openrouter-api-key --data-file=- --project="$PROJECT_ID"
-echo -n "placeholder" | gcloud secrets create retriever-openai-api-key --data-file=- --project="$PROJECT_ID"
+echo -n "placeholder" | gcloud secrets create retriever-llm-gateway-token --data-file=- --project="$PROJECT_ID"
 echo -n "placeholder" | gcloud secrets create retriever-database-url --data-file=- --project="$PROJECT_ID"
 echo -n "placeholder" | gcloud secrets create retriever-supabase-url --data-file=- --project="$PROJECT_ID"
 echo -n "placeholder" | gcloud secrets create retriever-supabase-anon-key --data-file=- --project="$PROJECT_ID"
@@ -58,11 +57,8 @@ echo -n "placeholder" | gcloud secrets create retriever-supabase-anon-key --data
 ## Step 5: Update Secrets with Real Values
 
 ```bash
-# OpenRouter API key
-echo -n 'sk-or-v1-your-key-here' | gcloud secrets versions add retriever-openrouter-api-key --data-file=- --project="$PROJECT_ID"
-
-# OpenAI API key
-echo -n 'sk-your-key-here' | gcloud secrets versions add retriever-openai-api-key --data-file=- --project="$PROJECT_ID"
+# LLM gateway BYOK token (provider keys live in the gateway)
+echo -n 'your-gateway-byok-token' | gcloud secrets versions add retriever-llm-gateway-token --data-file=- --project="$PROJECT_ID"
 
 # Database URL (Supabase connection pooler)
 echo -n 'postgresql+asyncpg://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres' | gcloud secrets versions add retriever-database-url --data-file=- --project="$PROJECT_ID"
@@ -79,7 +75,7 @@ echo -n 'your-anon-key' | gcloud secrets versions add retriever-supabase-anon-ke
 ```bash
 PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
 
-for SECRET in retriever-openrouter-api-key retriever-openai-api-key retriever-database-url retriever-supabase-url retriever-supabase-anon-key; do
+for SECRET in retriever-llm-gateway-token retriever-database-url retriever-supabase-url retriever-supabase-anon-key; do
   gcloud secrets add-iam-policy-binding $SECRET \
       --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
       --role="roles/secretmanager.secretAccessor" \
@@ -104,8 +100,8 @@ gcloud run deploy retriever \
     --max-instances 10 \
     --timeout 60 \
     --concurrency 80 \
-    --set-env-vars "DEBUG=false" \
-    --set-secrets "OPENROUTER_API_KEY=retriever-openrouter-api-key:latest,OPENAI_API_KEY=retriever-openai-api-key:latest,DATABASE_URL=retriever-database-url:latest,SUPABASE_URL=retriever-supabase-url:latest,SUPABASE_ANON_KEY=retriever-supabase-anon-key:latest"
+    --set-env-vars "DEBUG=false,CLOUDFLARE_ACCOUNT_ID=your-account-id,CLOUDFLARE_GATEWAY_ID=your-gateway-id" \
+    --set-secrets "LLM_GATEWAY_TOKEN=retriever-llm-gateway-token:latest,DATABASE_URL=retriever-database-url:latest,SUPABASE_URL=retriever-supabase-url:latest,SUPABASE_ANON_KEY=retriever-supabase-anon-key:latest"
 ```
 
 Skip to Step 11 for verification.
@@ -145,8 +141,8 @@ gcloud run deploy retriever \
     --max-instances 10 \
     --timeout 60 \
     --concurrency 80 \
-    --set-env-vars "DEBUG=false" \
-    --set-secrets "OPENROUTER_API_KEY=retriever-openrouter-api-key:latest,OPENAI_API_KEY=retriever-openai-api-key:latest,DATABASE_URL=retriever-database-url:latest,SUPABASE_URL=retriever-supabase-url:latest,SUPABASE_ANON_KEY=retriever-supabase-anon-key:latest"
+    --set-env-vars "DEBUG=false,CLOUDFLARE_ACCOUNT_ID=your-account-id,CLOUDFLARE_GATEWAY_ID=your-gateway-id" \
+    --set-secrets "LLM_GATEWAY_TOKEN=retriever-llm-gateway-token:latest,DATABASE_URL=retriever-database-url:latest,SUPABASE_URL=retriever-supabase-url:latest,SUPABASE_ANON_KEY=retriever-supabase-anon-key:latest"
 ```
 
 ## Step 11: Verify Deployment
@@ -210,7 +206,7 @@ gcloud run services describe retriever --region $REGION --project $PROJECT_ID --
 gcloud run services delete retriever --region $REGION --project $PROJECT_ID
 
 # Update a secret
-echo -n 'new-value' | gcloud secrets versions add retriever-openrouter-api-key --data-file=- --project=$PROJECT_ID
+echo -n 'new-value' | gcloud secrets versions add retriever-llm-gateway-token --data-file=- --project=$PROJECT_ID
 ```
 
 ---

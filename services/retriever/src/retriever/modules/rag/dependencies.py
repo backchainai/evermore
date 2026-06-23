@@ -17,7 +17,8 @@ from retriever.infrastructure.cache.pg_cache import PgSemanticCache
 from retriever.infrastructure.database.session import _get_factory
 from retriever.infrastructure.embeddings.openai import OpenAIEmbeddingProvider
 from retriever.infrastructure.llm.fallback import FallbackLLMProvider
-from retriever.infrastructure.llm.openrouter import OpenRouterProvider
+from retriever.infrastructure.llm.gateway_client import build_gateway_client
+from retriever.infrastructure.llm.openai_compat import OpenAICompatProvider
 from retriever.infrastructure.safety.confidence import ConfidenceScorer
 from retriever.infrastructure.safety.detector import PromptInjectionDetector
 from retriever.infrastructure.safety.moderation import OpenAIModerator
@@ -44,27 +45,13 @@ def get_session_factory() -> async_sessionmaker[AsyncSession]:
 def get_embedding_provider() -> OpenAIEmbeddingProvider:
     """Create an embedding provider from settings.
 
-    Uses AI Gateway URL when Cloudflare is configured, otherwise
-    falls back to OpenAI directly (not OpenRouter, which doesn't
-    support the embeddings endpoint with the same auth).
-
     Returns:
         Configured OpenAI embedding provider.
     """
     settings = get_settings()
-    use_gateway = bool(
-        settings.cloudflare_account_id and settings.cloudflare_gateway_id
-    )
-    base_url = (
-        settings.ai_gateway_base_url if use_gateway else "https://api.openai.com/v1"
-    )
-    model = settings.default_embedding_model
-    if not use_gateway and model.startswith("openai/"):
-        model = model.removeprefix("openai/")
     return OpenAIEmbeddingProvider(
-        api_key=settings.openai_api_key.get_secret_value(),
-        base_url=base_url,
-        model=model,
+        model=settings.default_embedding_model,
+        client=build_gateway_client(settings),
     )
 
 
@@ -75,13 +62,15 @@ def get_llm_provider() -> FallbackLLMProvider:
         Configured fallback LLM provider wrapping the primary provider.
     """
     settings = get_settings()
-    primary = OpenRouterProvider(
-        api_key=settings.openrouter_api_key.get_secret_value(),
-        base_url=settings.ai_gateway_base_url,
+    primary = OpenAICompatProvider(
         default_model=settings.default_llm_model,
         timeout_seconds=settings.llm_timeout_seconds,
+        client=build_gateway_client(
+            settings,
+            timeout_seconds=settings.llm_timeout_seconds,
+        ),
     )
-    return FallbackLLMProvider(primary, fallback_model="anthropic/claude-haiku-3")
+    return FallbackLLMProvider(primary, fallback_model=settings.fallback_llm_model)
 
 
 def get_vector_store() -> PgVectorStore:
@@ -132,9 +121,7 @@ def get_safety_service() -> SafetyService | None:
     settings = get_settings()
     if not settings.moderation_enabled:
         return None
-    moderator = OpenAIModerator(
-        api_key=settings.openai_api_key.get_secret_value(),
-    )
+    moderator = OpenAIModerator(client=build_gateway_client(settings))
     detector = PromptInjectionDetector()
     return SafetyService(
         moderator=moderator,

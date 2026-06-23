@@ -82,7 +82,7 @@ Plus:
 | Authentication | Supabase Auth, validated per-backend via JWKS | `auth-flow.md` |
 | Authorization | Subscription table + per-module gate (UI + backend) | `subscriptions.md` |
 | Observability | structlog JSON + OpenTelemetry API | tech-stack standard |
-| LLM gateway | Cloudflare AI Gateway (retriever uses it; future modules should too) | tech-stack standard |
+| LLM gateway | One OpenAI-compatible LLM gateway, Cloudflare AI Gateway by default (retriever uses it; future modules should too) | tech-stack standard, ADR 0007 |
 | Type contracts | OpenAPI 3.1 → TS via `openapi-typescript`, regenerated in stacker CI | `module-template.md` |
 
 ## What lives where

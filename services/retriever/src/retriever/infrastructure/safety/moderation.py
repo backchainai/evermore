@@ -34,27 +34,21 @@ class ModerationProvider(Protocol):
 class OpenAIModerator:
     """Content moderator using OpenAI's Moderation API.
 
-    The OpenAI Moderation API is free to use and provides fast (<100ms)
-    content classification for harmful content categories. Calls OpenAI
-    directly (not through AI Gateway) since moderation is free.
+    The Moderation API provides fast (<100ms) content classification for
+    harmful content categories. Calls route through the shared LLM gateway
+    (consolidated transport, single BYOK token) like chat and embeddings.
     """
 
-    def __init__(
-        self,
-        api_key: str,
-        *,
-        timeout_seconds: float = 10.0,
-    ) -> None:
+    def __init__(self, *, client: AsyncOpenAI) -> None:
         """Initialize the moderator.
 
         Args:
-            api_key: OpenAI API key for moderation requests.
-            timeout_seconds: Request timeout in seconds.
+            client: Pre-built AsyncOpenAI client pointed at the LLM gateway.
+                The injected client owns the base URL, timeout, and auth
+                header, so moderation routes through the gateway like chat and
+                embeddings.
         """
-        self._client = AsyncOpenAI(
-            api_key=api_key,
-            timeout=timeout_seconds,
-        )
+        self._client = client
 
     async def check(self, text: str) -> ModerationResult:
         """Check if text contains unsafe content.
@@ -70,9 +64,11 @@ class OpenAIModerator:
             legitimate requests. Errors are logged for monitoring.
         """
         try:
+            # The compat endpoint addresses every provider uniformly, so the
+            # model carries its provider prefix like chat and embeddings.
             response = await self._client.moderations.create(
                 input=text,
-                model="omni-moderation-latest",
+                model="openai/omni-moderation-latest",
             )
 
             result = response.results[0]

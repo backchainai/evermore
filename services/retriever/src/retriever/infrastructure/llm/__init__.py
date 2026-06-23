@@ -10,7 +10,7 @@ from retriever.infrastructure.llm.exceptions import (
     LLMTimeoutError,
 )
 from retriever.infrastructure.llm.fallback import FallbackLLMProvider
-from retriever.infrastructure.llm.openrouter import OpenRouterProvider
+from retriever.infrastructure.llm.openai_compat import OpenAICompatProvider
 from retriever.infrastructure.llm.protocol import LLMProvider
 
 __all__ = [
@@ -20,5 +20,5 @@ __all__ = [
     "LLMProviderError",
     "LLMRateLimitError",
     "LLMTimeoutError",
-    "OpenRouterProvider",
+    "OpenAICompatProvider",
 ]
