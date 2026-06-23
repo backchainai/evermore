@@ -1,59 +1,33 @@
-# Local development: backend services for Stacker portal
-# Frontend runs natively: npm run dev (port 5173)
+# Local development: application database for the Retriever service.
+#
+# Topology (see docs/local-development.md):
+#   - Supabase CLI provides auth (GoTrue) on 54321: `supabase start` from this dir.
+#   - This compose provides the app database: pgvector Postgres on host 5433.
+#   - Retriever and stacker run natively (uvicorn / vite), not in compose.
 #
 # Usage:
-#   docker compose up -d          # Start all backends
-#   docker compose logs -f        # Follow logs
-#   docker compose down           # Stop all
+#   docker compose up -d        # start the app database
+#   docker compose down         # stop it (data persists in the named volume)
+#   docker compose down -v      # stop and wipe data
+#
+# 5433 (not 5432) avoids colliding with a host Postgres or Supabase's bundled DB.
 
 services:
   postgres:
     image: pgvector/pgvector:pg17
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: stacker
+      POSTGRES_DB: retriever
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d retriever"]
       interval: 5s
       timeout: 3s
       retries: 5
 
-  retriever-api:
-    build:
-      context: ../retriever/backend
-    ports:
-      - "8001:8000"
-    env_file:
-      - ../retriever/.env
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/stacker
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  petdata-api:
-    build:
-      context: ../petdata
-    ports:
-      - "8002:8000"
-    env_file:
-      - ../petdata/.env
-    environment:
-      - PETDATA_DATABASE_PATH=/app/data/petdata.db
-    volumes:
-      - petdata-data:/app/data
-
-  jaeger:
-    image: jaegertracing/jaeger:latest
-    ports:
-      - "16686:16686"  # UI
-      - "4317:4317"    # OTLP gRPC
-
 volumes:
   pgdata:
-  petdata-data:

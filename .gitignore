@@ -40,3 +40,6 @@ build/
 
 # Logs
 *.log
+
+# Makefile local dev run state (retriever pid/log from `make dev`)
+.dev/
