@@ -1,4 +1,4 @@
-"""Custom exceptions for Adalo API operations."""
+"""Custom exceptions for SMS API operations."""
 
 from __future__ import annotations
 

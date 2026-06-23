@@ -1,4 +1,4 @@
-"""Synchronous HTTP client for Adalo API with rate limiting and retry logic."""
+"""Synchronous HTTP client for SMS API with rate limiting and retry logic."""
 
 from __future__ import annotations
 
@@ -18,8 +18,8 @@ from petdata.modules.api.exceptions import (
 )
 
 
-class AdaloClient:
-    """Synchronous HTTP client for Adalo API with rate limiting and retry.
+class SMSClient:
+    """Synchronous HTTP client for SMS API with rate limiting and retry.
 
     Features:
     - Cookie-based authentication
@@ -31,12 +31,12 @@ class AdaloClient:
     Important: Not thread-safe - use one client instance per thread.
 
     Usage:
-        >>> with AdaloClient() as client:
+        >>> with SMSClient() as client:
         ...     animals = client.fetch_animals(limit=100)
     """
 
     def __init__(self) -> None:
-        """Initialize Adalo API client.
+        """Initialize SMS API client.
 
         Note: httpx.Client is created in __enter__ for proper resource management.
         """
@@ -45,7 +45,7 @@ class AdaloClient:
         self._client: httpx.Client | None = None
         self._last_request_time: float = 0.0
 
-    def __enter__(self) -> AdaloClient:
+    def __enter__(self) -> SMSClient:
         """Context manager entry - creates httpx.Client."""
         self._client = httpx.Client(
             timeout=httpx.Timeout(
@@ -65,7 +65,7 @@ class AdaloClient:
     def close(self) -> None:
         """Explicitly close the HTTP client.
 
-        Prefer using context manager (`with AdaloClient() as client`)
+        Prefer using context manager (`with SMSClient() as client`)
         for automatic cleanup.
         """
         if self._client:
@@ -140,7 +140,7 @@ class AdaloClient:
             APINetworkError: If network error persists after all retries.
         """
         if not self._client:
-            msg = "Client not initialized. Use 'with AdaloClient() as client:' syntax"
+            msg = "Client not initialized. Use 'with SMSClient() as client:' syntax"
             raise RuntimeError(msg)
 
         last_exception: Exception | None = None
@@ -236,14 +236,14 @@ class AdaloClient:
         limit: int = 100,
         offset: int = 0,
     ) -> dict[str, Any]:
-        """Fetch animal records from Adalo.
+        """Fetch animal records from SMS.
 
         Args:
             limit: Maximum records to return (default 100).
             offset: Record offset for pagination (default 0).
 
         Returns:
-            Raw JSON response from Adalo API with {"records": [...]} structure.
+            Raw JSON response from SMS API with {"records": [...]} structure.
 
         Raises:
             APINetworkError: If request fails after retries.
@@ -251,7 +251,7 @@ class AdaloClient:
             APIRateLimitError: If rate limit exceeded after retries.
             APIServerError: If server error persists after retries.
         """
-        url = f"{self._settings.adalo_base_url}/{self._settings.adalo_table_animals}"
+        url = f"{self._settings.sms_base_url}/{self._settings.sms_table_animals}"
         params = {
             "limit": limit,
             "offset": offset,
@@ -265,14 +265,14 @@ class AdaloClient:
         limit: int = 100,
         offset: int = 0,
     ) -> dict[str, Any]:
-        """Fetch volunteer note records from Adalo.
+        """Fetch volunteer note records from SMS.
 
         Args:
             limit: Maximum records to return (default 100).
             offset: Record offset for pagination (default 0).
 
         Returns:
-            Raw JSON response from Adalo API with {"records": [...]} structure.
+            Raw JSON response from SMS API with {"records": [...]} structure.
 
         Raises:
             APINetworkError: If request fails after retries.
@@ -281,8 +281,7 @@ class AdaloClient:
             APIServerError: If server error persists after retries.
         """
         url = (
-            f"{self._settings.adalo_base_url}/"
-            f"{self._settings.adalo_table_volunteer_notes}"
+            f"{self._settings.sms_base_url}/{self._settings.sms_table_volunteer_notes}"
         )
         params = {
             "limit": limit,
@@ -295,14 +294,14 @@ class AdaloClient:
         limit: int = 100,
         offset: int = 0,
     ) -> dict[str, Any]:
-        """Fetch walk record data from Adalo.
+        """Fetch walk record data from SMS.
 
         Args:
             limit: Maximum records to return (default 100).
             offset: Record offset for pagination (default 0).
 
         Returns:
-            Raw JSON response from Adalo API with {"records": [...]} structure.
+            Raw JSON response from SMS API with {"records": [...]} structure.
 
         Raises:
             APINetworkError: If request fails after retries.
@@ -310,9 +309,7 @@ class AdaloClient:
             APIRateLimitError: If rate limit exceeded after retries.
             APIServerError: If server error persists after retries.
         """
-        url = (
-            f"{self._settings.adalo_base_url}/{self._settings.adalo_table_walk_records}"
-        )
+        url = f"{self._settings.sms_base_url}/{self._settings.sms_table_walk_records}"
         params = {
             "limit": limit,
             "offset": offset,

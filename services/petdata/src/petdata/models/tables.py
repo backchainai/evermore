@@ -59,7 +59,7 @@ class Animal(Base):
         Index("idx_animals_last_synced", "last_synced_at"),
     )
 
-    id: Mapped[str] = mapped_column(String, primary_key=True)  # e.g. "A-55833"
+    id: Mapped[str] = mapped_column(String, primary_key=True)  # e.g. "A-00000"
     name: Mapped[str] = mapped_column(String, nullable=False)
     aka: Mapped[str | None] = mapped_column(String, nullable=True)
     breed: Mapped[str | None] = mapped_column(String, nullable=True)
@@ -73,7 +73,7 @@ class Animal(Base):
     is_foster_care: Mapped[bool | None] = mapped_column(nullable=True)
     photo_url: Mapped[str | None] = mapped_column(String, nullable=True)
     public_profile_url: Mapped[str | None] = mapped_column(String, nullable=True)
-    adalo_record_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    source_record_id: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=text("now()")
     )
@@ -158,7 +158,7 @@ class VolunteerNote(Base):
     animal_id: Mapped[str] = mapped_column(
         ForeignKey("petdata_animals.id", ondelete="CASCADE"), nullable=False
     )
-    adalo_record_id: Mapped[str | None] = mapped_column(
+    source_record_id: Mapped[str | None] = mapped_column(
         String, nullable=True, unique=True
     )
     volunteer_name: Mapped[str] = mapped_column(String, nullable=False)
@@ -210,7 +210,7 @@ class WalkRecord(Base):
     animal_id: Mapped[str] = mapped_column(
         ForeignKey("petdata_animals.id", ondelete="CASCADE"), nullable=False
     )
-    adalo_record_id: Mapped[str | None] = mapped_column(
+    source_record_id: Mapped[str | None] = mapped_column(
         String, nullable=True, unique=True
     )
     volunteer_name: Mapped[str | None] = mapped_column(String, nullable=True)

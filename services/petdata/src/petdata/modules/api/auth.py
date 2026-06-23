@@ -1,4 +1,4 @@
-"""Cookie-based authentication for Adalo API."""
+"""Cookie-based authentication for SMS API."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from petdata.modules.api.exceptions import APIAuthenticationError
 
 
 class CookieAuth:
-    """Cookie-based authentication for Adalo API.
+    """Cookie-based authentication for SMS API.
 
     Validates cookie presence and format, provides headers for HTTP requests.
     Cookies must be in format: "key1=value1; key2=value2"
@@ -49,7 +49,7 @@ class CookieAuth:
         if not self._cookies:
             msg = (
                 "PETDATA_COOKIES environment variable is required. "
-                "Set it to your Adalo session cookies "
+                "Set it to your SMS session cookies "
                 "(format: 'key1=value1; key2=value2')"
             )
             raise APIAuthenticationError(msg)

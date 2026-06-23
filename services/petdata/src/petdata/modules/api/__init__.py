@@ -1,9 +1,9 @@
-"""Adalo API client for petdata data extraction."""
+"""SMS API client for petdata data extraction."""
 
 from __future__ import annotations
 
 from petdata.modules.api.auth import CookieAuth
-from petdata.modules.api.client import AdaloClient
+from petdata.modules.api.client import SMSClient
 from petdata.modules.api.exceptions import (
     APIAuthenticationError,
     APIError,
@@ -27,8 +27,8 @@ __all__ = [
     "APIResponseParseError",
     "APIServerError",
     "APIValidationError",
-    "AdaloClient",
     "CookieAuth",
+    "SMSClient",
     "parse_animal_response",
     "parse_volunteer_note_response",
     "parse_walk_record_response",

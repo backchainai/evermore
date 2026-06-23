@@ -61,7 +61,7 @@ def animal_to_row(model: pyd.Animal) -> orm.Animal:
         is_foster_care=model.is_foster_care,
         photo_url=model.photo_url,
         public_profile_url=model.public_profile_url,
-        adalo_record_id=model.adalo_record_id,
+        source_record_id=model.source_record_id,
         last_synced_at=_parse_dt(model.last_synced_at),
     )
     # created_at / updated_at carry server defaults; only override when supplied.
@@ -89,7 +89,7 @@ def animal_from_row(row: orm.Animal) -> pyd.Animal:
         is_foster_care=row.is_foster_care,
         photo_url=row.photo_url,
         public_profile_url=row.public_profile_url,
-        adalo_record_id=row.adalo_record_id,
+        source_record_id=row.source_record_id,
         created_at=_fmt_dt(row.created_at),
         updated_at=_fmt_dt(row.updated_at),
         last_synced_at=_fmt_dt(row.last_synced_at),
@@ -145,7 +145,7 @@ def volunteer_note_to_row(model: pyd.VolunteerNote) -> orm.VolunteerNote:
         raise ValueError("VolunteerNote.note_date is required")
     row = orm.VolunteerNote(
         animal_id=model.animal_id,
-        adalo_record_id=model.adalo_record_id,
+        source_record_id=model.source_record_id,
         volunteer_name=model.volunteer_name,
         note_date=note_date,
         note_text=model.note_text,
@@ -167,7 +167,7 @@ def volunteer_note_from_row(row: orm.VolunteerNote) -> pyd.VolunteerNote:
     return pyd.VolunteerNote(
         id=row.id,
         animal_id=row.animal_id,
-        adalo_record_id=row.adalo_record_id,
+        source_record_id=row.source_record_id,
         volunteer_name=row.volunteer_name,
         note_date=_fmt_dt(row.note_date) or "",
         note_text=row.note_text,
@@ -210,7 +210,7 @@ def walk_record_to_row(model: pyd.WalkRecord) -> orm.WalkRecord:
     """Map a WalkRecord contract model to an ORM row."""
     row = orm.WalkRecord(
         animal_id=model.animal_id,
-        adalo_record_id=model.adalo_record_id,
+        source_record_id=model.source_record_id,
         volunteer_name=model.volunteer_name,
         out_time=_parse_dt(model.out_time),
         in_time=_parse_dt(model.in_time),
@@ -227,7 +227,7 @@ def walk_record_from_row(row: orm.WalkRecord) -> pyd.WalkRecord:
     return pyd.WalkRecord(
         id=row.id,
         animal_id=row.animal_id,
-        adalo_record_id=row.adalo_record_id,
+        source_record_id=row.source_record_id,
         volunteer_name=row.volunteer_name,
         out_time=_fmt_dt(row.out_time),
         in_time=_fmt_dt(row.in_time),

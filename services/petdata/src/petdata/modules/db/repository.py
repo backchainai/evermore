@@ -113,7 +113,7 @@ class Database:
         """Get an animal by ID.
 
         Args:
-            animal_id: Animal ID (e.g., A-55833).
+            animal_id: Animal ID (e.g., A-00000).
 
         Returns:
             Animal if found, None otherwise.

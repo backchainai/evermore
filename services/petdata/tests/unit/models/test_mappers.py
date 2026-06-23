@@ -10,7 +10,7 @@ from petdata.modules.db import models as pyd
 
 def test_animal_round_trip_preserves_fields() -> None:
     model = pyd.Animal(
-        id="A-55833",
+        id="A-00000",
         name="Buddy",
         weight_lbs=70.0,
         birth_date="2020-01-15",
@@ -24,7 +24,7 @@ def test_animal_round_trip_preserves_fields() -> None:
     )
 
     row = mappers.animal_to_row(model)
-    assert row.id == "A-55833"
+    assert row.id == "A-00000"
     assert row.weight_lbs == 70.0
     assert row.birth_date == datetime.date(2020, 1, 15)
     assert row.intake_date == datetime.date(2024, 3, 1)
@@ -34,7 +34,7 @@ def test_animal_round_trip_preserves_fields() -> None:
     assert row.created_at == datetime.datetime(2026, 6, 1, 12, 0, tzinfo=datetime.UTC)
 
     back = mappers.animal_from_row(row)
-    assert back.id == "A-55833"
+    assert back.id == "A-00000"
     assert back.birth_date == "2020-01-15"
     assert back.behavior_mod_tags == ["leash", "shy"]
     assert back.is_in_kennel is True
@@ -59,7 +59,7 @@ def test_birth_date_accepts_datetime_string() -> None:
 def test_volunteer_note_round_trip() -> None:
     model = pyd.VolunteerNote(
         id=12,
-        animal_id="A-55833",
+        animal_id="A-00000",
         volunteer_name="Pat",
         note_date="2026-06-10T09:00:00+00:00",
         note_text="Walked well",
@@ -69,7 +69,7 @@ def test_volunteer_note_round_trip() -> None:
 
     row = mappers.volunteer_note_to_row(model)
     assert row.id == 12
-    assert row.animal_id == "A-55833"
+    assert row.animal_id == "A-00000"
     assert row.note_date == datetime.datetime(2026, 6, 10, 9, 0, tzinfo=datetime.UTC)
     assert row.rating_strong_on_leash == 4
 

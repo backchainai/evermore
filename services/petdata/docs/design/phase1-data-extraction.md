@@ -12,12 +12,12 @@ The SMS is treated as a generic upstream source. Connection details (base URL, t
 
 The reference SMS exposes a table-oriented REST API.
 
-**Base URL pattern** (configured via `PETDATA_ADALO_BASE_URL`):
+**Base URL pattern** (configured via `PETDATA_SMS_BASE_URL`):
 ```
 https://<sms-host>/databases/{database_id}/tables/{table_id}
 ```
 
-**Tables consumed** (table identifiers via `PETDATA_ADALO_TABLE_*`):
+**Tables consumed** (table identifiers via `PETDATA_SMS_TABLE_*`):
 
 | Logical table | Purpose |
 |---------------|---------|
