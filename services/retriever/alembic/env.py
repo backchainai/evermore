@@ -9,8 +9,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 from sqlalchemy import pool
 
-# Load .env from repo root (same location as pydantic-settings in config.py)
-_env_file = Path(__file__).resolve().parents[2] / ".env"
+# Load .env from the service root (services/retriever/.env), matching config.py
+_env_file = Path(__file__).resolve().parents[1] / ".env"
 load_dotenv(_env_file)
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config

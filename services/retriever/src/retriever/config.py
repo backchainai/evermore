@@ -12,8 +12,8 @@ from pathlib import Path
 from pydantic import SecretStr, computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Resolve .env at repo root (one level above backend/)
-_ENV_FILE = Path(__file__).resolve().parents[3] / ".env"
+# Resolve .env at the service root (services/retriever/.env)
+_ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
 
 # Default CORS origins for local development
 _DEFAULT_ORIGINS = "http://localhost:5173,http://localhost:3000"
