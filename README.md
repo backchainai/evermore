@@ -1,0 +1,32 @@
+# Evermore
+
+An AI platform for nonprofit animal shelters. Evermore ingests animal data from whatever system a shelter already uses, generates research-backed adoption marketing, answers staff questions, and is measured against one outcome: more healthy, safe, and permanent adoptions for homeless animals.
+
+It rides on top of the Shelter Management System (SMS) a shelter already runs rather than replacing it. The initial design partner is a nonprofit animal shelter served pro bono.
+
+Built and maintained by Backchain LLC.
+
+## Start here
+
+- **Vision and architecture:** [`docs/evermore-vision-and-architecture.md`](docs/evermore-vision-and-architecture.md)
+- **Decisions:** [`docs/adr/`](docs/adr/)
+- **Restructure plan:** [`docs/plans/repo-restructure-and-rename.md`](docs/plans/repo-restructure-and-rename.md)
+- **Research corpus:** [`docs/research/README.md`](docs/research/README.md)
+
+## Structure (target monorepo)
+
+```
+apps/stacker         SvelteKit portal: SSO, subscription gating, module registry
+services/petdata     Animal data: connectors, canonical Animal Record, Package builder
+services/biowriter   Generation: kennel cards, social posts, the lint/score editor
+services/retriever   RAG: shelter-ops chat, and the research-corpus index for citations
+packages/            Shared contracts (schema), auth, and UI
+docs/                Vision, ADRs, plans, and the research corpus
+infra/               One-command local stack
+```
+
+> This repository is consolidating from four separate repositories into a single monorepo. See the restructure plan for current state and sequencing.
+
+## License
+
+Apache License 2.0. Copyright (C) 2026 Backchain LLC. See [LICENSE](LICENSE).

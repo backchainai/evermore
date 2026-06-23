@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/backchain-design-system-498b670c-d505-45f2-92e8-791ed34722f0/tokens/fonts.css">
+  <link rel="stylesheet" href="_ds/backchain-design-system-498b670c-d505-45f2-92e8-791ed34722f0/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/backchain-design-system-498b670c-d505-45f2-92e8-791ed34722f0/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/backchain-design-system-498b670c-d505-45f2-92e8-791ed34722f0/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/backchain-design-system-498b670c-d505-45f2-92e8-791ed34722f0/tokens/base.css">
+  <link rel="stylesheet" href="_ds/backchain-design-system-498b670c-d505-45f2-92e8-791ed34722f0/styles.css">
+  <script src="_ds/backchain-design-system-498b670c-d505-45f2-92e8-791ed34722f0/_ds_bundle.js"></script>
+  <style>
+    .bw-scroll::-webkit-scrollbar { width: 9px; }
+    .bw-scroll::-webkit-scrollbar-thumb { background: rgba(80,99,111,0.18); border-radius: 9999px; border: 3px solid transparent; background-clip: padding-box; }
+    .bw-scroll::-webkit-scrollbar-track { background: transparent; }
+  </style>
+</helmet>
+
+<div class="bw-scroll" style="height:100vh; overflow:auto; background:#FAFAF8;">
+<div style="min-width:1180px; height:100%; display:flex; flex-direction:column; background:#FAFAF8; font-family:var(--font-content); color:#50636F; -webkit-font-smoothing:antialiased;">
+
+  <!-- ============ 1. PORTAL TOP BAR ============ -->
+  <div style="flex:none; height:48px; display:flex; align-items:center; justify-content:space-between; padding:0 18px; background:#FAFAF8; border-bottom:1px solid rgba(80,99,111,0.16);">
+    <div style="display:flex; align-items:center; gap:14px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="width:7px; height:7px; border-radius:9999px; background:#E07A5F; display:inline-block;"></span>
+        <span style="font-family:var(--font-brand); font-weight:600; font-size:16px; letter-spacing:-0.01em; color:#41423D;">Evermore</span>
+      </div>
+      <span style="width:1px; height:18px; background:rgba(80,99,111,0.22);"></span>
+      <span style="font-size:12.5px; color:#50636F; letter-spacing:0.01em;">BioWriter</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button title="Theme" style="width:28px; height:28px; border-radius:4px; background:transparent; border:1px solid rgba(80,99,111,0.2); color:#50636F; font-size:14px; line-height:1; display:flex; align-items:center; justify-content:center; cursor:pointer;" style-hover="background:rgba(80,99,111,0.06);">◑</button>
+      <div style="width:28px; height:28px; border-radius:9999px; background:#41423D; color:#F5F0E8; font-size:11px; font-weight:600; letter-spacing:0.02em; display:flex; align-items:center; justify-content:center;">MR</div>
+    </div>
+  </div>
+
+  <!-- ============ APP BODY: three zones ============ -->
+  <div style="flex:1; display:flex; min-height:0;">
+
+    <!-- ---------- 3. LEFT RAIL — conversation ---------- -->
+    <div style="flex:none; width:308px; display:flex; flex-direction:column; min-height:0; background:#FAFAF8; border-right:1px solid rgba(80,99,111,0.16);">
+
+      <div style="flex:none; padding:16px 18px 12px; border-bottom:1px solid rgba(80,99,111,0.10);">
+        <p style="margin:0; font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:0.06em; color:#A35945;">Bio assistant</p>
+      </div>
+
+      <!-- transcript -->
+      <div class="bw-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:18px;">
+        <div style="text-align:center; font-size:11px; color:rgba(80,99,111,0.7); margin-bottom:18px;">Draft opened &middot; sally-kc-v7</div>
+
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="width:20px; height:20px; border-radius:9999px; background:#E07A5F; color:#41423D; font-size:11px; font-weight:600; display:flex; align-items:center; justify-content:center;">e</span>
+            <span style="font-size:12px; color:#50636F;">Evermore assistant</span>
+          </div>
+
+          <div style="background:#F5F0E8; border:1px solid rgba(80,99,111,0.12); border-radius:4px 10px 10px 10px; padding:14px 15px; font-size:13.5px; line-height:1.6; color:#41423D;">
+            <div style="display:flex; align-items:center; gap:7px; margin-bottom:9px;">
+              <span style="flex:none; width:18px; height:18px; border-radius:9999px; background:#A35945; color:#F5F0E8; font-size:11px; font-weight:600; line-height:1; display:flex; align-items:center; justify-content:center;">1</span>
+              <span style="font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:#A35945; font-weight:500;">Opening line</span>
+            </div>
+            Let's get Sally adopted faster. Her bio leads with how she <em style="font-style:normal; color:#A35945;">looks</em> instead of what she <em style="font-style:normal; color:#A35945;">does</em>. Want me to rewrite the opening around her settling next to you while you work?
+          </div>
+
+          <sc-if value="{{ notApplied }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex; align-items:center; gap:10px; padding-left:2px;">
+              <x-import component-from-global-scope="BackchainDesignSystem_498b67.Button" hint-size="84px,40px" variant="primary" size="sm" onClick="{{ onApply }}">Apply</x-import>
+              <x-import component-from-global-scope="BackchainDesignSystem_498b67.Button" hint-size="68px,32px" variant="tertiary" size="sm" onClick="{{ onModify }}">Modify</x-import>
+            </div>
+          </sc-if>
+          <sc-if value="{{ applied }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex; align-items:center; gap:8px; padding:8px 2px; font-size:12.5px; color:#50636F;">
+              <span style="color:#27AE60; font-weight:600;">&#10003;</span>
+              Applied. The opening now leads with how she settles.
+            </div>
+          </sc-if>
+        </div>
+      </div>
+
+      <!-- composer -->
+      <div style="flex:none; padding:14px 16px 16px; border-top:1px solid rgba(80,99,111,0.10);">
+        <div style="border:1px solid rgba(80,99,111,0.18); border-radius:6px; background:#FFFFFF; padding:10px 10px 8px;">
+          <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:9px;">
+            <sc-for list="{{ chips }}" as="chip" hint-placeholder-count="2">
+              <span style="display:inline-flex; align-items:center; gap:5px; background:rgba(224,122,95,0.14); border:1px solid rgba(224,122,95,0.32); color:#41423D; font-size:12px; padding:3px 5px 3px 10px; border-radius:9999px; line-height:1.4;">
+                {{ chip.label }}
+                <button onClick="{{ chip.onRemove }}" title="Remove" style="width:16px; height:16px; border:none; background:transparent; color:#A35945; font-size:14px; line-height:1; display:flex; align-items:center; justify-content:center; cursor:pointer; border-radius:9999px;" style-hover="background:rgba(163,89,69,0.14);">&times;</button>
+              </span>
+            </sc-for>
+          </div>
+          <div contentEditable="true" style="font-size:13px; line-height:1.5; color:#41423D; min-height:20px; outline:none;">These both show how Sally bonds. Worth weaving into the close?</div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:9px;">
+            <span style="font-size:11px; color:rgba(80,99,111,0.75);">2 facts attached</span>
+            <button onClick="{{ onSend }}" title="Send" style="width:32px; height:32px; border-radius:4px; background:#A35945; color:#F5F0E8; border:none; display:flex; align-items:center; justify-content:center; font-size:15px; cursor:pointer;" style-hover="opacity:0.9;">&rarr;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- CENTER COLUMN ---------- -->
+    <div style="flex:1; display:flex; flex-direction:column; min-width:0; background:#F5F0E8;">
+
+      <!-- 2. CANVAS HEADER (slim, fused to top of canvas) -->
+      <div style="flex:none; height:60px; display:flex; align-items:center; gap:18px; padding:0 24px; background:#F5F0E8; border-bottom:1px solid rgba(80,99,111,0.14);">
+        <input defaultValue="Sally" size="5" aria-label="Animal name" style="border:none; background:transparent; font-family:var(--font-content); font-size:18px; font-weight:600; color:#41423D; padding:3px 5px; border-radius:3px; border-bottom:1px dashed transparent;" style-hover="background:rgba(80,99,111,0.05);" style-focus="outline:none; border-bottom:1px solid #A35945; background:rgba(80,99,111,0.05);">
+
+        <div style="display:flex; background:rgba(80,99,111,0.07); border:1px solid rgba(80,99,111,0.14); border-radius:6px; padding:3px; gap:2px;">
+          <button onClick="{{ setKennel }}" style="{{ kennelStyle }}">Kennel Card</button>
+          <button onClick="{{ setSocial }}" style="{{ socialStyle }}">Social Media</button>
+        </div>
+
+        <div style="flex:1;"></div>
+
+        <div style="display:flex; flex-direction:column; gap:4px; min-width:150px;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <span style="font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:0.06em; color:#A35945;">Score</span>
+            <span style="font-size:11.5px; color:#50636F;">Needs a little work</span>
+          </div>
+          <div style="height:6px; border-radius:9999px; background:rgba(80,99,111,0.12); overflow:hidden;">
+            <div style="height:100%; width:46%; border-radius:9999px; background:linear-gradient(90deg,#E07A5F,#A35945);"></div>
+          </div>
+        </div>
+
+        <x-import component-from-global-scope="BackchainDesignSystem_498b67.Button" hint-size="86px,40px" variant="primary" size="sm" onClick="{{ onShare }}">Share</x-import>
+      </div>
+
+      <!-- content row: kennel card canvas + evidence panel (both below the full-width header) -->
+      <div style="flex:1; display:flex; min-height:0; min-width:0;">
+
+      <!-- 5. CENTER CANVAS — the kennel card -->
+      <div class="bw-scroll" style="flex:1; min-width:0; min-height:0; overflow-y:auto; padding:40px 32px;">
+        <div style="max-width:600px; margin:0 auto; background:#FAFAF8; border:1px solid rgba(80,99,111,0.14); border-radius:4px; padding:40px 44px 28px;">
+
+          <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin-bottom:22px; padding-bottom:18px; border-bottom:1px solid rgba(80,99,111,0.10);">
+            <div>
+              <p style="margin:0 0 4px; font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:0.06em; color:#A35945;">Kennel card</p>
+              <h1 style="margin:0; font-size:26px; font-weight:600; letter-spacing:-0.01em; color:#41423D;">Sally</h1>
+            </div>
+            <span style="font-size:12px; color:#50636F; white-space:nowrap; padding-top:4px;">Brindle shepherd mix &middot; ~3 yrs &middot; 42 lb</span>
+          </div>
+
+          <div style="position:relative; font-size:16px; line-height:1.7; color:#50636F;">
+            <sc-if value="{{ notApplied }}" hint-placeholder-val="{{ true }}">
+              <span title="Linked to the assistant note" style="position:absolute; left:-34px; top:3px; width:22px; height:22px; border-radius:9999px; background:#A35945; color:#F5F0E8; font-size:12px; font-weight:600; line-height:1; display:flex; align-items:center; justify-content:center;">1</span>
+            </sc-if>
+            <p style="margin:0 0 16px;">
+              <sc-if value="{{ notApplied }}" hint-placeholder-val="{{ true }}">
+                <span style="background:rgba(224,122,95,0.18); box-shadow:inset 2px 0 0 #A35945; padding:1px 5px; border-radius:2px; color:#41423D;">Sally is a handsome brindle-and-white shepherd mix with bright amber eyes and a coat that catches the afternoon light.</span>
+              </sc-if>
+              <sc-if value="{{ applied }}" hint-placeholder-val="{{ false }}">
+                <span style="color:#41423D;">Give Sally a quiet afternoon and she will fold herself onto the floor beside your chair, rest her head against your leg, and stay as long as you will have her.</span>
+              </sc-if>
+              She is happiest near her person and asks for very little in return: a walk, a warm spot, the occasional ear scratch.
+            </p>
+            <p style="margin:0 0 16px;">
+              Sally is house-trained and crate-comfortable, so the early weeks at home tend to be calm ones. She is heartworm negative, spayed, and up to date on her vaccines. In playgroup she greets other dogs with an easy, loose-bodied friendliness, though she has not yet been tested around cats.
+            </p>
+            <p style="margin:0;">
+              Around three years old and a comfortable forty-two pounds, she would do beautifully with someone who works from home or simply likes company underfoot: a steady, affectionate dog who has clearly been waiting for a lap to claim. Come meet her; she will make the case better than we can.
+            </p>
+          </div>
+
+          <div style="margin-top:32px; padding-top:16px; border-top:1px solid rgba(80,99,111,0.10); display:flex; align-items:center; justify-content:space-between;">
+            <span style="font-size:11.5px; color:rgba(80,99,111,0.8);">Evermore &middot; sally-kc-v7</span>
+            <span style="font-size:11.5px; color:rgba(80,99,111,0.8);">Last edited just now</span>
+          </div>
+        </div>
+      </div>
+
+    <!-- ---------- 4. RIGHT RAIL — Sally's records ---------- -->
+    <div style="flex:none; width:324px; display:flex; flex-direction:column; min-height:0; background:#FAFAF8; border-left:1px solid rgba(80,99,111,0.16);">
+      <div style="flex:none; padding:16px 18px 12px; border-bottom:1px solid rgba(80,99,111,0.10);">
+        <h2 style="margin:0 0 3px; font-size:15px; font-weight:600; color:#41423D;">Sally's records</h2>
+        <p style="margin:0; font-size:12px; color:#50636F;">Select evidence to include. Each carries its source.</p>
+      </div>
+      <div class="bw-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:8px;">
+        <sc-for list="{{ records }}" as="record" hint-placeholder-count="5">
+          <div onClick="{{ record.onToggle }}" style="display:flex; gap:12px; align-items:flex-start; padding:12px 12px; border-radius:4px; cursor:pointer;" style-hover="background:rgba(80,99,111,0.045);">
+            <sc-if value="{{ record.checked }}" hint-placeholder-val="{{ true }}">
+              <div style="width:18px; height:18px; border-radius:3px; background:#A35945; border:1px solid #A35945; display:flex; align-items:center; justify-content:center; color:#F5F0E8; font-size:12px; flex:none; margin-top:1px;">&#10003;</div>
+            </sc-if>
+            <sc-if value="{{ record.unchecked }}" hint-placeholder-val="{{ false }}">
+              <div style="width:18px; height:18px; border-radius:3px; background:transparent; border:1px solid rgba(80,99,111,0.4); flex:none; margin-top:1px;"></div>
+            </sc-if>
+            <div style="flex:1; min-width:0;">
+              <div style="font-size:13.5px; color:#41423D; line-height:1.45;">{{ record.fact }}</div>
+              <div style="font-size:11.5px; color:#50636F; opacity:0.85; margin-top:4px;">{{ record.source }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </div>
+    </div>
+
+  </div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    channel: 'kennel',
+    applied: false,
+    records: [
+      { id: 'r1', fact: 'Rests head on your lap when seated', source: 'Intake note · May 12', checked: true },
+      { id: 'r2', fact: 'Settles nearby while you work', source: 'Foster report · May 20', checked: true },
+      { id: 'r3', fact: 'House-trained; crate-comfortable', source: 'Foster report · May 20', checked: false },
+      { id: 'r4', fact: 'Good with other dogs; untested with cats', source: 'Playgroup · May 18', checked: false },
+      { id: 'r5', fact: 'Heartworm negative; spayed', source: 'Vet exam · May 10', checked: true },
+    ],
+    chips: [
+      { id: 'c1', label: 'Rests head on lap' },
+      { id: 'c2', label: 'Crate-comfortable' },
+    ],
+  };
+
+  toggleRecord(id) {
+    this.setState(s => ({ records: s.records.map(r => r.id === id ? { ...r, checked: !r.checked } : r) }));
+  }
+  removeChip(id) {
+    this.setState(s => ({ chips: s.chips.filter(c => c.id !== id) }));
+  }
+  setChannel(ch) { this.setState({ channel: ch }); }
+
+  renderVals() {
+    const active = { padding: '6px 13px', borderRadius: '4px', border: 'none', background: '#A35945', color: '#F5F0E8', fontSize: '13px', fontWeight: 500, fontFamily: 'var(--font-content)', cursor: 'pointer', whiteSpace: 'nowrap' };
+    const inactive = { ...active, background: 'transparent', color: '#50636F' };
+    const kennel = this.state.channel === 'kennel';
+    return {
+      records: this.state.records.map(r => ({ ...r, unchecked: !r.checked, onToggle: () => this.toggleRecord(r.id) })),
+      chips: this.state.chips.map(c => ({ ...c, onRemove: () => this.removeChip(c.id) })),
+      kennelStyle: kennel ? active : inactive,
+      socialStyle: kennel ? inactive : active,
+      setKennel: () => this.setChannel('kennel'),
+      setSocial: () => this.setChannel('social'),
+      onApply: () => this.setState({ applied: true }),
+      onModify: () => {},
+      onShare: () => {},
+      onSend: () => {},
+      applied: this.state.applied,
+      notApplied: !this.state.applied,
+    };
+  }
+}
+</script>
+</body>
+</html>

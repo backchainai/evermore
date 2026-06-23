@@ -1,0 +1,77 @@
+# Python cache and build artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Virtual environments (we build our own in the container)
+.venv/
+venv/
+ENV/
+env/
+
+# Testing artifacts
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+.nox/
+tests/
+*.test.py
+
+# Type checking and linting cache
+.mypy_cache/
+.ruff_cache/
+
+# IDE and editor files
+.idea/
+.vscode/
+.devcontainer/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+.github/
+
+# Environment files (CRITICAL: Never include secrets)
+.env
+.env.*
+!.env.example
+
+# Documentation (excluding docs/ directory, but keeping markdown files in root)
+docs/
+
+# CI/CD
+.gitlab-ci.yml
+.travis.yml
+Jenkinsfile
+
+# Database and data files (use volumes instead)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite3
+data/
+documents/
+
+# Development scripts
+scripts/
+
+# Docker files (avoid recursive copying)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Plan files
+.claude/

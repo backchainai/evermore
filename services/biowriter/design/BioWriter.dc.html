@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/backchain-design-system-498b670c-d505-45f2-92e8-791ed34722f0/tokens/fonts.css">
+  <link rel="stylesheet" href="_ds/backchain-design-system-498b670c-d505-45f2-92e8-791ed34722f0/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/backchain-design-system-498b670c-d505-45f2-92e8-791ed34722f0/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/backchain-design-system-498b670c-d505-45f2-92e8-791ed34722f0/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/backchain-design-system-498b670c-d505-45f2-92e8-791ed34722f0/tokens/base.css">
+  <link rel="stylesheet" href="_ds/backchain-design-system-498b670c-d505-45f2-92e8-791ed34722f0/styles.css">
+  <script src="_ds/backchain-design-system-498b670c-d505-45f2-92e8-791ed34722f0/_ds_bundle.js"></script>
+  <style>
+    .bw-scroll::-webkit-scrollbar { width: 9px; }
+    .bw-scroll::-webkit-scrollbar-thumb { background: rgba(80,99,111,0.18); border-radius: 9999px; border: 3px solid transparent; background-clip: padding-box; }
+    .bw-scroll::-webkit-scrollbar-track { background: transparent; }
+  </style>
+</helmet>
+
+<div class="bw-scroll" style="height:100vh; overflow:auto; background:#E8EEF3;">
+<div style="--color-cta:#1A7AC2; --color-cta-text:#FFFFFF; --color-label-accent:#1A7AC2; --color-link-hover:#1A7AC2; min-width:1180px; height:100%; display:flex; flex-direction:column; background:#F1F5F8; font-family:var(--font-content); color:#50636F; -webkit-font-smoothing:antialiased;">
+
+  <!-- ============ 1. PORTAL TOP BAR ============ -->
+  <div style="flex:none; height:48px; display:flex; align-items:center; padding:0 18px; background:#F1F5F8; border-bottom:1px solid rgba(80,99,111,0.16);">
+
+    <!-- LEFT: platform + app switcher -->
+    <div style="flex:1; min-width:0; display:flex; align-items:center; gap:11px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="width:7px; height:7px; border-radius:9999px; background:#1A7AC2; display:inline-block;"></span>
+        <span style="font-family:var(--font-brand); font-weight:600; font-size:16px; letter-spacing:-0.01em; color:#1F3B54;">Evermore</span>
+      </div>
+      <span style="font-size:13px; color:rgba(80,99,111,0.32);" data-comment-anchor="b79eefe54c-span">/</span>
+      <div style="position:relative;">
+        <button onClick="{{ toggleApps }}" title="Switch app" style="display:flex; align-items:center; gap:7px; background:transparent; border:1px solid transparent; cursor:pointer; padding:3px 7px 3px 5px; border-radius:6px; font-family:var(--font-content);" style-hover="background:rgba(80,99,111,0.07);">
+          <span style="flex:none; width:20px; height:20px; border-radius:5px; background:#1A7AC2; color:#FFFFFF; font-size:8.5px; font-weight:700; letter-spacing:0.02em; display:flex; align-items:center; justify-content:center;">{{ currentApp.glyph }}</span>
+          <span style="font-size:13px; font-weight:600; color:#1F3B54;">{{ currentApp.name }}</span>
+          <span style="font-size:8px; color:#50636F; line-height:1;">▾</span>
+        </button>
+        <sc-if value="{{ appsOpen }}" hint-placeholder-val="{{ false }}">
+          <div onClick="{{ toggleApps }}" style="position:fixed; inset:0; z-index:999;"></div>
+          <div style="position:absolute; top:calc(100% + 8px); left:0; width:278px; background:#FFFFFF; border:1px solid rgba(80,99,111,0.16); border-radius:8px; box-shadow:0 8px 24px rgba(47,69,91,0.10), 0 2px 6px rgba(47,69,91,0.06); padding:6px; z-index:1000;">
+            <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:#50636F; padding:7px 8px 6px;">Evermore apps</div>
+            <sc-for list="{{ apps }}" as="app" hint-placeholder-count="4">
+              <button onClick="{{ app.onSelect }}" style="{{ app.rowStyle }}" style-hover="background:rgba(80,99,111,0.05);">
+                <div style="display:flex; align-items:center; gap:11px;">
+                  <span style="{{ app.glyphStyle }}">{{ app.glyph }}</span>
+                  <div style="flex:1; min-width:0;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                      <span style="font-size:13px; color:#1F3B54; font-weight:600;">{{ app.name }}</span>
+                      <sc-if value="{{ app.current }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px; color:#1A7AC2; font-weight:600;">Open</span></sc-if>
+                    </div>
+                    <div style="font-size:11px; color:#50636F; margin-top:1px;">{{ app.desc }}</div>
+                  </div>
+                </div>
+              </button>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+
+    <!-- CENTER: independent animal subject (persists across apps) -->
+    <div style="flex:none; display:flex; justify-content:center;">
+      <div style="position:relative;">
+        <button onClick="{{ toggleAnimals }}" title="Switch animal — your selection stays as you change apps" style="display:flex; align-items:center; gap:9px; background:#FFFFFF; border:1px solid rgba(80,99,111,0.18); cursor:pointer; padding:3px 11px 3px 4px; border-radius:9999px; font-family:var(--font-content);" style-hover="border-color:rgba(80,99,111,0.34);">
+          <span style="flex:none; width:28px; height:28px; border-radius:9999px; background:#E3EEF6; color:#1A7AC2; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center;">{{ currentAnimalInitial }}</span>
+          <span style="display:flex; flex-direction:column; align-items:flex-start; line-height:1.1;">
+            <span style="font-size:9px; text-transform:uppercase; letter-spacing:0.06em; color:rgba(80,99,111,0.6);">Animal</span>
+            <span style="font-size:13px; font-weight:600; color:#1F3B54;">{{ currentAnimalName }}</span>
+          </span>
+          <span style="font-size:8px; color:#50636F; line-height:1; margin-left:1px;">▾</span>
+        </button>
+        <sc-if value="{{ animalsOpen }}" hint-placeholder-val="{{ false }}">
+          <div onClick="{{ toggleAnimals }}" style="position:fixed; inset:0; z-index:999;"></div>
+          <div style="position:absolute; top:calc(100% + 8px); left:50%; transform:translateX(-50%); width:296px; background:#FFFFFF; border:1px solid rgba(80,99,111,0.16); border-radius:8px; box-shadow:0 8px 24px rgba(47,69,91,0.10), 0 2px 6px rgba(47,69,91,0.06); padding:6px; z-index:1000;">
+            <div style="padding:8px 9px 7px; margin-bottom:4px; border-bottom:1px solid rgba(80,99,111,0.10);">
+              <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:#1A7AC2; font-weight:500;">Animal</div>
+              <div style="font-size:11.5px; color:#50636F; margin-top:3px; line-height:1.4;">Stays selected as you move between Evermore apps.</div>
+            </div>
+            <sc-for list="{{ animals }}" as="animal" hint-placeholder-count="4">
+              <button onClick="{{ animal.onSelect }}" style="{{ animal.rowStyle }}" style-hover="background:rgba(80,99,111,0.05);">
+                <div style="display:flex; align-items:center; gap:11px;">
+                  <span style="{{ animal.avatarStyle }}">{{ animal.initial }}</span>
+                  <div style="flex:1; min-width:0;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                      <span style="font-size:13px; color:#1F3B54; font-weight:600;">{{ animal.name }}</span>
+                      <sc-if value="{{ animal.current }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex; align-items:center; gap:5px; font-size:10px; color:#1A7AC2; font-weight:600;"><span style="width:5px; height:5px; border-radius:9999px; background:#2FB85F; display:inline-block;"></span>Selected</span></sc-if>
+                    </div>
+                    <div style="font-size:11px; color:#50636F; margin-top:1px;">{{ animal.meta }}</div>
+                  </div>
+                </div>
+              </button>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+
+    <!-- RIGHT: account -->
+    <div style="flex:1; min-width:0; display:flex; align-items:center; justify-content:flex-end; gap:10px;">
+      <button title="Theme" style="width:28px; height:28px; border-radius:4px; background:transparent; border:1px solid rgba(80,99,111,0.2); color:#50636F; font-size:14px; line-height:1; display:flex; align-items:center; justify-content:center; cursor:pointer;" style-hover="background:rgba(80,99,111,0.06);">◑</button>
+      <div style="width:28px; height:28px; border-radius:9999px; background:#1F3B54; color:#FFFFFF; font-size:11px; font-weight:600; letter-spacing:0.02em; display:flex; align-items:center; justify-content:center;">MR</div>
+    </div>
+  </div>
+
+  <!-- ============ APP BODY: three zones ============ -->
+  <div style="flex:1; display:flex; min-height:0;">
+
+    <!-- ---------- 3. LEFT RAIL — conversation ---------- -->
+    <div style="flex:none; width:308px; display:flex; flex-direction:column; min-height:0; background:#FFFFFF; border-right:1px solid rgba(80,99,111,0.16);">
+
+      <div style="flex:none; padding:16px 18px 12px; border-bottom:1px solid rgba(80,99,111,0.10);">
+        <p style="margin:0; font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:0.06em; color:#1A7AC2;">ASSISTANT</p>
+      </div>
+
+      <!-- transcript -->
+      <div class="bw-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:18px;">
+
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <!-- active suggestion (navigation folded into the card header) -->
+          <div style="background:#F6F8FB; border:1px solid rgba(80,99,111,0.14); border-radius:10px; padding:14px 15px; font-size:13.5px; line-height:1.6; color:#1F3B54;" data-comment-anchor="8da266924c-div">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+              <span style="{{ activeBadgeStyle }}">{{ activeBadgeText }}</span>
+              <span style="font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:#EF8E1F; font-weight:500;">{{ activeLabel }}</span>
+              <div style="flex:1;"></div>
+              <div style="display:flex; align-items:center; gap:4px;">
+                <button onClick="{{ onPrev }}" title="Previous suggestion" style="{{ prevStyle }}">‹</button>
+                <span style="font-size:11.5px; color:#50636F; min-width:28px; text-align:center; font-variant-numeric:tabular-nums;">{{ activeNum }}/{{ total }}</span>
+                <button onClick="{{ onNext }}" title="Next suggestion" style="{{ nextStyle }}">›</button>
+              </div>
+            </div>
+            {{ activeMessage }}
+            <sc-if value="{{ actionsOpen }}" hint-placeholder-val="{{ true }}">
+              <div data-comment-anchor="b10a03a21d-div" style="display:flex; align-items:flex-start; gap:8px; margin-top:12px;">
+                <div style="flex:1; display:flex; flex-direction:column; align-items:stretch; gap:6px;">
+                  <button onClick="{{ onAcceptAI }}" style="height:36px; width:100%; border-radius:4px; border:1px solid #1A7AC2; background:#1A7AC2; color:#FFFFFF; font-family:var(--font-content); font-size:13px; font-weight:500; cursor:pointer; transition:opacity 0.2s;" style-hover="opacity:0.9;">Accept</button>
+                  <span style="font-size:10px; line-height:1.3; color:rgba(80,99,111,0.6); text-align:center;">AI writes it</span>
+                </div>
+                <div style="flex:1; display:flex; flex-direction:column; align-items:stretch; gap:6px;">
+                  <button onClick="{{ onAcceptEdit }}" style="height:36px; width:100%; border-radius:4px; border:1px solid rgba(80,99,111,0.4); background:#FFFFFF; color:#1F3B54; font-family:var(--font-content); font-size:13px; font-weight:500; cursor:pointer; transition:border-color 0.2s;" style-hover="border-color:#1F3B54;">Edit</button>
+                  <span style="font-size:10px; line-height:1.3; color:rgba(80,99,111,0.6); text-align:center;">You'll edit it</span>
+                </div>
+                <div style="flex:1; display:flex; flex-direction:column; align-items:stretch; gap:6px;">
+                  <button onClick="{{ onIgnore }}" style="height:36px; width:100%; border-radius:4px; border:1px solid rgba(80,99,111,0.22); background:transparent; color:#50636F; font-family:var(--font-content); font-size:13px; font-weight:500; cursor:pointer; transition:background-color 0.2s;" style-hover="background:rgba(80,99,111,0.06);">Reject</button>
+                  <span style="font-size:10px; line-height:1.3; color:rgba(80,99,111,0.6); text-align:center;">Dismiss</span>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ actionsResolved }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; align-items:center; gap:8px; margin-top:12px; font-size:12.5px; color:#50636F;">
+                <span style="{{ statusIconStyle }}">{{ statusIcon }}</span>
+                <span style="flex:1;">{{ statusText }}</span>
+                <a href="#" onClick="{{ onUndo }}" style="font-size:11.5px; color:#1A7AC2; text-decoration:none;" style-hover="text-decoration:underline;">Undo</a>
+              </div>
+            </sc-if>
+            <div style="margin-top:11px; padding-top:10px; border-top:1px solid rgba(80,99,111,0.10);">
+              <a href="#" onClick="{{ onToggleResearch }}" style="font-size:11.5px; color:#1A7AC2; text-decoration:none; display:inline-flex; align-items:center; gap:5px;" style-hover="text-decoration:underline;">See the research behind this <span style="font-size:9px;">{{ researchCaret }}</span></a>
+              <sc-if value="{{ researchOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:10.5px; color:rgba(80,99,111,0.7); line-height:1.45; margin-top:5px;">{{ activeResearch }}</div>
+              </sc-if>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- composer: bound to the suggestion shown above -->
+      <div style="flex:none; padding:8px 14px 11px; border-top:1px solid rgba(80,99,111,0.10);">
+        <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px; font-size:11px; color:#50636F;">
+          <span style="color:#1A7AC2; font-size:13px; line-height:1;">↳</span>
+          <span>Replying to</span>
+          <span style="display:inline-flex; align-items:center; gap:6px; background:rgba(239,142,31,0.12); border:1px solid rgba(239,142,31,0.32); color:#1F3B54; padding:2px 9px 2px 4px; border-radius:9999px; line-height:1.4; font-weight:500;">
+            <span style="{{ replyBadgeStyle }}">{{ replyBadgeText }}</span>{{ activeLabel }}
+          </span>
+        </div>
+        <div style="border:1px solid rgba(80,99,111,0.18); border-radius:6px; background:#FFFFFF; padding:8px 9px 7px;">
+          <sc-if value="{{ hasChips }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid rgba(80,99,111,0.08);">
+              <span style="font-size:9.5px; text-transform:uppercase; letter-spacing:0.06em; color:rgba(80,99,111,0.7); margin-right:1px;">Traits</span>
+              <sc-for list="{{ chips }}" as="chip" hint-placeholder-count="2">
+                <span style="display:inline-flex; align-items:center; gap:4px; background:rgba(26,122,194,0.10); border:1px solid rgba(26,122,194,0.28); color:#1F3B54; font-size:11.5px; padding:2px 4px 2px 9px; border-radius:9999px; line-height:1.4;">
+                  {{ chip.label }}
+                  <button onClick="{{ chip.onRemove }}" title="Remove" style="width:15px; height:15px; border:none; background:transparent; color:#1A7AC2; font-size:13px; line-height:1; display:flex; align-items:center; justify-content:center; cursor:pointer; border-radius:9999px;" style-hover="background:rgba(26,122,194,0.14);">×</button>
+                </span>
+              </sc-for>
+            </div>
+          </sc-if>
+          <div contentEditable="true" style="font-size:13px; line-height:1.5; color:rgba(80,99,111,0.55); min-height:20px; outline:none;">Reply, or ask for a different angle…</div>
+          <div style="display:flex; align-items:center; justify-content:flex-end; margin-top:7px;">
+            <button onClick="{{ onSend }}" title="Send" style="width:28px; height:28px; border-radius:4px; background:#1A7AC2; color:#FFFFFF; border:none; display:flex; align-items:center; justify-content:center; font-size:15px; cursor:pointer;" style-hover="opacity:0.9;">→</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- CENTER COLUMN ---------- -->
+    <div style="flex:1; display:flex; flex-direction:column; min-width:0; background:#E9F1F7;">
+
+      <!-- 2. CANVAS HEADER (slim, fused to top of canvas) -->
+      <div style="flex:none; height:60px; display:flex; align-items:center; gap:18px; padding:0 24px; background:#E9F1F7; border-bottom:1px solid rgba(80,99,111,0.14);">
+        <div style="display:flex; background:rgba(80,99,111,0.07); border:1px solid rgba(80,99,111,0.14); border-radius:6px; padding:3px; gap:2px;">
+          <button onClick="{{ setKennel }}" style="{{ kennelStyle }}">Kennel Card</button>
+          <button onClick="{{ setSocial }}" style="{{ socialStyle }}">Social Media</button>
+        </div>
+
+        <div style="width:1px; height:32px; background:rgba(80,99,111,0.14);"></div>
+
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <span style="font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:0.06em; color:#1A7AC2;">VERSION OF THIS COMPOSITION</span>
+          <div style="position:relative;">
+            <button onClick="{{ toggleVersions }}" title="Switch the saved version of this composition" style="display:flex; align-items:center; gap:6px; background:rgba(80,99,111,0.07); border:1px solid rgba(80,99,111,0.14); cursor:pointer; padding:3px 9px; border-radius:9999px; font-family:var(--font-content);" style-hover="background:rgba(80,99,111,0.12);">
+              <span style="width:6px; height:6px; border-radius:9999px; background:#2FB85F; display:inline-block; flex:none;"></span>
+              <span style="font-size:11.5px; color:#1F3B54; letter-spacing:0.01em; font-weight:500;">{{ versionId }}</span>
+              <span style="font-size:8px; color:#50636F; line-height:1;">▾</span>
+            </button>
+            <sc-if value="{{ versionOpen }}" hint-placeholder-val="{{ false }}">
+              <div onClick="{{ toggleVersions }}" style="position:fixed; inset:0; z-index:999;"></div>
+              <div style="position:absolute; top:calc(100% + 8px); left:0; width:300px; background:#FFFFFF; border:1px solid rgba(80,99,111,0.16); border-radius:8px; box-shadow:0 8px 24px rgba(47,69,91,0.10), 0 2px 6px rgba(47,69,91,0.06); padding:6px; z-index:1000;">
+                <div style="padding:9px 9px 8px; margin-bottom:4px; border-bottom:1px solid rgba(80,99,111,0.10);">
+                  <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:#1A7AC2; font-weight:500;">Versions of this composition</div>
+                  <div style="font-size:11.5px; color:#50636F; margin-top:4px; line-height:1.45;">Every time you save, BioWriter keeps a copy of this composition here. Pick one to bring it back.</div>
+                </div>
+                <sc-for list="{{ versions }}" as="ver" hint-placeholder-count="4">
+                  <button onClick="{{ ver.onSelect }}" style="{{ ver.rowStyle }}" style-hover="background:rgba(80,99,111,0.05);">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                      <span style="font-size:12.5px; color:#1F3B54; font-weight:500;">{{ ver.id }}</span>
+                      <sc-if value="{{ ver.current }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex; align-items:center; gap:5px; font-size:10px; color:#1A7AC2; font-weight:600;"><span style="width:5px; height:5px; border-radius:9999px; background:#2FB85F; display:inline-block;"></span>Editing now</span></sc-if>
+                    </div>
+                    <div style="font-size:11px; color:#50636F; margin-top:2px;">{{ ver.note }} · {{ ver.when }}</div>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+
+        <div style="flex:1;"></div>
+
+        <div style="display:flex; flex-direction:column; gap:4px; min-width:150px;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <span style="font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:0.06em; color:#1A7AC2;">Score</span>
+            <span style="font-size:11.5px; color:#50636F;">Needs a little work</span>
+          </div>
+          <div style="height:6px; border-radius:9999px; background:rgba(80,99,111,0.12); overflow:hidden;">
+            <div style="height:100%; width:46%; border-radius:9999px; background:linear-gradient(90deg,#9AA7AE,#2FB85F); background-size:217% 100%; background-position:left center;"></div>
+          </div>
+        </div>
+
+        <div style="position:relative;">
+          <x-import component-from-global-scope="BackchainDesignSystem_498b67.Button" hint-size="86px,40px" variant="primary" size="sm" onClick="{{ onShare }}">Share</x-import>
+          <sc-if value="{{ shareOpen }}" hint-placeholder-val="{{ false }}">
+            <div onClick="{{ onShare }}" style="position:fixed; inset:0; z-index:999;"></div>
+            <div style="position:absolute; top:calc(100% + 8px); right:0; width:214px; background:#FFFFFF; border:1px solid rgba(80,99,111,0.16); border-radius:8px; box-shadow:0 8px 24px rgba(47,69,91,0.10), 0 2px 6px rgba(47,69,91,0.06); padding:6px; z-index:1000;">
+              <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:#50636F; padding:6px 8px 5px;">Share as</div>
+              <button onClick="{{ onPickWord }}" style="display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:transparent; border:none; border-radius:6px; padding:8px; cursor:pointer; font-family:var(--font-content);" style-hover="background:rgba(80,99,111,0.05);">
+                <span style="flex:none; width:26px; height:26px; border-radius:5px; background:rgba(26,122,194,0.12); color:#1A7AC2; font-size:9px; font-weight:700; display:flex; align-items:center; justify-content:center;">DOC</span>
+                <span style="font-size:13px; color:#1F3B54;">Word document</span>
+              </button>
+              <button onClick="{{ onPickPdf }}" style="display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:transparent; border:none; border-radius:6px; padding:8px; cursor:pointer; font-family:var(--font-content);" style-hover="background:rgba(80,99,111,0.05);">
+                <span style="flex:none; width:26px; height:26px; border-radius:5px; background:rgba(239,142,31,0.16); color:#EF8E1F; font-size:9px; font-weight:700; display:flex; align-items:center; justify-content:center;">PDF</span>
+                <span style="font-size:13px; color:#1F3B54;">PDF</span>
+              </button>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+
+      <!-- content row: kennel card canvas + evidence panel (both below the full-width header) -->
+      <div style="flex:1; display:flex; min-height:0; min-width:0;">
+
+      <!-- 5. CENTER CANVAS — the kennel card -->
+      <div class="bw-scroll" style="flex:1; min-width:0; min-height:0; overflow-y:auto; padding:40px 32px;">
+        <div style="max-width:600px; margin:0 auto; background:#FFFFFF; border:1px solid rgba(80,99,111,0.14); border-radius:4px; padding:40px 44px 28px;">
+
+          <div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin-bottom:22px; padding-bottom:18px; border-bottom:1px solid rgba(80,99,111,0.10);">
+            <div>
+              <p style="margin:0 0 4px; font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:0.06em; color:#1A7AC2;">Kennel card</p>
+              <h1 style="margin:0; font-size:26px; font-weight:600; letter-spacing:-0.01em; color:#1F3B54;">Sally</h1>
+            </div>
+            <span style="font-size:12px; color:#50636F; white-space:nowrap; padding-top:4px;">Brindle shepherd mix · ~3 yrs · 42 lb</span>
+          </div>
+
+          <div style="font-size:16px; line-height:1.7; color:#50636F;">
+            <sc-for list="{{ paragraphs }}" as="para" hint-placeholder-count="3">
+              <p style="{{ para.style }}">
+                <sc-for list="{{ para.parts }}" as="part" hint-placeholder-count="3">
+                  <sc-if value="{{ part.plain }}" hint-placeholder-val="{{ true }}">{{ part.text }}</sc-if>
+                  <sc-if value="{{ part.cited }}" hint-placeholder-val="{{ false }}"><span onClick="{{ part.onClick }}" style="{{ part.markerStyle }}">{{ part.markerText }}</span><span onClick="{{ part.onClick }}" style="{{ part.spanStyle }}">{{ part.text }}</span></sc-if>
+                </sc-for>
+              </p>
+            </sc-for>
+          </div>
+
+          <div style="margin-top:32px; padding-top:16px; border-top:1px solid rgba(80,99,111,0.10); display:flex; align-items:center; justify-content:space-between;">
+            <span style="font-size:11.5px; color:rgba(80,99,111,0.8);">Evermore · {{ versionId }}</span>
+            <span style="font-size:11.5px; color:rgba(80,99,111,0.8);">Last edited just now</span>
+          </div>
+        </div>
+      </div>
+
+    <!-- ---------- 4. RIGHT RAIL — Sally's records ---------- -->
+    <div style="flex:none; width:324px; display:flex; flex-direction:column; min-height:0; background:#F1F5F8; border-left:1px solid rgba(80,99,111,0.16);">
+      <div style="flex:none; padding:16px 18px 12px; border-bottom:1px solid rgba(80,99,111,0.10);">
+        <h2 style="margin:0 0 3px; font-size:15px; font-weight:600; color:#1F3B54;">Sally's records</h2>
+        <p style="margin:0; font-size:12px; color:#50636F;">Select traits to include.</p>
+      </div>
+      <div class="bw-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:8px;">
+        <sc-for list="{{ records }}" as="record" hint-placeholder-count="5">
+          <div onClick="{{ record.onToggle }}" style="display:flex; gap:12px; align-items:flex-start; padding:12px 12px; border-radius:4px; cursor:pointer;" style-hover="background:rgba(80,99,111,0.045);">
+            <sc-if value="{{ record.checked }}" hint-placeholder-val="{{ true }}">
+              <div style="width:18px; height:18px; border-radius:3px; background:#1A7AC2; border:1px solid #1A7AC2; display:flex; align-items:center; justify-content:center; color:#FFFFFF; font-size:12px; flex:none; margin-top:1px;">✓</div>
+            </sc-if>
+            <sc-if value="{{ record.unchecked }}" hint-placeholder-val="{{ false }}">
+              <div style="width:18px; height:18px; border-radius:3px; background:transparent; border:1px solid rgba(80,99,111,0.4); flex:none; margin-top:1px;"></div>
+            </sc-if>
+            <div style="flex:1; min-width:0;">
+              <div style="font-size:13.5px; color:#1F3B54; line-height:1.45;">{{ record.fact }}</div>
+              <div style="font-size:11.5px; color:#50636F; opacity:0.85; margin-top:4px;">{{ record.source }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </div>
+    </div>
+
+  </div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    channel: 'kennel',
+    activeIndex: 0,
+    shareOpen: false,
+    researchOpen: true,
+    appsOpen: false,
+    animalsOpen: false,
+    currentAppId: 'biowriter',
+    currentAnimalId: 'sally',
+    apps: [
+      { id: 'biowriter', name: 'BioWriter', desc: 'Adoption bios and listings', glyph: 'BW' },
+      { id: 'snapshot',  name: 'Snapshot',  desc: 'Photo cleanup and cards',    glyph: 'SN' },
+      { id: 'matchmaker', name: 'Matchmaker', desc: 'Adopter matching',          glyph: 'MM' },
+      { id: 'intake',    name: 'Intake',    desc: 'Records and paperwork',      glyph: 'IN' },
+    ],
+    animals: [
+      { id: 'sally',   name: 'Sally',   meta: 'Brindle shepherd mix · ~3 yrs' },
+      { id: 'biscuit', name: 'Biscuit', meta: 'Orange tabby · ~2 yrs' },
+      { id: 'pepper',  name: 'Pepper',  meta: 'Beagle mix · ~5 yrs' },
+      { id: 'moose',   name: 'Moose',   meta: 'Great Dane · ~1 yr' },
+    ],
+    versionId: 'sally-kc-v7',
+    versionOpen: false,
+    versions: [
+      { id: 'sally-kc-v7', note: 'Working draft', when: 'Just now' },
+      { id: 'sally-kc-v6', note: 'Foster report merged', when: 'May 20' },
+      { id: 'sally-kc-v5', note: 'Playgroup update', when: 'May 18' },
+      { id: 'sally-kc-v4', note: 'Intake draft', when: 'May 12' },
+    ],
+    citations: [
+      { label: 'Opening line',     message: "Her bio leads with how she looks instead of what she does. Want me to rewrite the opening around her settling next to you while you work?", applied: false },
+      { label: 'Vague claim',      message: "\u201CAsks for very little\u201D is vague. Naming one concrete need (a daily walk, a warm spot) makes her easier to picture.", applied: false },
+      { label: 'Lead with proof',  message: "House-trained and crate-comfortable is your strongest line. Adopters scan for it, so it can move up.", applied: false },
+      { label: 'Medical clarity',  message: "Keep the medical facts as one scannable line: heartworm negative, spayed, vaccines current.", applied: false },
+      { label: 'Set expectations', message: "\u201CUntested with cats\u201D is honest and helpful. Pair it with what she is good with so it does not read as a warning.", applied: false },
+      { label: 'Concrete detail',  message: "Her age and size belong near the top where adopters filter, not buried in the closing paragraph.", applied: false },
+      { label: 'Closing ask',      message: "Strong closer. Consider naming the next step (book a meet-and-greet) so the reader knows what to do.", applied: false },
+    ],
+    records: [
+      { id: 'r1', fact: 'Rests head on your lap when seated', source: 'Intake note · May 12', checked: true },
+      { id: 'r2', fact: 'Settles nearby while you work', source: 'Foster report · May 20', checked: true },
+      { id: 'r3', fact: 'House-trained; crate-comfortable', source: 'Foster report · May 20', checked: false },
+      { id: 'r4', fact: 'Good with other dogs; untested with cats', source: 'Playgroup · May 18', checked: false },
+      { id: 'r5', fact: 'Heartworm negative; spayed', source: 'Vet exam · May 10', checked: true },
+    ],
+    chips: [
+      { id: 'c1', label: 'Rests head on lap' },
+      { id: 'c2', label: 'Crate-comfortable' },
+    ],
+  };
+
+  toggleRecord(id) {
+    this.setState(s => ({ records: s.records.map(r => r.id === id ? { ...r, checked: !r.checked } : r) }));
+  }
+  removeChip(id) {
+    this.setState(s => ({ chips: s.chips.filter(c => c.id !== id) }));
+  }
+  setChannel(ch) { this.setState({ channel: ch }); }
+  toggleVersions() { this.setState(s => ({ versionOpen: !s.versionOpen })); }
+  selectVersion(id) { this.setState({ versionId: id, versionOpen: false }); }
+  toggleApps() { this.setState(s => ({ appsOpen: !s.appsOpen, animalsOpen: false })); }
+  selectApp(id) { this.setState({ currentAppId: id, appsOpen: false }); }
+  toggleAnimals() { this.setState(s => ({ animalsOpen: !s.animalsOpen, appsOpen: false })); }
+  selectAnimal(id) { this.setState({ currentAnimalId: id, animalsOpen: false }); }
+
+  jump(i) { this.setState({ activeIndex: i }); }
+  prevCite() { this.setState(s => ({ activeIndex: Math.max(0, s.activeIndex - 1) })); }
+  nextCite() { this.setState(s => ({ activeIndex: Math.min(s.citations.length - 1, s.activeIndex + 1) })); }
+  setStatus(status) {
+    this.setState(s => {
+      const citations = s.citations.map((c, idx) => idx === s.activeIndex ? { ...c, status } : c);
+      const isOpen = (c) => !c.status || c.status === 'open';
+      let ni = s.activeIndex;
+      for (let k = s.activeIndex + 1; k < citations.length; k++) { if (isOpen(citations[k])) { ni = k; break; } }
+      if (ni === s.activeIndex) { for (let k = 0; k < citations.length; k++) { if (isOpen(citations[k])) { ni = k; break; } } }
+      return { citations, activeIndex: ni };
+    });
+  }
+  undoStatus() {
+    this.setState(s => ({ citations: s.citations.map((c, idx) => idx === s.activeIndex ? { ...c, status: 'open' } : c) }));
+  }
+
+  renderVals() {
+    const cits = this.state.citations;
+    const ai = this.state.activeIndex;
+    const total = cits.length;
+    const appliedCount = cits.filter(c => c.status && c.status !== 'open').length;
+
+    // toggle (channel) styles
+    const active = { padding: '6px 13px', borderRadius: '4px', border: 'none', background: '#1A7AC2', color: '#FFFFFF', fontSize: '13px', fontWeight: 500, fontFamily: 'var(--font-content)', cursor: 'pointer', whiteSpace: 'nowrap' };
+    const inactive = { ...active, background: 'transparent', color: '#50636F' };
+    const kennel = this.state.channel === 'kennel';
+
+    // ---- navigator chips removed; inline document markers serve as the index ----
+
+    // ---- prev / next (compact, inline in the suggestion header) ----
+    const navBase = { width: '24px', height: '24px', flex: 'none', borderRadius: '4px', border: '1px solid rgba(80,99,111,0.2)', background: '#FFFFFF', color: '#1A7AC2', fontSize: '15px', lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-content)' };
+    const canPrev = ai > 0, canNext = ai < total - 1;
+
+    // ---- active bubble ----
+    const activeCit = cits[ai];
+    const activeStatus = activeCit.status || 'open';
+    const badgeBase = { flex: 'none', width: '18px', height: '18px', borderRadius: '9999px', fontSize: '11px', fontWeight: 600, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFFFFF' };
+    const activeBadge = activeStatus === 'ai' ? { bg: '#27AE60', text: '\u2713' }
+      : activeStatus === 'edit' ? { bg: '#1A7AC2', text: '\u270e' }
+      : activeStatus === 'ignored' ? { bg: '#9AA7AE', text: '\u00d7' }
+      : { bg: '#EF8E1F', text: String(ai + 1) };
+
+    // ---- bio paragraphs with inline citation markers ----
+    const rawParas = [
+      [ { c: 0, orig: 'Sally is a handsome brindle-and-white shepherd mix with bright amber eyes and a coat that catches the afternoon light.', done: 'Give Sally a quiet afternoon and she will fold herself onto the floor beside your chair, rest her head against your leg, and stay as long as you will have her.' },
+        { sp: true },
+        { c: 1, text: 'She is happiest near her person and asks for very little in return: a walk, a warm spot, the occasional ear scratch.' } ],
+      [ { c: 2, text: 'Sally is house-trained and crate-comfortable, so the early weeks at home tend to be calm ones.' },
+        { sp: true },
+        { c: 3, text: 'She is heartworm negative, spayed, and up to date on her vaccines.' },
+        { sp: true },
+        { c: 4, text: 'In playgroup she greets other dogs with an easy, loose-bodied friendliness, though she has not yet been tested around cats.' } ],
+      [ { c: 5, text: 'Around three years old and a comfortable forty-two pounds, she would do beautifully with someone who works from home or simply likes company underfoot: a steady, affectionate dog who has clearly been waiting for a lap to claim.' },
+        { sp: true },
+        { c: 6, text: 'Come meet her; she will make the case better than we can.' } ],
+    ];
+    const markerBase = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '16px', height: '16px', borderRadius: '9999px', fontSize: '10px', fontWeight: 600, lineHeight: 1, marginRight: '5px', verticalAlign: 'middle', cursor: 'pointer', flex: 'none' };
+    const spanBase = { borderRadius: '2px', cursor: 'pointer' };
+    const buildPart = (seg) => {
+      if (seg.sp) return { plain: true, cited: false, text: ' ' };
+      const idx = seg.c, num = idx + 1;
+      const isActive = idx === ai;
+      const st = cits[idx].status || 'open';
+      const text = (idx === 0) ? (st === 'ai' ? seg.done : seg.orig) : seg.text;
+      let markerStyle, markerText, spanStyle;
+      if (st === 'ai') {
+        markerStyle = { ...markerBase, background: '#27AE60', color: '#FFFFFF', border: '1px solid #27AE60', fontSize: '9px' };
+        markerText = '\u2713';
+        spanStyle = { ...spanBase, color: '#50636F' };
+      } else if (st === 'edit') {
+        markerStyle = { ...markerBase, background: '#1A7AC2', color: '#FFFFFF', border: '1px solid #1A7AC2', fontSize: '9px' };
+        markerText = '\u270e';
+        spanStyle = { ...spanBase, background: 'rgba(26,122,194,0.12)', boxShadow: 'inset 2px 0 0 #1A7AC2', padding: '1px 5px', color: '#1F3B54' };
+      } else if (st === 'ignored') {
+        markerStyle = { ...markerBase, background: 'transparent', color: 'rgba(80,99,111,0.5)', border: '1px solid rgba(80,99,111,0.3)', fontSize: '11px' };
+        markerText = '\u00d7';
+        spanStyle = { ...spanBase, color: 'rgba(80,99,111,0.5)' };
+      } else if (isActive) {
+        markerStyle = { ...markerBase, background: '#EF8E1F', color: '#FFFFFF', border: '1px solid #EF8E1F' };
+        markerText = String(num);
+        spanStyle = { ...spanBase, background: 'rgba(239,142,31,0.18)', boxShadow: 'inset 2px 0 0 #EF8E1F', padding: '1px 5px', color: '#1F3B54' };
+      } else {
+        markerStyle = { ...markerBase, background: '#FFFFFF', color: '#EF8E1F', border: '1px solid rgba(239,142,31,0.6)' };
+        markerText = String(num);
+        spanStyle = { ...spanBase, borderBottom: '1px dotted rgba(239,142,31,0.55)', color: '#50636F' };
+      }
+      return { plain: false, cited: true, text, markerStyle, markerText, spanStyle, onClick: () => this.jump(idx) };
+    };
+    const paragraphs = rawParas.map((parts, pi) => ({
+      parts: parts.map(buildPart),
+      style: { margin: pi === rawParas.length - 1 ? '0' : '0 0 16px' },
+    }));
+
+    return {
+      // records + evidence
+      records: this.state.records.map(r => ({ ...r, unchecked: !r.checked, onToggle: () => this.toggleRecord(r.id) })),
+      chips: this.state.chips.map(c => ({ ...c, onRemove: () => this.removeChip(c.id) })),
+      hasChips: this.state.chips.length > 0,
+      // ---- app switcher (left) ----
+      appsOpen: this.state.appsOpen,
+      toggleApps: () => this.toggleApps(),
+      currentApp: this.state.apps.find(a => a.id === this.state.currentAppId),
+      apps: this.state.apps.map(a => ({
+        ...a,
+        current: a.id === this.state.currentAppId,
+        onSelect: () => this.selectApp(a.id),
+        rowStyle: { display: 'block', width: '100%', textAlign: 'left', background: a.id === this.state.currentAppId ? 'rgba(26,122,194,0.08)' : 'transparent', border: 'none', borderRadius: '6px', padding: '8px', cursor: 'pointer', fontFamily: 'var(--font-content)' },
+        glyphStyle: { flex: 'none', width: '28px', height: '28px', borderRadius: '6px', background: a.id === this.state.currentAppId ? '#1A7AC2' : 'rgba(80,99,111,0.10)', color: a.id === this.state.currentAppId ? '#FFFFFF' : '#50636F', fontSize: '10px', fontWeight: 700, letterSpacing: '0.02em', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+      })),
+      // ---- animal subject selector (center, persists across apps) ----
+      animalsOpen: this.state.animalsOpen,
+      toggleAnimals: () => this.toggleAnimals(),
+      currentAnimalName: (this.state.animals.find(a => a.id === this.state.currentAnimalId) || {}).name,
+      currentAnimalInitial: ((this.state.animals.find(a => a.id === this.state.currentAnimalId) || {}).name || '?').charAt(0),
+      animals: this.state.animals.map(a => ({
+        ...a,
+        initial: a.name.charAt(0),
+        current: a.id === this.state.currentAnimalId,
+        onSelect: () => this.selectAnimal(a.id),
+        rowStyle: { display: 'block', width: '100%', textAlign: 'left', background: a.id === this.state.currentAnimalId ? 'rgba(26,122,194,0.08)' : 'transparent', border: 'none', borderRadius: '6px', padding: '8px', cursor: 'pointer', fontFamily: 'var(--font-content)' },
+        avatarStyle: { flex: 'none', width: '30px', height: '30px', borderRadius: '9999px', background: a.id === this.state.currentAnimalId ? '#1A7AC2' : '#E3EEF6', color: a.id === this.state.currentAnimalId ? '#FFFFFF' : '#1A7AC2', fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+      })),
+      // channel toggle
+      kennelStyle: kennel ? active : inactive,
+      socialStyle: kennel ? inactive : active,
+      setKennel: () => this.setChannel('kennel'),
+      setSocial: () => this.setChannel('social'),
+      onShare: () => this.setState(s => ({ shareOpen: !s.shareOpen })),
+      shareOpen: this.state.shareOpen,
+      onPickWord: () => this.setState({ shareOpen: false }),
+      onPickPdf: () => this.setState({ shareOpen: false }),
+      onSend: () => {},
+      // version drawer
+      versionId: this.state.versionId,
+      versionOpen: this.state.versionOpen,
+      toggleVersions: () => this.toggleVersions(),
+      versions: this.state.versions.map(v => ({
+        ...v,
+        current: v.id === this.state.versionId,
+        onSelect: () => this.selectVersion(v.id),
+        rowStyle: { display: 'block', width: '100%', textAlign: 'left', background: v.id === this.state.versionId ? 'rgba(26,122,194,0.08)' : 'transparent', border: 'none', borderRadius: '6px', padding: '8px 8px', cursor: 'pointer', fontFamily: 'var(--font-content)' },
+      })),
+      // citation navigator
+      total,
+      activeNum: ai + 1,
+      statusText: `${appliedCount} applied`,
+      prevStyle: { ...navBase, opacity: canPrev ? 1 : 0.3, cursor: canPrev ? 'pointer' : 'default' },
+      nextStyle: { ...navBase, opacity: canNext ? 1 : 0.35, cursor: canNext ? 'pointer' : 'default' },
+      onPrev: () => this.prevCite(),
+      onNext: () => this.nextCite(),
+      // active bubble
+      activeLabel: activeCit.label,
+      activeMessage: activeCit.message,
+      actionsOpen: activeStatus === 'open',
+      actionsResolved: activeStatus !== 'open',
+      statusIcon: activeBadge.text,
+      statusIconStyle: { flex: 'none', width: '18px', height: '18px', borderRadius: '9999px', fontSize: activeStatus === 'ignored' ? '12px' : '10px', fontWeight: 600, lineHeight: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: activeStatus === 'ignored' ? 'rgba(80,99,111,0.6)' : '#FFFFFF', background: activeStatus === 'ignored' ? 'transparent' : activeBadge.bg, border: activeStatus === 'ignored' ? '1px solid rgba(80,99,111,0.3)' : 'none' },
+      statusText: activeStatus === 'ai' ? 'BioWriter rewrote this. Use Next to continue.' : activeStatus === 'edit' ? "Accepted \u2014 yours to edit in the card." : 'Ignored. The card is unchanged.',
+      onUndo: (e) => { if (e && e.preventDefault) e.preventDefault(); this.undoStatus(); },
+      activeBadgeStyle: { ...badgeBase, background: activeStatus === 'ignored' ? '#9AA7AE' : activeBadge.bg },
+      activeBadgeText: activeBadge.text,
+      replyBadgeStyle: { ...badgeBase, width: '16px', height: '16px', fontSize: activeStatus === 'open' ? '10px' : '9px', background: activeStatus === 'ignored' ? '#9AA7AE' : activeBadge.bg },
+      replyBadgeText: activeBadge.text,
+      onAcceptAI: () => this.setStatus('ai'),
+      onAcceptEdit: () => this.setStatus('edit'),
+      onIgnore: () => this.setStatus('ignored'),
+      researchOpen: this.state.researchOpen,
+      researchCaret: this.state.researchOpen ? '\u25be' : '\u25b8',
+      onToggleResearch: (e) => { if (e && e.preventDefault) e.preventDefault(); this.setState(s => ({ researchOpen: !s.researchOpen })); },
+      activeResearch: [
+        'Best Friends Animal Society, 2019 — behavior-led bios get more inquiries than looks-led ones.',
+        'ASPCA adopter survey, 2021 — one concrete need raises inquiry rates over vague warmth.',
+        'Petfinder engagement data, 2022 — house-training is among the most-scanned traits.',
+        'AAHA shelter guidelines — a scannable medical summary reduces repeat questions.',
+        "Maddie's Fund, 2020 — honest, paired caveats lower post-adoption returns.",
+        'Petfinder filter analytics — age and size are the first filters adopters apply.',
+        'Nielsen Norman CTA study — an explicit next step lifts response.',
+      ][ai],
+      // bio
+      paragraphs,
+    };
+  }
+}
+</script>
+</body>
+</html>

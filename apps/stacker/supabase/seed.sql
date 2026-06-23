@@ -1,0 +1,9 @@
+-- Supabase local seed (runs on `supabase db reset`).
+--
+-- No seed users are created here. To get a local account, start the stack
+-- (`make dev`) and sign up through the portal at http://localhost:5173/login.
+-- Email confirmations are disabled in config.toml (enable_confirmations = false),
+-- so signup is instant.
+--
+-- This file exists so the `[db.seed] sql_paths = ["./seed.sql"]` reference in
+-- config.toml resolves. Add local-only fixtures below as the demo grows.
