@@ -12,21 +12,24 @@
 	let { module, active, collapsed, onclick }: Props = $props();
 
 	let isLocked = $derived(module.status === 'locked');
+	let isDisabled = $derived(module.status === 'disabled');
+	// Both locked and disabled modules are greyed and non-clickable in the sidebar.
+	let isUnavailable = $derived(isLocked || isDisabled);
 </script>
 
 <button
 	type="button"
 	class="module-card group flex w-full items-center gap-3 rounded-lg px-3 transition-colors"
 	class:module-card--active={active}
-	class:module-card--locked={isLocked}
+	class:module-card--locked={isUnavailable}
 	class:module-card--collapsed={collapsed}
 	onclick={onclick}
-	disabled={isLocked}
+	disabled={isUnavailable}
 	aria-current={active ? 'page' : undefined}
 	title={collapsed ? module.name : undefined}
 >
 	<span class="module-card__icon flex shrink-0 items-center justify-center">
-		{#if isLocked}
+		{#if isUnavailable}
 			<Lock size={20} />
 		{:else}
 			<module.icon size={20} />

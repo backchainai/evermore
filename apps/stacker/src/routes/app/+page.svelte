@@ -24,6 +24,7 @@
 	<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 		{#each modules as mod}
 			{@const isActive = mod.status === 'active'}
+			{@const statusLabel = mod.status === 'disabled' ? 'In development' : 'Coming Soon'}
 			{@const href = isActive && mod.navItems.length > 0
 				? mod.basePath + mod.navItems[0].href
 				: isActive
@@ -65,7 +66,7 @@
 					</h2>
 					<p class="text-sm opacity-60">{mod.description}</p>
 					<span class="mt-auto text-xs font-medium uppercase tracking-wide opacity-40">
-						Coming Soon
+						{statusLabel}
 					</span>
 				</div>
 			{/if}

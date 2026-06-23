@@ -28,6 +28,9 @@
 	let activeModule = $derived(modules.find((m) => m.id === activeModuleId) ?? null);
 
 	function handleModuleClick(mod: ModuleDefinition): void {
+		if (mod.status === 'disabled') {
+			return; // in-development modules are inert (the card is also disabled)
+		}
 		if (mod.status === 'locked') {
 			onlockedclick(mod);
 		} else {
