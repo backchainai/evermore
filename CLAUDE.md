@@ -49,4 +49,4 @@ Pending follow-ups from the plan: tech-stack conformance (Phase 5) and scaffoldi
 - The repo is now under one git history. Treat moves and deletes carefully and get approval before deleting.
 - User-visible content avoids em-dashes (use colons, parentheses, commas).
 - Per-module build/test commands live in each module's own `CLAUDE.md`; the tech-stack standard governs all of them.
-- FOHA was scrubbed from the working tree in Phase 3: code, tests, and docs are genericized to "Shelter Management System (SMS)". Do not reintroduce client names or branded SMS tool names; refer to shelter systems generically. The pre-Phase-3 snapshot-import commit still contains FOHA in git history; a history scrub is a separate prerequisite before the repo flips public.
+- The design partner's name was scrubbed from the working tree in Phase 3: code, tests, and docs are genericized to "Shelter Management System (SMS)". Do not reintroduce client names or branded SMS tool names; refer to shelter systems generically. The pre-Phase-3 snapshot-import commit still contains the design partner's name in git history; a history scrub is a separate prerequisite before the repo flips public.

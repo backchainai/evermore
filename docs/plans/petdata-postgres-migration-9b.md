@@ -10,7 +10,7 @@ Rejected alternatives: Hybrid (async tests now with skip-if-unavailable; #9c fli
 
 ## Cutover surface (verified)
 
-- Routes are two GETs only: `/animals`, `/animals/{id}`. All 24 write/upsert/delete methods on `Database` are exercised only by `test_repository.py` and the future Adalo sync path (not yet wired in this service). Runtime blast radius is small; test blast radius is the integration suite.
+- Routes are two GETs only: `/animals`, `/animals/{id}`. All 24 write/upsert/delete methods on `Database` are exercised only by `test_repository.py` and the future SMS sync path (not yet wired in this service). Runtime blast radius is small; test blast radius is the integration suite.
 - `get_session` already exists from #9a (`src/petdata/infrastructure/database/session.py`): request-scoped, commit on success, rollback on error. The plan says routes depend on it.
 - CI petdata job: `uv sync --extra dev` then `ruff format --check`, `ruff check`, `mypy src/`, `uvx bandit -r src/ -q`, `pytest --cov`. No Postgres service, no `alembic upgrade`, no coverage floor. All of those are #9c.
 

@@ -55,7 +55,7 @@ Vision spec, ADRs 0001-0003, and this plan written to `docs/`.
 4. Operator creates the remote at `github.com/backchainai/evermore` and configures it (see "GitHub structure" below); push `main`.
 
 ### Phase 2: consolidate the modules (clean-snapshot true monorepo)
-Method: import each module's committed tree as a clean snapshot (`git archive HEAD | tar -x`), not `git subtree`. The repo is public-bound and FOHA is woven through module code and history; a snapshot keeps the monorepo history clean from commit one, avoids a future `git filter-repo` rewrite before going public, and removes the merge-method constraint that subtree merge commits impose under branch protection. The granular pre-consolidation history is preserved in the archived `ckrough/*` origin repos.
+Method: import each module's committed tree as a clean snapshot (`git archive HEAD | tar -x`), not `git subtree`. The repo is public-bound and the design partner's name is woven through module code and history; a snapshot keeps the monorepo history clean from commit one, avoids a future `git filter-repo` rewrite before going public, and removes the merge-method constraint that subtree merge commits impose under branch protection. The granular pre-consolidation history is preserved in the archived `ckrough/*` origin repos.
 
 1. Snapshot each module into the monorepo, excluding monorepo-redundant paths (`.beads`, `.claude`, `.github`, `.vscode`, `LICENSE`, `NOTICE`, `CONTRIBUTING.md`, `CITATION.cff`, module `.gitignore`/`.gitattributes`):
    - `petbio` -> `services/petdata`
@@ -64,8 +64,8 @@ Method: import each module's committed tree as a clean snapshot (`git archive HE
    - `platform`: copy `platform/docs/*` into `docs/` (architecture, auth-flow, subscriptions, module-template), then retire the repo.
 2. Remove the now-unused top-level module directories and drop their ignore entries. (Confirm the `ckrough/*` origins are intact as the history archive first; `platform` has no remote, so deleting it drops its 2-commit history, though its docs are preserved in `docs/`.)
 
-### Phase 3 (done, 2026-06-19): rename petbio -> petdata (code-level) + FOHA scrub
-Done: Python package `petbio` -> `petdata`, all imports, the FastAPI app (title "Pet Data"), config env prefix `PETBIO_` -> `PETDATA_`, `pyproject.toml` name, `uv.lock`, database references, tests, and docs. The stacker portal renamed in lockstep: module id, `/app/petdata` route, `PUBLIC_PETDATA_API_URL`, the `PetDataApi` client. FOHA scrubbed from the working tree (code, tests, docs) to generic "Shelter Management System (SMS)", including the design partner's leaked SMS URL and the `"FOHA ID"` parser field key (-> `"Animal ID"`). Gates green: petdata pytest (248)/ruff/mypy, stacker svelte-check (0 errors).
+### Phase 3 (done, 2026-06-19): rename petbio -> petdata (code-level) + client-name scrub
+Done: Python package `petbio` -> `petdata`, all imports, the FastAPI app (title "Pet Data"), config env prefix `PETBIO_` -> `PETDATA_`, `pyproject.toml` name, `uv.lock`, database references, tests, and docs. The stacker portal renamed in lockstep: module id, `/app/petdata` route, `PUBLIC_PETDATA_API_URL`, the `PetDataApi` client. The design partner's name scrubbed from the working tree (code, tests, docs) to generic "Shelter Management System (SMS)", including the design partner's leaked SMS URL and the client-specific ID parser field key (-> `"Animal ID"`). Gates green: petdata pytest (248)/ruff/mypy, stacker svelte-check (0 errors).
 
 ### Phase 4 (done, 2026-06-19): GitHub setup and issue migration
 Done: labels (standard set + per-module, with `module:petbio` -> `module:petdata`), milestones (Portal foundation, Portal MVP, v1 wedge), the Evermore Project board, issue/PR templates, and branch protection (PR required; `ci-success` is a required status check). Path-filtered CI landed in `.github/workflows/ci.yml` (PR #48): per-service gates for petdata (ruff/mypy/bandit/pytest), retriever (ruff/mypy/unit pytest; integration needs Postgres, deferred), and stacker (svelte-check/build), behind a single `ci-success` gate. The ~32 Evermore issues were migrated from the consulting Beads db to GitHub Issues with mapped labels and milestones.
@@ -92,10 +92,10 @@ The research-backed kennel card: generation + live lint/score, on the petdata Pa
 
 ## Open items
 - **Repo visibility:** public now vs private until the wedge is demoable. Note the vision spec contains business-model/pricing detail; decide whether that section stays in the public repo or moves to a private planning location before going public.
-- **History scrub before public:** the working tree is FOHA-clean as of Phase 3, but the Phase 2 snapshot-import commit still carries FOHA in git history. Decide whether to rewrite history (e.g. squash to a single clean root) before the repo flips public.
+- **History scrub before public:** the working tree is clean of the design partner's name as of Phase 3, but the Phase 2 snapshot-import commit still carries it in git history. Decide whether to rewrite history (e.g. squash to a single clean root) before the repo flips public.
 - **Docker topology:** `apps/stacker/docker-compose.yml` still references pre-consolidation relative paths (`../petdata`, `../retriever/backend`). Refactor so each service is independently testable or runnable as a suite (tracked separately).
 
 ## Resolved
 - **History preservation:** resolved as clean-snapshot true monorepo (see Phase 2), superseding the `git subtree` recommendation. Granular history stays in the archived `ckrough/*` origins.
-- **FOHA scrub (working tree):** done in Phase 3 (2026-06-19). Code, tests, and docs across `services/petdata` and `apps/stacker` genericized to "Shelter Management System (SMS)"; the design partner's leaked SMS URL and the `"FOHA ID"` field key removed. History scrub is tracked separately under Open items.
+- **Client-name scrub (working tree):** done in Phase 3 (2026-06-19). Code, tests, and docs across `services/petdata` and `apps/stacker` genericized to "Shelter Management System (SMS)"; the design partner's leaked SMS URL and the client-specific ID field key removed. History scrub is tracked separately under Open items.
 - **GitHub setup and CI:** done in Phase 4 (2026-06-19). Labels/milestones/board/templates/branch-protection in place; path-filtered CI (`ci-success` required check) merged in PR #48; issues migrated and the v1 wedge backlog filed (#38-#47).

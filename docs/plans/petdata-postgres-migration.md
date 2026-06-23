@@ -20,7 +20,7 @@ The brief at `agent_brief_petdata-postgres-migration_2026-06-19.html` carried th
 Issue #9 was migrated verbatim from Beads and carries pre-rename language. Two lines need translation when implementing:
 
 - "PetBio uses shared Supabase Postgres" and "petbio_ table prefix" -> the service is `petdata`; tables are prefixed `petdata_`.
-- "Adalo sync writes to Postgres" -> the external sync path writes through the new async repository like every other writer; no Adalo-specific work beyond pointing it at the new repository.
+- "SMS sync writes to Postgres" -> the external sync path writes through the new async repository like every other writer; no SMS-specific work beyond pointing it at the new repository.
 
 ## Scope guard
 

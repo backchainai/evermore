@@ -36,3 +36,7 @@ The three variable font masters live in `_ds/.../assets/fonts/` and resolve the 
 
 - **`uploads/pasted-1781910063581-0.png`** : a design-time reference paste (a 2440x1036 screenshot), not referenced by either comp. It exceeds the 256 KiB `get_file` cap and is not needed for the comps.
 - **`_ds_manifest.json` / `_adherence.oxlintrc.json`** : design-tool metadata describing the full Backchain component library (`components/`, `ui_kits/`, `guidelines/`) that is not part of this token-only embedded bundle; they reference paths absent from this import.
+
+## License
+
+Apache License 2.0. Copyright (C) 2026 Backchain LLC. See [LICENSE](../../../LICENSE).
