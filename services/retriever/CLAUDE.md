@@ -8,21 +8,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 AI-powered Q&A system for shelter volunteers, using RAG to answer questions from policy/procedure documents.
 
-## Issue Tracking (Beads)
+## Issue Tracking
 
-This repository uses [Beads](https://github.com/steveyegge/beads) for issue tracking, with a **redirect** to the shared database in `~/Documents/professional/.beads/`.
-
-**Database:** Shared `professional` database (prefix: `prof-`)
-**Label:** `apprtvr` (identifies Retriever issues within the shared database)
-
-### Creating Issues
-
-Every issue requires the `apprtvr` label plus a type label:
-
-```bash
-bd create "Add user authentication" -l apprtvr -l docs
-bd create "Fix chat timeout bug" -l apprtvr -l tooling
-```
+Evermore uses GitHub Issues for tracking (see ADR 0002 and the root `CLAUDE.md`). Beads is retired in this repo: do not run `bd init` here.
 
 **Architecture:** Cloud-native microservices
 
@@ -182,7 +170,7 @@ follow_imports = "skip"
 
 **Docling OpenAITokenizer API:** `OpenAITokenizer` takes `tokenizer=tiktoken.encoding_for_model("text-embedding-3-small")` (a `tiktoken.Encoding` object), NOT `model_name="text-embedding-3-small"`. Online docs and context7 show the old API — always check the actual constructor signature.
 
-**Environment files:** Backend reads root `.env` via pydantic-settings. Frontend reads `frontend/.env` for SvelteKit `PUBLIC_*` vars. Two separate files — do NOT merge them (adding `extra="ignore"` to pydantic-settings hides typos). In production, each deploy target sets its own env vars. See `.env.example` and `frontend/.env.example`.
+**Environment files:** This service reads its own `.env` via pydantic-settings (do NOT add `extra="ignore"`: it hides typos). In production, the deploy target sets its env vars directly. See `.env.example`. The SvelteKit frontend is a separate app at [`apps/stacker`](../../apps/stacker/) with its own `.env` for `PUBLIC_*` vars; the two are not shared.
 
 **OTel exporter selection:** `tracing.py` auto-selects exporter: GCP Cloud Trace (`gcp_project_id` set) → OTLP/gRPC (`OTEL_EXPORTER_OTLP_ENDPOINT` set, for Jaeger) → Console (debug) → no-op. GCP exporter gracefully falls through if credentials are unavailable (local dev without ADC).
 
@@ -352,7 +340,7 @@ Use this index to find relevant documentation without loading all files. Read on
 
 | Path | Purpose | Read When |
 |------|---------|-----------|
-| `docs/guides/deployment.md` | Railway/Render deployment instructions | Deploying, configuring environments |
+| `docs/guides/deployment.md` | Cloud Run + Cloudflare Pages deployment instructions | Deploying, configuring environments |
 | `docs/guides/adding-documents.md` | Managing policy documents for RAG | Working with document ingestion |
 
 ### Architectural Decision Records (ADRs)

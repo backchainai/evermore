@@ -45,7 +45,7 @@ chore: update dependencies
 
 ### Required Checks (CI enforced)
 
-All backend commands run from the `backend/` directory using `uv run`:
+All commands run from the service root `services/retriever` using `uv run`:
 
 ```bash
 # Linting
@@ -64,7 +64,7 @@ uv run pip-audit
 
 ### All Checks (run before PR)
 
-Run from `backend/`:
+Run from the service root `services/retriever`:
 
 ```bash
 uv run ruff check src/ tests/ --fix && \
@@ -85,7 +85,7 @@ supabase start
 docker compose up -d
 
 # 3. Backend (separate terminal)
-cd backend && uv sync --dev
+cd services/retriever && uv sync --dev
 uv run alembic upgrade head          # first time / after migrations
 uv run uvicorn retriever.main:app --reload --port 8000
 
