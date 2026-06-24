@@ -1,39 +1,30 @@
 # Evermore: Vision and Architecture (v0.1)
 
-Status: draft, 2026-06-19. Living document. Source of truth for what Evermore is and how it is shaped; the GitHub backlog and the repo scaffold derive from this.
-
-## What Evermore is
+## What is Evermore?
 
 Evermore is an AI platform for nonprofit animal shelters. It ingests each shelter's animal data from whatever systems they already use, runs AI modules that produce adoption marketing and answer staff questions, and over time distributes and measures campaigns. Shelters subscribe to the modules they need through one authenticated portal.
 
-The architecture is industry-neutral. The initial design partner is a nonprofit animal shelter served pro bono. The name comes from a short story written by the project owner.
-
-## North Star
+## What is the goal?
 
 Maximize **healthy, safe, and permanent adoptions** for homeless animals. Every module is measured against that single outcome. The working proxy metric is **time-online** (days to adoption), which is the primary outcome variable in the adoption-advertising research and the natural trigger for outcome-based pricing.
 
 ## Who it serves
 
-Nonprofit shelters: chronically under-funded, skeleton crews, volunteer-heavy, and a patchwork of data systems (a commercial Shelter Management System (SMS), bespoke in-house apps, or plain PDF / HTML / Word / text exports, with an API or database only if you are lucky). The wedge: shelters are starved for labor, so any task AI can absorb frees a human for the work that actually places animals.
+Nonprofit shelters: chronically under-funded, skeleton crews, volunteer-heavy, and a patchwork of data systems (a commercial Shelter Management System (SMS), bespoke in-house apps, or plain PDF / HTML / Word / text exports, with an API or database only if you are lucky). Shelters are starved for labor, so any task AI can absorb frees a human for the work that actually places animals.
 
 ## Positioning
 
-Evermore is **not** a Shelter Management System (SMS) and does not replace the one a shelter already runs. It is the **AI intelligence layer that rides on top of whatever system a shelter already uses.** Today's systems are built for records and day-to-day operations, with limited data-extraction APIs and little built-in AI. That gap is the reason to exist: Evermore brings advanced tooling on top of the system of record, and meets the data wherever it lives (even a PDF export).
+Evermore is **not** a Shelter Management System (SMS) and does not replace the one a shelter already runs. It is an **AI intelligence layer that rides on top of shelter operations.** Today's systems are built for records and day-to-day operations, with limited data-extraction APIs and little built-in AI. Evermore brings advanced tooling on top of the system of record, and meets the data wherever it lives.
 
-## Business model
-
-- **Pro bono tier:** rate-limited and content-limited free access. Mission-first, keeps costs bounded.
-- **Outcome-aligned pricing:** a few dollars per *successful adoption* to offset costs. Revenue is tied to the north star; a shelter pays only when an animal goes home. This is also a trust and marketing story: no shelter gambles budget on software that might not work.
-
-## The data spine (core vocabulary)
+## The data model
 
 The platform is a pipeline of named objects. These names are settled; do not overload them.
 
-| Object | What it is | Provenance | Versioned | Owner |
+| Object | What it is | Provenance | Versioned | Module |
 |---|---|---|---|---|
 | **Source documents** | Raw inputs: SMS kennel-card export, in-house app observations, PDFs, HTML, Word | n/a | no | external |
-| **Animal Record** | Canonical normalized data for one animal (demographics, history, behavior observations, medical) | n/a | tracked | Pet Data |
-| **Package** | A curated, named selection of evidence assembled by a human (now) or the LLM (later), the generation-ready subset of the Animal Record | **yes**, per item `{source document, location, category}` | **yes** | Pet Data |
+| **Animal Record** | Canonical normalized data for one animal (demographics, history, behavior observations, medical) | n/a | tracked | PetData |
+| **Package** | A curated, named selection of evidence assembled by a human (now) or the LLM (later), the generation-ready subset of the Animal Record | **yes**, per item `{source document, location, category}` | **yes** | PetData |
 | **Template** | The structure and rules for a collateral type (the five-section kennel card, a Facebook post, an adoption ad) | n/a | n/a | BioWriter |
 | **Composition** | The generated and human-edited piece = Package + Template + customizations. The living source of truth inside the platform. | **yes**, each unit links back to its package items and the research rule it satisfies | **yes, automatically** | BioWriter |
 | **Export** | A flat file rendered from a Composition (PDF, DOCX, Drive). For manual transfer into the shelter system. | **no** (flattened) | a snapshot of a Composition version | BioWriter |
@@ -45,31 +36,28 @@ Flow: `Sources -> Animal Record -> Package -> Composition -> Export`. Provenance
 | Module | Repo (post-rename) | Role |
 |---|---|---|
 | **Stacker** | `apps/stacker` | The portal substrate: single sign-on, subscription/entitlement gating, module registry. Shelters see only what they subscribe to. |
-| **Pet Data** | `services/petdata` (was `petbio`) | The data plane: extensible per-source connectors, the canonical Animal Record, behavior and trend analysis, and the Package builder. |
+| **PetData** | `services/petdata` (was `petbio`) | The data plane: extensible per-source connectors, the canonical Animal Record, behavior and trend analysis, and the Package builder. |
 | **BioWriter** | `services/biowriter` (new) | The generation plane: kennel cards, social posts, and ads from Package + Template + research; the live lint/score editor; Composition versioning and Export. |
 | **Retriever** | `services/retriever` | Dual role: an end-user module (RAG chat over shelter ops and policy docs) **and** an internal platform service (indexes the research corpus so BioWriter can cite the paper a recommendation came from). |
 | **Behavior & Trend Analysis** | within `services/petdata` | Time-decay weighting of longitudinal volunteer observations into per-animal trends. Lets staff get ahead of behavior changes and makes every Composition more accurate. |
 | **Social Distribution & Analytics** | future | Integrations (for example Hootsuite) to schedule cross-platform campaigns, plus per-animal engagement monitoring and content QA (errors, omissions, stale listings). |
 
-## The wedge: the research-backed kennel card
+## The research-backed kennel card
 
-The first thing put in front of a shelter is the **kennel card writer**. Why it is the highest-leverage artifact on the platform: a volunteer writes the kennel card, it is entered in the SMS, the SMS federates it to the public adoption-listing sites, and that text becomes the animal's public listing on the sites adopters actually search. The photos come from the SMS; the words come straight from the kennel card. An untrained volunteer's phrasing is therefore the top of the adoption funnel, published nationally.
+The first thing put in front of a shelter is the **kennel card writer**. Why it is the highest-leverage artifact on the platform: a volunteer writes the kennel card, it is entered in the SMS, the SMS publishes it to the public adoption-listing sites, and that text becomes the animal's public listing on the sites adopters actually search. The photos come from the SMS; the words come straight from the kennel card. Kennel card content is the top of the adoption funnel, published nationally.
 
 Two capabilities, both grounded in the research rubric:
 
 - **Generate:** produce a compliant kennel card from the animal's Package and the five-section template.
-- **Lint and score:** grade a human-written draft against the rubric in the editor in real time. Half the rules are mechanically detectable (social descriptors, first-person dog voice, paragraph vs bullets, 200 to 280 word target, pronoun-over-noun).
-
-The pitch, in one provocative sentence: *your volunteers are lovingly writing kennel cards in the style the research shows gets animals adopted slower, and we fix that with the evidence.*
+- **Lint and score:** grade a human-written draft against the rubric in the editor in real time.
 
 ## Research corpus (two-tier)
 
-Lives in `docs/research/` (see `docs/research/README.md`). The evidence is the platform's credibility and a moat that a generic LLM wrapper cannot copy.
+Lives in `docs/research/` (see `docs/research/README.md`).
 
 - **Tier 1, source-research:** primary peer-reviewed studies, indexable by a Retriever collection for citation. The kennel-card backbone is Markowitz (2020, 184,805 Petfinder profiles) and Kelling et al.
 - **Tier 2, distilled rules:** compiled summaries, templates, and rubrics that drive generation directly. The kennel-card template and rubric already exist (currently in `docs/research/extractions/`, to be renamed `distilled/`).
 - **Known coverage gap:** the behavior-and-welfare and shelter-outcomes papers are only partially distilled; distilling them is backlog behind the Behavior & Trend Analysis module.
-- **Author relationships:** courting the researchers is a named strategic asset; it hardens "defensible" into "endorsed," and outcome data flowing back to them closes the flywheel.
 
 ## Design principles
 
@@ -77,10 +65,6 @@ Lives in `docs/research/` (see `docs/research/README.md`). The evidence is the p
 - **Evidence-backed and traceable.** Generation is grounded in research and, over time, in measured outcomes. Provenance persists through the Composition (hover a sentence, see the evidence and the rule behind it).
 - **Source-agnostic.** The platform never assumes a shelter's stack; connectors are fungible.
 - **Workforce multiplier.** Success is measured in staff hours returned and animals placed, not features shipped.
-
-## The flywheel
-
-Engagement and adoption-outcome data (from the social/analytics module and time-online tracking) feed back to refine what "successful collateral" means for these animals at this shelter. Evermore stops guessing from papers alone and starts learning from results. The longer a shelter runs it, the better its marketing gets.
 
 ## Related documents
 
