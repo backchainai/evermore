@@ -21,11 +21,11 @@ The four formerly-separate module repos are now tracked directly in this one git
 | `services/petdata/` | `petbio` | Directory moved and code renamed `petbio` -> `petdata` (Phase 3): Python package `src/petdata/`, all imports, env prefix `PETDATA_`, FastAPI title "Pet Data". |
 | `services/retriever/` | `retriever` | The inner `backend/` was flattened up to the service root. |
 | `apps/stacker/` | `stacker` | SvelteKit portal. |
-| `services/biowriter/` | (new) | Not yet scaffolded (plan Phase 5/6). |
+| `services/biowriter/` | (new) | Not yet scaffolded; the greenfield scaffold is plan Phase 5, the wedge build on top of it is Phase 6. |
 
 `platform` is retired; its docs (`architecture.md`, `auth-flow.md`, `subscriptions.md`, `module-template.md`) folded into `docs/`.
 
-Pending follow-ups from the plan: tech-stack conformance (Phase 5) and scaffolding `services/biowriter` (Phase 5/6).
+Pending follow-ups from the plan: tech-stack conformance, which includes scaffolding `services/biowriter` greenfield to the standard (Phase 5), then building the wedge on it (Phase 6).
 
 ## The data spine (settled vocabulary, do not overload)
 
@@ -41,7 +41,7 @@ Pending follow-ups from the plan: tech-stack conformance (Phase 5) and scaffoldi
 
 - **Monorepo** (ADR 0001), owner `github.com/backchainai`, repo `evermore`.
 - **GitHub-native tracking** (ADR 0002): Issues + Projects + PRs + the Claude Code action. Beads is retired for Evermore; do **not** `bd init` here. Existing issues migrate from the consulting Beads db to GitHub.
-- **Aggressive tech-stack standardization** (ADR 0003): every module conforms to `~/.claude/standards/tech-stack-standard.md`; nothing is grandfathered. Heavy lift is petdata's SQLite -> Supabase Postgres migration.
+- **Aggressive tech-stack standardization** (ADR 0003): every module conforms to `~/.claude/standards/tech-stack-standard.md`; nothing is grandfathered. petdata's SQLite -> Supabase Postgres migration is done (ADR 0004): it now runs on Supabase Postgres + pgvector via SQLAlchemy async (asyncpg) with Alembic migrations.
 - **The wedge:** the research-backed kennel card.
 
 ## Working conventions

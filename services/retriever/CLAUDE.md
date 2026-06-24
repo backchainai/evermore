@@ -26,7 +26,7 @@ bd create "Fix chat timeout bug" -l apprtvr -l tooling
 
 **Architecture:** Cloud-native microservices
 
-### Stack (backend only — frontend lives in [stacker](https://github.com/ckrough/stacker))
+### Stack (backend only — frontend lives in [`apps/stacker`](../../apps/stacker/))
 - **Backend:** Python 3.13+, FastAPI, Pydantic 2.x, SQLAlchemy 2.0 async
 - **Document Processing:** Docling (PDF, DOCX, PPTX, XLSX, HTML, images, MD, TXT) with HybridChunker
 - **LLM:** One OpenAI-compatible LLM gateway (Cloudflare AI Gateway by default), `OpenAICompatProvider` for chat
@@ -37,7 +37,7 @@ bd create "Fix chat timeout bug" -l apprtvr -l tooling
 
 ## Commands
 
-### Backend (run from `backend/`)
+### Backend (run from the service root `services/retriever/`)
 
 ```bash
 # Install dependencies (dev)
@@ -65,7 +65,7 @@ uv run ruff check src/ tests/ --fix && uv run ruff format src/ tests/ && uv run 
 
 ## Local Development
 
-The dev workflow runs infrastructure in Docker + Supabase CLI, with the backend running natively for fast live reload. The frontend lives in the [stacker](https://github.com/ckrough/stacker) portal repo.
+The dev workflow runs infrastructure in Docker + Supabase CLI, with the backend running natively for fast live reload. The frontend lives in the [`apps/stacker`](../../apps/stacker/) portal.
 
 ```bash
 # 1. Start Supabase (auth, realtime, storage)
@@ -75,7 +75,7 @@ supabase start
 docker compose up -d
 
 # 3. Backend
-cd backend && uv sync --dev
+cd services/retriever && uv sync --dev
 uv run alembic upgrade head          # first time / after migrations
 uv run uvicorn retriever.main:app --reload --port 8000
 
@@ -107,7 +107,7 @@ CI uses `dorny/paths-filter` — only changed stacks run:
 
 | Stack | Path Filter | Jobs |
 |-------|-------------|------|
-| Backend | `backend/**` | lint, typecheck, test |
+| Retriever | `services/retriever/**` | lint, typecheck, test |
 
 The `all-checks` gate job requires all triggered jobs to pass (skipped jobs are OK).
 
@@ -118,18 +118,17 @@ The `all-checks` gate job requires all triggered jobs to pass (skipped jobs are 
 ### Repository Layout
 
 ```
-retriever/
-├── .github/workflows/      # CI/CD: ci.yml, claude.yml, release.yml
-├── backend/                # Python backend
-│   ├── src/retriever/      # Application source
-│   ├── tests/              # Backend tests
-│   └── pyproject.toml      # uv-managed dependencies
-└── docs/                   # Architecture docs and ADRs
+services/retriever/
+├── src/retriever/          # Application source
+├── tests/                  # Tests
+├── alembic/                # Database migrations
+├── docs/                   # Architecture docs and ADRs
+└── pyproject.toml          # uv-managed dependencies
 ```
 
-> **Frontend** has been extracted to the [stacker](https://github.com/ckrough/stacker) portal repo.
+> **Frontend** lives in the [`apps/stacker`](../../apps/stacker/) portal.
 
-### Backend Structure (`backend/src/retriever/`)
+### Backend Structure (`src/retriever/`)
 
 ```
 retriever/
@@ -323,7 +322,7 @@ provider = OpenAICompatProvider(
 ```
 
 ### Module Structure (backend)
-Each module in `backend/src/retriever/modules/` is self-contained:
+Each module in `src/retriever/modules/` is self-contained:
 ```
 module_name/
 ├── __init__.py

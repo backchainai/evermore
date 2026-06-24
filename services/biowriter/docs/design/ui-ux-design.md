@@ -1,6 +1,6 @@
 # BioWriter UI/UX Design
 
-Design reference for the BioWriter user interface. Captures the layout model, interaction patterns, and the Share subsystem settled during design sessions, so they survive into the build. BioWriter is not yet scaffolded (plan Phase 5/6); this document is the design input for that work.
+Design reference for the BioWriter user interface. Captures the layout model, interaction patterns, and the Share subsystem settled during design sessions, so they survive into the build. BioWriter is not yet scaffolded (greenfield scaffold in plan Phase 5, the wedge build in Phase 6); this document is the design input for that work.
 
 ## What BioWriter is
 
