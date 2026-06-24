@@ -19,12 +19,31 @@ RUN_DIR := .dev
 RETRIEVER_PID := $(RUN_DIR)/retriever.pid
 RETRIEVER_LOG := $(RUN_DIR)/retriever.log
 
-.PHONY: env supabase-up db-up db-migrate retriever-up retriever-bg stacker-up dev down
+# Persistent dev-config store, outside any worktree so values survive across
+# checkouts and worktree deletes. Override with EVERMORE_DEV_HOME.
+DEV_HOME ?= $(or $(EVERMORE_DEV_HOME),$(HOME)/.config/evermore)
+
+.PHONY: env link-env supabase-up db-up db-migrate retriever-up retriever-bg stacker-up dev down
 
 env:
 	@[ -f $(STACKER_DIR)/.env ] || cp $(STACKER_DIR)/.env.example $(STACKER_DIR)/.env && echo "stacker .env ready"
 	@[ -f $(RETRIEVER_DIR)/.env ] || cp $(RETRIEVER_DIR)/.env.example $(RETRIEVER_DIR)/.env && echo "retriever .env ready"
-	@echo "Add your OPENROUTER_API_KEY and OPENAI_API_KEY to $(RETRIEVER_DIR)/.env for chat answers."
+	@echo "Add LLM_GATEWAY_TOKEN + CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_GATEWAY_ID to $(RETRIEVER_DIR)/.env for chat answers."
+	@echo "To retain config across worktrees instead, use 'make link-env' (see docs/local-development.md)."
+
+# Persistent alternative to `env`: keep one copy of your dev config in $(DEV_HOME)
+# and symlink each service's .env to it. Run once per worktree; values persist.
+link-env:
+	@mkdir -p $(DEV_HOME)
+	@for svc in $(RETRIEVER_DIR) $(STACKER_DIR); do \
+	  name=$$(basename $$svc); store=$(DEV_HOME)/$$name.env; envf=$$svc/.env; \
+	  if [ ! -f $$store ]; then \
+	    if [ -f $$envf ] && [ ! -L $$envf ]; then mv $$envf $$store && echo "adopted existing $$envf -> $$store"; \
+	    else cp $$svc/.env.example $$store && echo "bootstrapped $$store from $$svc/.env.example"; fi; \
+	  fi; \
+	  ln -sfn $$store $$envf && echo "linked $$envf -> $$store"; \
+	done
+	@echo "Edit values once in $(DEV_HOME)/*.env; they persist across worktrees and development cycles."
 
 supabase-up:
 	cd $(STACKER_DIR) && supabase start
