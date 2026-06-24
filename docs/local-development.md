@@ -24,7 +24,7 @@ reload; only the datastores run in Docker.
 - [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started)
 - [uv](https://docs.astral.sh/uv/)
 - Node.js and npm
-- An LLM gateway for chat answers: chat, embeddings, and moderation route through one OpenAI-compatible gateway (Cloudflare AI Gateway by default). Set `LLM_GATEWAY_TOKEN` (the single BYOK secret) plus `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_GATEWAY_ID` (or `LLM_GATEWAY_URL` for another gateway). The gateway is required; without it the Retriever API fails fast on startup.
+- An LLM gateway for chat answers: chat, embeddings, and moderation route through one OpenAI-compatible gateway (Cloudflare AI Gateway by default). Set `LLM_GATEWAY_TOKEN` (the single BYOK secret) plus `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_GATEWAY_ID` (or `LLM_GATEWAY_URL` for another gateway). The gateway is required; without it the Retriever API fails fast on startup. To stand up a new gateway, see `docs/cloudflare-ai-gateway-setup.md`.
 
 ## Quick start
 
@@ -63,6 +63,32 @@ make down
 ```
 
 stops the background Retriever, the pgvector container, and Supabase.
+
+## Persistent dev config (across worktrees)
+
+`make env` copies the `.env.example` files into the current checkout with blank
+secrets. A fresh worktree (for example a per-issue worktree) starts with no
+`.env`, so this re-blanks your gateway token, account and gateway IDs, model
+pins, and database and Supabase values every cycle.
+
+`make link-env` keeps one persistent copy of your dev config outside any
+worktree and symlinks each service's `.env` to it:
+
+```
+make link-env
+```
+
+On first run it stores your config under `~/.config/evermore/` (override with
+`EVERMORE_DEV_HOME`), bootstrapping `retriever.env` and `stacker.env` from the
+examples, or adopting an existing real `.env` if you already have one. It then
+points `services/retriever/.env` and `apps/stacker/.env` at those store files.
+Edit the values once in `~/.config/evermore/*.env`; because the store lives
+outside the repo, the values survive worktree deletes and cannot be committed.
+In any new worktree, run `make link-env` once and your config is present.
+
+Keep model pins (`DEFAULT_LLM_MODEL`, `DEFAULT_EMBEDDING_MODEL`,
+`FALLBACK_LLM_MODEL`) in the same store file to carry them across cycles. Use
+`make env` instead if you prefer an independent `.env` per checkout.
 
 ## Manual steps
 
