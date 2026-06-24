@@ -66,7 +66,7 @@ Pin actual versions per the tech stack standard.
 
 ## 4. Auth wiring
 
-Copy the JWKS validator and dependencies from `retriever/backend/src/retriever/modules/auth/`. Apply as router-level dependencies:
+Copy the JWKS validator and dependencies from `services/retriever/src/retriever/modules/auth/`. Apply as router-level dependencies:
 
 ```python
 from fastapi import APIRouter, Depends

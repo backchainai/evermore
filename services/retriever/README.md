@@ -54,12 +54,12 @@ cp .env.example .env
 supabase start                    # Auth + Supabase services
 docker compose up -d              # pgvector postgres + jaeger
 
-cd backend && uv sync --dev
+cd services/retriever && uv sync --dev
 uv run alembic upgrade head
 uv run uvicorn retriever.main:app --reload --port 8000
 ```
 
-Backend API: [http://localhost:8000/docs](http://localhost:8000/docs). The frontend portal lives in the separate [stacker](https://github.com/ckrough/stacker) repository.
+Backend API: [http://localhost:8000/docs](http://localhost:8000/docs). The frontend portal lives in [`apps/stacker`](../../apps/stacker/) in this monorepo.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for full development setup, quality checks, and workflow.
 
@@ -110,9 +110,9 @@ For best results:
 
 ## Deployment
 
-- **Backend:** Cloud Run via `gcloud run deploy --source ./backend`
+- **Backend:** Cloud Run via `gcloud run deploy --source services/retriever`
 - **Database:** Supabase (managed Postgres + pgvector)
-- **Frontend:** deployed from the [stacker](https://github.com/ckrough/stacker) repository (Cloudflare Pages)
+- **Frontend:** deployed from [`apps/stacker`](../../apps/stacker/) (Cloudflare Pages)
 
 ### Production Checklist
 
@@ -144,7 +144,7 @@ For best results:
 - **Auth:** Supabase Auth / JWKS
 - **Observability:** structlog + OpenTelemetry + Langfuse
 - **Deploy:** Cloud Run (backend)
-- **Frontend:** [stacker](https://github.com/ckrough/stacker) (separate repo): SvelteKit + Svelte 5 runes + Skeleton UI v4
+- **Frontend:** [`apps/stacker`](../../apps/stacker/) in this monorepo: SvelteKit + Svelte 5 runes + Skeleton UI v4
 
 ## Development
 

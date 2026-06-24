@@ -93,7 +93,8 @@ make dev
 
 Brings up the pgvector container, runs the Retriever migrations, starts
 Retriever in the background, then runs stacker in the foreground. Supabase is
-already up from step 3; `make dev` re-checks it and continues.
+already up from step 3; `make dev` re-runs `supabase start`, which is a no-op
+when Supabase is already running.
 
 Open http://localhost:5173/login, sign up (email confirmation is disabled, so
 signup is instant), and you land on the Retriever chat. Ask a question to get

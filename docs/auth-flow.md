@@ -49,7 +49,7 @@ Browser              stacker (SvelteKit SSR)         module backend          Sup
 
 ## Module backend side
 
-Reference implementation: `retriever/backend/src/retriever/modules/auth/`.
+Reference implementation: `services/retriever/src/retriever/modules/auth/`.
 
 Components every backend implements:
 

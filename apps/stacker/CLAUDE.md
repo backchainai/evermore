@@ -26,7 +26,7 @@ Stacker is a **portal frontend** that hosts module UIs for independent backend s
 Each module provides:
 - `src/lib/modules/{id}/index.ts` — `ModuleDefinition` export
 - `src/lib/modules/{id}/api/` — TypeScript API client + types
-- `src/lib/modules/{id}/components/` — Svelte components
+- `src/lib/modules/{id}/components/` — Svelte components (modules with their own UI; Retriever has these, Pet Data ships an API client only so far)
 - `src/routes/app/{id}/` — SvelteKit routes
 
 Portal shell lives at `src/lib/portal/` (components, config, theme, types).
