@@ -8,10 +8,24 @@ Built and maintained by Backchain LLC.
 
 ## Start here
 
+- **Run it locally:** [`docs/local-development.md`](docs/local-development.md)
+- **Contributing:** [`CONTRIBUTING.md`](CONTRIBUTING.md)
 - **Vision and architecture:** [`docs/evermore-vision-and-architecture.md`](docs/evermore-vision-and-architecture.md)
 - **Decisions:** [`docs/adr/`](docs/adr/)
 - **Restructure plan:** [`docs/plans/repo-restructure-and-rename.md`](docs/plans/repo-restructure-and-rename.md)
 - **Research corpus:** [`docs/research/README.md`](docs/research/README.md)
+
+## Quick start
+
+Bring up the portal with the Retriever module on your machine:
+
+```
+make env    # create .env files from examples
+make dev    # Supabase + pgvector + retriever, then stacker in the foreground
+```
+
+Then open http://localhost:5173/login. Prerequisites, full topology, and
+troubleshooting live in [`docs/local-development.md`](docs/local-development.md).
 
 ## Structure (target monorepo)
 
