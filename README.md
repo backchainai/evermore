@@ -2,10 +2,6 @@
 
 An AI platform for nonprofit animal shelters. Evermore ingests animal data from whatever system a shelter already uses, generates research-backed adoption marketing, answers staff questions, and is measured against one outcome: more healthy, safe, and permanent adoptions for homeless animals.
 
-It rides on top of the Shelter Management System (SMS) a shelter already runs rather than replacing it. The initial design partner is a nonprofit animal shelter served pro bono.
-
-Built and maintained by Backchain LLC.
-
 ## Start here
 
 - **Run it locally:** [`docs/local-development.md`](docs/local-development.md)
