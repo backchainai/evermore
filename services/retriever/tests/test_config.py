@@ -66,7 +66,7 @@ def test_llm_gateway_token_default() -> None:
 def test_fallback_llm_model_default() -> None:
     """fallback_llm_model defaults to the cheap Haiku slug."""
     settings = Settings(_env_file=None)  # type: ignore[call-arg]
-    assert settings.fallback_llm_model == "anthropic/claude-haiku-3"
+    assert settings.fallback_llm_model == "anthropic/claude-haiku-4-5"
 
 
 def test_get_settings_returns_cached_instance() -> None:

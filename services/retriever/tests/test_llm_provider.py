@@ -25,7 +25,7 @@ class TestOpenAICompatProviderInit:
         """Provider should initialize with an injected client."""
         provider = OpenAICompatProvider(client=_make_client())
 
-        assert provider._default_model == "anthropic/claude-sonnet-4.6"
+        assert provider._default_model == "anthropic/claude-sonnet-4-6"
         assert provider._timeout == 30.0
 
     def test_init_with_custom_model(self) -> None:
@@ -96,7 +96,7 @@ class TestOpenAICompatProviderComplete:
         )
 
         call_kwargs = provider._client.chat.completions.create.call_args.kwargs
-        assert call_kwargs["model"] == "anthropic/claude-sonnet-4.6"
+        assert call_kwargs["model"] == "anthropic/claude-sonnet-4-6"
 
     async def test_complete_with_custom_model(
         self, provider: OpenAICompatProvider, mock_response: MagicMock
