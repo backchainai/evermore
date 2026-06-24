@@ -26,9 +26,13 @@ DEV_HOME ?= $(or $(EVERMORE_DEV_HOME),$(HOME)/.config/evermore)
 .PHONY: env link-env supabase-up db-up db-migrate retriever-up retriever-bg stacker-up dev down
 
 env:
-	@[ -f $(STACKER_DIR)/.env ] || cp $(STACKER_DIR)/.env.example $(STACKER_DIR)/.env && echo "stacker .env ready"
-	@[ -f $(RETRIEVER_DIR)/.env ] || cp $(RETRIEVER_DIR)/.env.example $(RETRIEVER_DIR)/.env && echo "retriever .env ready"
-	@echo "Add LLM_GATEWAY_TOKEN + CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_GATEWAY_ID to $(RETRIEVER_DIR)/.env for chat answers."
+	@[ -f $(STACKER_DIR)/.env ] || cp $(STACKER_DIR)/.env.example $(STACKER_DIR)/.env && echo "stacker   .env ready: $(STACKER_DIR)/.env"
+	@[ -f $(RETRIEVER_DIR)/.env ] || cp $(RETRIEVER_DIR)/.env.example $(RETRIEVER_DIR)/.env && echo "retriever .env ready: $(RETRIEVER_DIR)/.env"
+	@echo ""
+	@echo "Populate these before 'make dev':"
+	@echo "  $(RETRIEVER_DIR)/.env  -> LLM_GATEWAY_TOKEN, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_GATEWAY_ID  (required; chat fails fast without them)"
+	@echo "  $(STACKER_DIR)/.env    -> PUBLIC_SUPABASE_ANON_KEY  (from: cd $(STACKER_DIR) && supabase status -o json, after 'make supabase-up')"
+	@echo ""
 	@echo "To retain config across worktrees instead, use 'make link-env' (see docs/local-development.md)."
 
 # Persistent alternative to `env`: keep one copy of your dev config in $(DEV_HOME)
@@ -62,8 +66,8 @@ retriever-bg: db-migrate
 	@mkdir -p $(RUN_DIR)
 	cd $(RETRIEVER_DIR) && uv sync
 	@echo "starting retriever in background (log: $(RETRIEVER_LOG))"
-	@cd $(RETRIEVER_DIR) && nohup uv run uvicorn retriever.main:app --port 8001 --reload \
-		> ../../$(RETRIEVER_LOG) 2>&1 & echo $$! > ../../$(RETRIEVER_PID)
+	@( cd $(RETRIEVER_DIR) && exec nohup uv run uvicorn retriever.main:app --port 8001 --reload ) \
+		> $(RETRIEVER_LOG) 2>&1 & echo $$! > $(RETRIEVER_PID)
 
 stacker-up:
 	cd $(STACKER_DIR) && npm install && npm run dev

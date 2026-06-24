@@ -84,8 +84,8 @@ class Settings(BaseSettings):
     database_require_ssl: bool = False  # True in production (Supabase / Cloud Run)
 
     # LLM
-    default_llm_model: str = "anthropic/claude-sonnet-4.6"
-    fallback_llm_model: str = "anthropic/claude-haiku-3"
+    default_llm_model: str = "anthropic/claude-sonnet-4-6"
+    fallback_llm_model: str = "anthropic/claude-haiku-4-5"
     default_embedding_model: str = "openai/text-embedding-3-small"
     llm_timeout_seconds: float = 30.0
 
