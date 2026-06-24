@@ -49,4 +49,6 @@ infra/               One-command local stack (planned)
 
 ## License
 
-Apache License 2.0. Copyright (C) 2026 Backchain LLC. See [LICENSE](LICENSE).
+Apache License 2.0. See [LICENSE](LICENSE) for the full text.
+
+Copyright (C) 2026 Backchain LLC
