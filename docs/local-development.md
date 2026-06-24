@@ -24,7 +24,7 @@ reload; only the datastores run in Docker.
 - [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started)
 - [uv](https://docs.astral.sh/uv/)
 - Node.js and npm
-- LLM API keys for chat answers: an OpenRouter key and an OpenAI key
+- An LLM gateway for chat answers: chat, embeddings, and moderation route through one OpenAI-compatible gateway (Cloudflare AI Gateway by default). Set `LLM_GATEWAY_TOKEN` (the single BYOK secret) plus `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_GATEWAY_ID` (or `LLM_GATEWAY_URL` for another gateway). The gateway is required; without it the Retriever API fails fast on startup.
 
 ## Quick start
 
@@ -32,15 +32,17 @@ reload; only the datastores run in Docker.
 make env
 ```
 
-Creates `.env` files from the examples. Then add your keys to
+Creates `.env` files from the examples. Then add your gateway config to
 `services/retriever/.env`:
 
 ```
-OPENROUTER_API_KEY=...   # chat model (default anthropic/claude-sonnet-4)
-OPENAI_API_KEY=...       # embeddings + moderation
+LLM_GATEWAY_TOKEN=...        # single BYOK token; provider keys live in the gateway
+CLOUDFLARE_ACCOUNT_ID=...    # with CLOUDFLARE_GATEWAY_ID, derives the gateway URL
+CLOUDFLARE_GATEWAY_ID=...    # (or set LLM_GATEWAY_URL for another OpenAI-compatible gateway)
 ```
 
-Without these, the portal and navigation work but chat cannot return answers.
+Without a gateway configured, the Retriever API fails fast on startup, so chat
+cannot return answers (the portal and navigation still work).
 
 ```
 make dev

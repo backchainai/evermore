@@ -56,20 +56,21 @@ class Settings(BaseSettings):
     supabase_service_role_key: SecretStr = SecretStr("")
     database_url: SecretStr = SecretStr("")
 
-    # OpenRouter
-    openrouter_api_key: SecretStr = SecretStr("")
-
-    # OpenAI
-    openai_api_key: SecretStr = SecretStr("")
-
     # Langfuse
     langfuse_secret_key: SecretStr = SecretStr("")
     langfuse_public_key: str = ""
     langfuse_host: str = "https://us.cloud.langfuse.com"
 
-    # Cloudflare AI Gateway
+    # LLM gateway (Cloudflare AI Gateway by default; override llm_gateway_url
+    # for any OpenAI-compatible gateway)
+    llm_gateway_url: str = ""
     cloudflare_account_id: str = ""
     cloudflare_gateway_id: str = ""
+    llm_gateway_token: SecretStr = SecretStr("")
+    # Gateway-specific auth header. Isolating the name here keeps the client
+    # code generic: a different gateway sets this (or leaves the token empty to
+    # use the standard Authorization header).
+    llm_gateway_auth_header: str = "cf-aig-authorization"
 
     # GCP
     gcp_project_id: str = ""
@@ -83,7 +84,8 @@ class Settings(BaseSettings):
     database_require_ssl: bool = False  # True in production (Supabase / Cloud Run)
 
     # LLM
-    default_llm_model: str = "anthropic/claude-sonnet-4"
+    default_llm_model: str = "anthropic/claude-sonnet-4.6"
+    fallback_llm_model: str = "anthropic/claude-haiku-3"
     default_embedding_model: str = "openai/text-embedding-3-small"
     llm_timeout_seconds: float = 30.0
 
@@ -138,16 +140,34 @@ class Settings(BaseSettings):
         """Parsed list of allowed CORS origins."""
         return _parse_origins_str(self.allowed_origins)
 
-    @computed_field  # type: ignore[prop-decorator]
     @property
-    def ai_gateway_base_url(self) -> str:
-        """Cloudflare AI Gateway base URL for OpenAI-compatible calls."""
+    def llm_gateway_base_url(self) -> str:
+        """Base URL for the OpenAI-compatible LLM gateway.
+
+        Resolves an explicit override first so the gateway is swappable to any
+        OpenAI-compatible endpoint with config alone; Cloudflare is the default
+        concrete provider. The gateway is required: with neither an explicit
+        URL nor the Cloudflare IDs configured, this raises rather than routing
+        anywhere implicitly.
+
+        This is a plain property (not a computed_field) so it is not evaluated
+        during model serialization/dump, where the raise would surface as a
+        dump error rather than at the call site that needs a gateway.
+
+        Raises:
+            ValueError: If no gateway is configured.
+        """
+        if self.llm_gateway_url:
+            return self.llm_gateway_url
         if self.cloudflare_account_id and self.cloudflare_gateway_id:
             return (
                 f"https://gateway.ai.cloudflare.com/v1/"
-                f"{self.cloudflare_account_id}/{self.cloudflare_gateway_id}/openai"
+                f"{self.cloudflare_account_id}/{self.cloudflare_gateway_id}/compat"
             )
-        return "https://openrouter.ai/api/v1"
+        raise ValueError(
+            "No LLM gateway configured. Set LLM_GATEWAY_URL, or "
+            "CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_GATEWAY_ID."
+        )
 
 
 @lru_cache

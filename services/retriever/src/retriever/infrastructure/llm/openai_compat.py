@@ -1,7 +1,7 @@
 # Copyright (C) 2025 Backchain LLC
 # SPDX-License-Identifier: Apache-2.0
 
-"""OpenRouter LLM provider implementation."""
+"""OpenAI-compatible LLM provider implementation."""
 
 from datetime import timedelta
 
@@ -16,7 +16,6 @@ from tenacity import (
 )
 
 from retriever.infrastructure.llm.exceptions import (
-    LLMConfigurationError,
     LLMProviderError,
     LLMRateLimitError,
     LLMTimeoutError,
@@ -26,51 +25,42 @@ from retriever.infrastructure.observability.langfuse import observe
 logger = structlog.get_logger()
 
 
-class OpenRouterProvider:
-    """LLM provider using OpenRouter's OpenAI-compatible API.
+class OpenAICompatProvider:
+    """LLM provider speaking the OpenAI chat-completions API.
 
-    Routes calls through Cloudflare AI Gateway when configured, falling
-    back to OpenRouter directly. Includes resilience patterns:
+    Calls go through an OpenAI-compatible LLM gateway. Includes resilience
+    patterns:
     - Retries with exponential backoff for transient failures
     - Circuit breaker to fail fast after repeated failures
     - Configurable timeouts
     """
 
-    PROVIDER_NAME = "openrouter"
+    PROVIDER_NAME = "openai-compat"
 
     def __init__(
         self,
-        api_key: str,
         *,
-        base_url: str = "https://openrouter.ai/api/v1",
-        default_model: str = "anthropic/claude-sonnet-4",
+        client: AsyncOpenAI,
+        default_model: str = "anthropic/claude-sonnet-4.6",
         timeout_seconds: float = 30.0,
         circuit_breaker_fail_max: int = 5,
         circuit_breaker_timeout: float = 60.0,
     ) -> None:
-        """Initialize the OpenRouter provider.
+        """Initialize the provider.
 
         Args:
-            api_key: OpenRouter API key.
-            base_url: Base URL for the API (injected from settings.ai_gateway_base_url).
+            client: Pre-built AsyncOpenAI client pointed at the LLM gateway.
+                The injected client owns the base URL, timeout, and auth
+                header, so chat carries the gateway auth header like embeddings
+                and moderation.
             default_model: Default model to use for completions.
-            timeout_seconds: Request timeout in seconds.
+            timeout_seconds: Request timeout in seconds, used only for the
+                timeout messages reported on APITimeoutError; the injected
+                client owns the transport-level timeout.
             circuit_breaker_fail_max: Open circuit after this many failures.
             circuit_breaker_timeout: Time in seconds before attempting recovery.
-
-        Raises:
-            LLMConfigurationError: If API key is missing.
         """
-        if not api_key:
-            raise LLMConfigurationError(
-                "OpenRouter API key is required", provider=self.PROVIDER_NAME
-            )
-
-        self._client = AsyncOpenAI(
-            base_url=base_url,
-            api_key=api_key,
-            timeout=timeout_seconds,
-        )
+        self._client = client
         self._default_model = default_model
         self._timeout = timeout_seconds
 
@@ -87,7 +77,7 @@ class OpenRouterProvider:
         *,
         model: str | None = None,
     ) -> str:
-        """Generate a completion using OpenRouter.
+        """Generate a completion via the LLM gateway.
 
         Args:
             system_prompt: The system message setting context/behavior.
@@ -205,7 +195,7 @@ class OpenRouterProvider:
                 model=model,
             )
             raise LLMRateLimitError(
-                "Rate limited by OpenRouter. Please try again shortly.",
+                "Rate limited by the LLM gateway. Please try again shortly.",
                 provider=self.PROVIDER_NAME,
             ) from e
 
@@ -357,7 +347,7 @@ class OpenRouterProvider:
                 model=model,
             )
             raise LLMRateLimitError(
-                "Rate limited by OpenRouter. Please try again shortly.",
+                "Rate limited by the LLM gateway. Please try again shortly.",
                 provider=self.PROVIDER_NAME,
             ) from e
 

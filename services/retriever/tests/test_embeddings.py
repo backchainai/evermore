@@ -3,10 +3,9 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from openai import APIConnectionError, APITimeoutError, RateLimitError
+from openai import APIConnectionError, APITimeoutError, AsyncOpenAI, RateLimitError
 
 from retriever.infrastructure.embeddings import (
-    EmbeddingConfigurationError,
     EmbeddingProviderError,
     EmbeddingRateLimitError,
     EmbeddingTimeoutError,
@@ -14,12 +13,17 @@ from retriever.infrastructure.embeddings import (
 )
 
 
+def _make_client() -> MagicMock:
+    """Create a mock AsyncOpenAI client for injection."""
+    return MagicMock(spec=AsyncOpenAI)
+
+
 class TestOpenAIEmbeddingProviderInit:
     """Tests for OpenAIEmbeddingProvider initialization."""
 
-    def test_init_with_valid_api_key(self) -> None:
-        """Provider should initialize with valid API key."""
-        provider = OpenAIEmbeddingProvider(api_key="test-key")
+    def test_init_with_injected_client(self) -> None:
+        """Provider should initialize with an injected client."""
+        provider = OpenAIEmbeddingProvider(client=_make_client())
 
         assert provider._model == "openai/text-embedding-3-small"
         assert provider._timeout == 30.0
@@ -27,24 +31,23 @@ class TestOpenAIEmbeddingProviderInit:
     def test_init_with_custom_model(self) -> None:
         """Provider should accept custom model."""
         provider = OpenAIEmbeddingProvider(
-            api_key="test-key",
+            client=_make_client(),
             model="openai/text-embedding-3-large",
         )
 
         assert provider._model == "openai/text-embedding-3-large"
 
-    def test_init_with_empty_api_key_raises(self) -> None:
-        """Provider should raise error with empty API key."""
-        with pytest.raises(EmbeddingConfigurationError) as exc_info:
-            OpenAIEmbeddingProvider(api_key="")
+    def test_init_stores_injected_client(self) -> None:
+        """Provider should store the injected client as _client."""
+        client = _make_client()
+        provider = OpenAIEmbeddingProvider(client=client)
 
-        assert "API key is required" in str(exc_info.value)
-        assert exc_info.value.provider == "openai"
+        assert provider._client is client
 
     def test_dimensions_returns_correct_value_for_small(self) -> None:
         """Should return correct dimensions for text-embedding-3-small."""
         provider = OpenAIEmbeddingProvider(
-            api_key="test-key",
+            client=_make_client(),
             model="openai/text-embedding-3-small",
         )
 
@@ -53,7 +56,7 @@ class TestOpenAIEmbeddingProviderInit:
     def test_dimensions_returns_correct_value_for_large(self) -> None:
         """Should return correct dimensions for text-embedding-3-large."""
         provider = OpenAIEmbeddingProvider(
-            api_key="test-key",
+            client=_make_client(),
             model="openai/text-embedding-3-large",
         )
 
@@ -66,7 +69,7 @@ class TestOpenAIEmbeddingProviderEmbed:
     @pytest.fixture
     def provider(self) -> OpenAIEmbeddingProvider:
         """Create a provider with a mocked client."""
-        return OpenAIEmbeddingProvider(api_key="test-key")
+        return OpenAIEmbeddingProvider(client=_make_client())
 
     @pytest.fixture
     def mock_response(self) -> MagicMock:
@@ -153,7 +156,7 @@ class TestOpenAIEmbeddingProviderCircuitBreaker:
     async def test_circuit_breaker_opens_after_failures(self) -> None:
         """Circuit breaker should open after repeated failures."""
         provider = OpenAIEmbeddingProvider(
-            api_key="test-key",
+            client=_make_client(),
             circuit_breaker_fail_max=3,
             circuit_breaker_timeout=60.0,
         )
@@ -183,7 +186,7 @@ class TestOpenAIEmbeddingProviderEmbedBatch:
     @pytest.fixture
     def provider(self) -> OpenAIEmbeddingProvider:
         """Create a provider with a mocked client."""
-        return OpenAIEmbeddingProvider(api_key="test-key")
+        return OpenAIEmbeddingProvider(client=_make_client())
 
     @pytest.fixture
     def mock_batch_response(self) -> MagicMock:

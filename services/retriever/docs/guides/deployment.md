@@ -10,7 +10,7 @@ How to deploy Retriever to production.
 | Frontend | Cloudflare Pages | Git-connected or `wrangler pages deploy` |
 | Database | Supabase | Managed Postgres + pgvector |
 | Auth | Supabase Auth | Managed, JWKS endpoint for JWT verification |
-| LLM Gateway | Cloudflare AI Gateway | Routes OpenRouter + OpenAI traffic |
+| LLM Gateway | Cloudflare AI Gateway | Routes all chat, embedding, and moderation traffic; BYOK provider keys held in the gateway |
 
 ## Prerequisites
 
@@ -18,9 +18,9 @@ How to deploy Retriever to production.
 - `gcloud` CLI configured and authenticated
 - Cloudflare account (for Pages + AI Gateway)
 - Supabase project created
-- API keys ready:
-  - OpenRouter API key ([get here](https://openrouter.ai/keys))
-  - OpenAI API key ([get here](https://platform.openai.com/api-keys))
+- LLM gateway ready:
+  - Cloudflare AI Gateway configured with BYOK provider keys (OpenAI, Anthropic) stored in the gateway
+  - Cloudflare account ID and gateway ID, plus the gateway BYOK token (`LLM_GATEWAY_TOKEN`)
 
 ---
 
@@ -39,8 +39,8 @@ gcloud run deploy retriever \
     --min-instances 0 \
     --max-instances 10 \
     --timeout 60 \
-    --set-env-vars "DEBUG=false" \
-    --set-secrets "OPENROUTER_API_KEY=retriever-openrouter-api-key:latest,OPENAI_API_KEY=retriever-openai-api-key:latest,DATABASE_URL=retriever-database-url:latest"
+    --set-env-vars "DEBUG=false,CLOUDFLARE_ACCOUNT_ID=your-account-id,CLOUDFLARE_GATEWAY_ID=your-gateway-id" \
+    --set-secrets "LLM_GATEWAY_TOKEN=retriever-llm-gateway-token:latest,DATABASE_URL=retriever-database-url:latest"
 ```
 
 This builds the container from source using Cloud Build and deploys it in one step. No local Docker build required.
@@ -53,18 +53,16 @@ Create secrets before first deploy:
 export PROJECT_ID=your-project-id
 
 # Create secrets
-echo -n "placeholder" | gcloud secrets create retriever-openrouter-api-key --data-file=- --project="$PROJECT_ID"
-echo -n "placeholder" | gcloud secrets create retriever-openai-api-key --data-file=- --project="$PROJECT_ID"
+echo -n "placeholder" | gcloud secrets create retriever-llm-gateway-token --data-file=- --project="$PROJECT_ID"
 echo -n "placeholder" | gcloud secrets create retriever-database-url --data-file=- --project="$PROJECT_ID"
 
 # Update with real values
-echo -n 'sk-or-v1-your-key' | gcloud secrets versions add retriever-openrouter-api-key --data-file=- --project="$PROJECT_ID"
-echo -n 'sk-your-key' | gcloud secrets versions add retriever-openai-api-key --data-file=- --project="$PROJECT_ID"
+echo -n 'your-gateway-byok-token' | gcloud secrets versions add retriever-llm-gateway-token --data-file=- --project="$PROJECT_ID"
 echo -n 'postgresql+asyncpg://...' | gcloud secrets versions add retriever-database-url --data-file=- --project="$PROJECT_ID"
 
 # Grant Cloud Run access
 PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
-for SECRET in retriever-openrouter-api-key retriever-openai-api-key retriever-database-url; do
+for SECRET in retriever-llm-gateway-token retriever-database-url; do
   gcloud secrets add-iam-policy-binding $SECRET \
       --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
       --role="roles/secretmanager.secretAccessor" \
@@ -137,18 +135,21 @@ postgresql+asyncpg://postgres.[project-ref]:[password]@aws-0-[region].pooler.sup
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `DATABASE_URL` | Yes | Supabase Postgres connection string (asyncpg) |
-| `OPENROUTER_API_KEY` | Yes | OpenRouter API key for LLM |
-| `OPENAI_API_KEY` | Yes | OpenAI API key for embeddings |
+| `LLM_GATEWAY_TOKEN` | Yes | BYOK token for the LLM gateway; provider keys live in the gateway |
 | `SUPABASE_URL` | Yes | Supabase project URL |
 | `SUPABASE_ANON_KEY` | Yes | Supabase anonymous key |
-| `CLOUDFLARE_ACCOUNT_ID` | No | Cloudflare account ID (enables AI Gateway) |
-| `CLOUDFLARE_GATEWAY_ID` | No | Cloudflare gateway ID (enables AI Gateway) |
+| `CLOUDFLARE_ACCOUNT_ID` | Yes¹ | Cloudflare account ID; derives the AI Gateway compat URL |
+| `CLOUDFLARE_GATEWAY_ID` | Yes¹ | Cloudflare gateway ID; derives the AI Gateway compat URL |
+| `LLM_GATEWAY_URL` | No | Override to point at any OpenAI-compatible gateway (replaces the two Cloudflare IDs) |
+| `LLM_GATEWAY_AUTH_HEADER` | No | Header carrying `LLM_GATEWAY_TOKEN` (default `cf-aig-authorization`) |
 | `LANGFUSE_SECRET_KEY` | No | Langfuse secret key (LLM observability) |
 | `LANGFUSE_PUBLIC_KEY` | No | Langfuse public key |
 | `LANGFUSE_HOST` | No | Langfuse host URL |
 | `GCP_PROJECT_ID` | No | GCP project (enables Cloud Trace exporter) |
 | `ENVIRONMENT` | No | `development` or `production` |
 | `LOG_LEVEL` | No | `DEBUG`, `INFO`, `WARNING`, `ERROR` |
+
+¹ The LLM gateway is required (the app fails fast at startup when none is configured). Configure it with either `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_GATEWAY_ID` (Cloudflare AI Gateway) or `LLM_GATEWAY_URL` (any OpenAI-compatible gateway).
 
 ---
 

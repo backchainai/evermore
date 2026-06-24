@@ -5,7 +5,9 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from openai import AsyncOpenAI
 
+from retriever.infrastructure.llm.gateway_client import build_gateway_client
 from retriever.infrastructure.safety import (
     ConfidenceLevel,
     ConfidenceScorer,
@@ -226,6 +228,11 @@ class TestNoOpModerator:
 class TestOpenAIModerator:
     """Tests for OpenAIModerator with mocked SDK."""
 
+    @staticmethod
+    def _make_moderator() -> OpenAIModerator:
+        """Create a moderator with an injected mock client."""
+        return OpenAIModerator(client=MagicMock(spec=AsyncOpenAI))
+
     def _make_mock_moderation_response(
         self,
         *,
@@ -254,7 +261,7 @@ class TestOpenAIModerator:
 
     async def test_safe_content_returns_safe(self) -> None:
         """Safe content should return unflagged result."""
-        moderator = OpenAIModerator(api_key="test-key")
+        moderator = self._make_moderator()
         mock_response = self._make_mock_moderation_response(flagged=False)
         moderator._client.moderations.create = AsyncMock(  # type: ignore[method-assign]
             return_value=mock_response
@@ -265,7 +272,7 @@ class TestOpenAIModerator:
 
     async def test_flagged_content_returns_flagged(self) -> None:
         """Flagged content should return flagged result."""
-        moderator = OpenAIModerator(api_key="test-key")
+        moderator = self._make_moderator()
         mock_response = self._make_mock_moderation_response(
             flagged=True,
             categories={"hate": True, "violence": False},
@@ -281,7 +288,7 @@ class TestOpenAIModerator:
 
     async def test_timeout_fails_open(self) -> None:
         """Timeout should return safe (fail open)."""
-        moderator = OpenAIModerator(api_key="test-key")
+        moderator = self._make_moderator()
         moderator._client.moderations.create = AsyncMock(  # type: ignore[method-assign]
             side_effect=TimeoutError("Connection timed out")
         )
@@ -291,7 +298,7 @@ class TestOpenAIModerator:
 
     async def test_api_error_fails_open(self) -> None:
         """API errors should return safe (fail open)."""
-        moderator = OpenAIModerator(api_key="test-key")
+        moderator = self._make_moderator()
         moderator._client.moderations.create = AsyncMock(  # type: ignore[method-assign]
             side_effect=RuntimeError("API error")
         )
@@ -301,15 +308,15 @@ class TestOpenAIModerator:
 
     async def test_close_calls_client_close(self) -> None:
         """Close should close the underlying client."""
-        moderator = OpenAIModerator(api_key="test-key")
+        moderator = self._make_moderator()
         moderator._client.close = AsyncMock()  # type: ignore[method-assign]
 
         await moderator.close()
         moderator._client.close.assert_awaited_once()
 
     async def test_calls_with_correct_model(self) -> None:
-        """Should call OpenAI with omni-moderation-latest model."""
-        moderator = OpenAIModerator(api_key="test-key")
+        """Should call moderation with the prefixed compat-endpoint model slug."""
+        moderator = self._make_moderator()
         mock_response = self._make_mock_moderation_response()
         moderator._client.moderations.create = AsyncMock(  # type: ignore[method-assign]
             return_value=mock_response
@@ -319,7 +326,26 @@ class TestOpenAIModerator:
 
         moderator._client.moderations.create.assert_awaited_once_with(
             input="test text",
-            model="omni-moderation-latest",
+            model="openai/omni-moderation-latest",
+        )
+
+    def test_routes_through_injected_gateway_client(self) -> None:
+        """Moderator uses the injected shared gateway client (no direct bypass)."""
+        settings = MagicMock()
+        settings.llm_gateway_base_url = (
+            "https://gateway.ai.cloudflare.com/v1/a/b/compat"
+        )
+        settings.llm_gateway_token.get_secret_value.return_value = "cf-token"
+        settings.llm_gateway_auth_header = "cf-aig-authorization"
+
+        client = build_gateway_client(settings)
+        moderator = OpenAIModerator(client=client)
+
+        assert moderator._client is client
+        assert str(moderator._client.base_url).rstrip("/").endswith("/compat")
+        assert (
+            moderator._client.default_headers["cf-aig-authorization"]
+            == "Bearer cf-token"
         )
 
 

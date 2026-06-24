@@ -29,7 +29,7 @@ bd create "Fix chat timeout bug" -l apprtvr -l tooling
 ### Stack (backend only — frontend lives in [stacker](https://github.com/ckrough/stacker))
 - **Backend:** Python 3.13+, FastAPI, Pydantic 2.x, SQLAlchemy 2.0 async
 - **Document Processing:** Docling (PDF, DOCX, PPTX, XLSX, HTML, images, MD, TXT) with HybridChunker
-- **LLM:** OpenRouter via Cloudflare AI Gateway (OpenAI-compatible API)
+- **LLM:** One OpenAI-compatible LLM gateway (Cloudflare AI Gateway by default), `OpenAICompatProvider` for chat
 - **Vector DB:** Supabase Postgres + pgvector (HNSW cosine + GIN full-text)
 - **Auth:** Supabase Auth / JWKS (RS256 JWT), RLS
 - **Observability:** structlog (JSON) + OpenTelemetry (GCP Cloud Trace / Jaeger) + Langfuse
@@ -83,6 +83,12 @@ uv run uvicorn retriever.main:app --reload --port 8000
 docker compose down && supabase stop
 ```
 
+### Local dev: LLM gateway
+
+Outbound model calls (chat, embeddings, moderation) route through one OpenAI-compatible LLM gateway (Cloudflare AI Gateway by default) via a single `AsyncOpenAI` client built by `build_gateway_client`. Chat uses `OpenAICompatProvider`. The gateway holds the provider keys (BYOK), so the only LLM secret needed to run against it is `LLM_GATEWAY_TOKEN` (sent on the `llm_gateway_auth_header`, default `cf-aig-authorization`), alongside `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_GATEWAY_ID`. Set `LLM_GATEWAY_URL` to swap to any other OpenAI-compatible gateway.
+
+The gateway is required: there is no no-gateway path. When none is configured, `settings.llm_gateway_base_url` raises `ValueError` and the app fails fast with a clear error, so every environment that makes model calls (local dev, CI, production) configures a gateway. See ADR `docs/adr/0007-llm-gateway-consolidation.md`.
+
 See [CONTRIBUTING.md](CONTRIBUTING.md) for full setup instructions including prerequisites and environment configuration.
 
 ## CI/CD
@@ -127,14 +133,14 @@ retriever/
 
 ```
 retriever/
-├── config.py               # pydantic-settings; ai_gateway_base_url computed field
+├── config.py               # pydantic-settings; llm_gateway_base_url computed field
 ├── main.py                 # FastAPI app, /health, CORS
 ├── models/                 # SQLAlchemy 2.0 async: User, Message, Document
 ├── infrastructure/
 │   ├── cache/              # PgSemanticCache (pgvector cosine similarity)
 │   ├── database/           # async session factory
-│   ├── embeddings/         # OpenAIEmbeddingProvider (via AI Gateway)
-│   ├── llm/                # OpenRouterProvider + FallbackLLMProvider (via AI Gateway)
+│   ├── embeddings/         # OpenAIEmbeddingProvider (via LLM gateway)
+│   ├── llm/                # OpenAICompatProvider + FallbackLLMProvider (via LLM gateway)
 │   ├── observability/      # structlog JSON + OTel (GCP/OTLP/console) + Langfuse + RequestIdMiddleware
 │   ├── safety/             # PromptInjectionDetector, OpenAIModerator, HallucinationDetector, ConfidenceScorer, SafetyService
 │   └── vectordb/           # PgVectorStore (HNSW cosine + GIN full-text)
@@ -167,7 +173,7 @@ follow_imports = "skip"
 
 **tenacity must NOT share the aiobreaker override:** `tenacity` ships `py.typed`. If you add it to the same override as aiobreaker, mypy silently drops type inference for `@retry` decorators, causing false-positive errors.
 
-**AI Gateway routing:** `settings.ai_gateway_base_url` is a computed field. If `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_GATEWAY_ID` are set, it routes through Cloudflare AI Gateway; otherwise it falls back to OpenRouter directly. All LLM and embedding providers must use this field, not hardcoded URLs.
+**LLM gateway routing:** `settings.llm_gateway_base_url` resolves the gateway base URL. `LLM_GATEWAY_URL` overrides it to any OpenAI-compatible gateway; otherwise `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_GATEWAY_ID` derive the Cloudflare AI Gateway URL; with neither set it raises `ValueError` (the gateway is required, there is no no-gateway path). All LLM and embedding providers must use this property, not hardcoded URLs.
 
 **File upload:** Uses ephemeral FS (process-and-discard) — processes, chunks, and embeds content, stores in pgvector, discards raw file. If Supabase Storage is needed later, only the upload handler changes.
 
@@ -295,7 +301,7 @@ Before opening a PR:
 ## Key Patterns
 
 ### LLM Provider Abstraction
-Use Protocol-based interface for swappable LLM providers. Providers receive `base_url` at construction time from `settings.ai_gateway_base_url`:
+Use Protocol-based interface for swappable LLM providers. Providers receive `base_url` at construction time from `settings.llm_gateway_base_url`:
 
 ```python
 class LLMProvider(Protocol):
@@ -307,11 +313,12 @@ class LLMProvider(Protocol):
     ) -> str: ...
 ```
 
-Construction pattern:
+Construction pattern (inject a gateway-configured client built by `build_gateway_client`):
 ```python
-provider = OpenRouterProvider(
-    api_key=settings.openrouter_api_key,
-    base_url=settings.ai_gateway_base_url,  # routes via Cloudflare if configured
+provider = OpenAICompatProvider(
+    default_model=settings.default_llm_model,
+    timeout_seconds=settings.llm_timeout_seconds,
+    client=build_gateway_client(settings, timeout_seconds=settings.llm_timeout_seconds),
 )
 ```
 
@@ -327,7 +334,7 @@ module_name/
 ```
 
 ### Configuration
-Use `pydantic-settings` for all configuration. Environment variables override defaults. Computed fields derive values from primitives (e.g., `ai_gateway_base_url` from account/gateway IDs).
+Use `pydantic-settings` for all configuration. Environment variables override defaults. Computed fields derive values from primitives (e.g., `llm_gateway_base_url` from account/gateway IDs or `LLM_GATEWAY_URL`).
 
 ## Documentation Index
 

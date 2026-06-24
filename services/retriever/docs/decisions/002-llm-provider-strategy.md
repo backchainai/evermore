@@ -1,18 +1,20 @@
 ---
 adr: 2
 title: LLM Provider Strategy
-status: accepted
+status: superseded
 date: 2024-12-18
 tags:
   - llm
   - openrouter
   - abstraction
 supersedes: null
-superseded_by: null
+superseded_by: docs/adr/0007-llm-gateway-consolidation.md
 related: [10, 13]
 ---
 
 # 002: LLM Provider Strategy
+
+> Superseded by ADR `docs/adr/0007-llm-gateway-consolidation.md`
 
 ## Status
 
