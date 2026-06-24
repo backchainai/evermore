@@ -41,7 +41,7 @@ class OpenAICompatProvider:
         self,
         *,
         client: AsyncOpenAI,
-        default_model: str = "anthropic/claude-sonnet-4.6",
+        default_model: str = "anthropic/claude-sonnet-4-6",
         timeout_seconds: float = 30.0,
         circuit_breaker_fail_max: int = 5,
         circuit_breaker_timeout: float = 60.0,

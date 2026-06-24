@@ -39,8 +39,8 @@ def _make_mock_settings(
     settings.llm_gateway_auth_header = "cf-aig-authorization"
     settings.llm_gateway_base_url = "https://gateway.ai.cloudflare.com/v1/a/b/compat"
     settings.default_embedding_model = "openai/text-embedding-3-small"
-    settings.default_llm_model = "anthropic/claude-sonnet-4.6"
-    settings.fallback_llm_model = "anthropic/claude-haiku-3"
+    settings.default_llm_model = "anthropic/claude-sonnet-4-6"
+    settings.fallback_llm_model = "anthropic/claude-haiku-4-5"
     settings.llm_timeout_seconds = 30.0
     settings.cache_enabled = cache_enabled
     settings.hybrid_retrieval_enabled = hybrid_retrieval_enabled
