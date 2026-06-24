@@ -6,7 +6,7 @@ How to deploy Retriever to production.
 
 | Component | Platform | Method |
 |-----------|----------|--------|
-| Backend | Google Cloud Run | `gcloud run deploy --source ./backend` |
+| Backend | Google Cloud Run | `gcloud run deploy --source services/retriever` |
 | Frontend | Cloudflare Pages | Git-connected or `wrangler pages deploy` |
 | Database | Supabase | Managed Postgres + pgvector |
 | Auth | Supabase Auth | Managed, JWKS endpoint for JWT verification |
@@ -30,7 +30,7 @@ How to deploy Retriever to production.
 
 ```bash
 gcloud run deploy retriever \
-    --source ./backend \
+    --source services/retriever \
     --region us-central1 \
     --project $PROJECT_ID \
     --allow-unauthenticated \
@@ -114,7 +114,7 @@ npx wrangler pages deploy .svelte-kit/cloudflare --project-name=retriever
 2. Enable pgvector extension: SQL Editor > `CREATE EXTENSION IF NOT EXISTS vector;`
 3. Run Alembic migrations against the Supabase database:
    ```bash
-   cd backend
+   cd services/retriever
    DATABASE_URL="postgresql+asyncpg://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres" \
        uv run alembic upgrade head
    ```
@@ -159,7 +159,7 @@ postgresql+asyncpg://postgres.[project-ref]:[password]@aws-0-[region].pooler.sup
 - [ ] Alembic migrations applied to Supabase database
 - [ ] RLS policies configured for all tables
 - [ ] GCP Secret Manager secrets created and populated
-- [ ] Backend deployed to Cloud Run: `gcloud run deploy --source ./backend`
+- [ ] Backend deployed to Cloud Run: `gcloud run deploy --source services/retriever`
 - [ ] Frontend deployed to Cloudflare Pages
 - [ ] Health check responds: `GET /health`
 - [ ] Admin user created in Supabase Auth dashboard

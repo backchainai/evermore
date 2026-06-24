@@ -89,7 +89,7 @@ The simplest approach uses `--source` to build and deploy in one step:
 
 ```bash
 gcloud run deploy retriever \
-    --source ./backend \
+    --source services/retriever \
     --region $REGION \
     --project $PROJECT_ID \
     --platform managed \
@@ -111,7 +111,7 @@ Skip to Step 11 for verification.
 If you prefer to build the image locally:
 
 ```bash
-docker build --platform linux/amd64 -t $REGION-docker.pkg.dev/$PROJECT_ID/retriever/retriever:latest ./backend
+docker build --platform linux/amd64 -t $REGION-docker.pkg.dev/$PROJECT_ID/retriever/retriever:latest services/retriever
 ```
 
 ## Step 8: Authenticate Docker with Artifact Registry
@@ -174,7 +174,7 @@ After code changes, redeploy from source:
 
 ```bash
 gcloud run deploy retriever \
-    --source ./backend \
+    --source services/retriever \
     --region $REGION \
     --project $PROJECT_ID
 ```
@@ -182,7 +182,7 @@ gcloud run deploy retriever \
 Or if using manual image builds, repeat steps 7-10:
 
 ```bash
-docker build --platform linux/amd64 -t $REGION-docker.pkg.dev/$PROJECT_ID/retriever/retriever:latest ./backend
+docker build --platform linux/amd64 -t $REGION-docker.pkg.dev/$PROJECT_ID/retriever/retriever:latest services/retriever
 gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin $REGION-docker.pkg.dev
 docker push $REGION-docker.pkg.dev/$PROJECT_ID/retriever/retriever:latest
 gcloud run deploy retriever \
