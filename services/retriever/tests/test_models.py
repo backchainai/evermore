@@ -71,6 +71,32 @@ def test_create_session_factory_returns_factory() -> None:
     assert factory is not None
 
 
+def test_create_engine_accepts_pool_params() -> None:
+    engine = create_engine(
+        "postgresql://postgres:postgres@localhost:5432/test",
+        pool_size=3,
+        max_overflow=7,
+        pool_timeout=15.0,
+        pool_recycle=900,
+        pool_pre_ping=False,
+    )
+    assert engine is not None
+
+
+# ── Settings pool defaults ──────────────────────────────────────────────────────
+
+
+def test_settings_db_pool_defaults() -> None:
+    from retriever.config import Settings
+
+    settings = Settings()
+    assert settings.db_pool_size == 5
+    assert settings.db_max_overflow == 10
+    assert settings.db_pool_timeout == 30.0
+    assert settings.db_pool_recycle == -1
+    assert settings.db_pool_pre_ping is True
+
+
 # ── Model metadata ─────────────────────────────────────────────────────────────
 
 

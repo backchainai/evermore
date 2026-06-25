@@ -83,6 +83,15 @@ class Settings(BaseSettings):
     # Database
     database_require_ssl: bool = False  # True in production (Supabase / Cloud Run)
 
+    # Database connection pool — env-driven so each deployment target (local vs
+    # Containers behind Hyperdrive) sizes its own pool without code changes.
+    # Defaults preserve prior hardcoded engine behavior.
+    db_pool_size: int = 5
+    db_max_overflow: int = 10
+    db_pool_timeout: float = 30.0
+    db_pool_recycle: int = -1
+    db_pool_pre_ping: bool = True
+
     # LLM
     default_llm_model: str = "anthropic/claude-sonnet-4-6"
     fallback_llm_model: str = "anthropic/claude-haiku-4-5"
