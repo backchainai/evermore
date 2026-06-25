@@ -72,6 +72,13 @@ class Settings(BaseSettings):
     # use the standard Authorization header).
     llm_gateway_auth_header: str = "cf-aig-authorization"
 
+    # Cloudflare R2 object storage
+    r2_account_id: str = ""
+    r2_access_key_id: SecretStr = SecretStr("")
+    r2_secret_access_key: SecretStr = SecretStr("")
+    r2_bucket: str = ""
+    r2_endpoint_url: str = ""
+
     # GCP
     gcp_project_id: str = ""
 
@@ -167,6 +174,27 @@ class Settings(BaseSettings):
         raise ValueError(
             "No LLM gateway configured. Set LLM_GATEWAY_URL, or "
             "CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_GATEWAY_ID."
+        )
+
+    @property
+    def r2_endpoint(self) -> str:
+        """S3-compatible endpoint URL for Cloudflare R2.
+
+        Resolves an explicit override first so the endpoint is swappable with
+        config alone; the per-account R2 URL is the default. This is a plain
+        property (not a computed_field) so it is not evaluated during model
+        serialization, where the raise would surface as a dump error rather than
+        at the call site that needs an endpoint.
+
+        Raises:
+            ValueError: If neither an endpoint URL nor an account id is set.
+        """
+        if self.r2_endpoint_url:
+            return self.r2_endpoint_url
+        if self.r2_account_id:
+            return f"https://{self.r2_account_id}.r2.cloudflarestorage.com"
+        raise ValueError(
+            "No R2 endpoint configured. Set R2_ENDPOINT_URL or R2_ACCOUNT_ID."
         )
 
 
