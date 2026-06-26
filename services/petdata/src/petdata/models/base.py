@@ -35,6 +35,9 @@ def create_engine(
     require_ssl: bool = False,
     pool_size: int = 5,
     max_overflow: int = 10,
+    pool_timeout: float = 30.0,
+    pool_recycle: int = -1,
+    pool_pre_ping: bool = True,
 ) -> AsyncEngine:
     """Create an async SQLAlchemy engine.
 
@@ -43,6 +46,10 @@ def create_engine(
         require_ssl: Enforce SSL (set True for Supabase / Cloud Run).
         pool_size: Number of persistent connections in the pool.
         max_overflow: Additional connections allowed above pool_size.
+        pool_timeout: Seconds to wait for a connection before raising.
+        pool_recycle: Recycle connections older than this many seconds
+            (-1 disables recycling).
+        pool_pre_ping: Test connections for liveness before use.
 
     Returns:
         Configured AsyncEngine instance.
@@ -53,9 +60,11 @@ def create_engine(
 
     return create_async_engine(
         _async_url(database_url),
-        pool_pre_ping=True,
+        pool_pre_ping=pool_pre_ping,
         pool_size=pool_size,
         max_overflow=max_overflow,
+        pool_timeout=pool_timeout,
+        pool_recycle=pool_recycle,
         connect_args=connect_args,
     )
 
