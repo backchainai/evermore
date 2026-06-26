@@ -89,6 +89,12 @@ module = ["docling.*", "docling_core.*"]
 ignore_missing_imports = true
 follow_imports = "skip"
 
+# boto3/botocore are an optional, lazily-imported dependency for R2 storage and
+# are not installed; their imports live inside build_r2_storage.
+[[tool.mypy.overrides]]
+module = ["boto3", "boto3.*", "botocore", "botocore.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
