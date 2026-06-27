@@ -1,0 +1,175 @@
+name: Deploy
+
+# Continuous deployment to Cloudflare (ADR 0008, issue #111).
+#
+# On merge to main: build and deploy the stacker frontend to Cloudflare Pages
+# and the retriever + petdata backends to Cloudflare Containers (Worker-fronted).
+# A gated Alembic migration runs against Supabase before each backend revision
+# takes traffic; a migration failure fails the job and the cutover step never
+# runs. On pull requests: preview deploys only (no production traffic, no
+# migration against the production database).
+#
+# Secrets (never committed) come from Actions secrets:
+#   CLOUDFLARE_API_TOKEN   scoped token: Pages + Workers + Containers deploy
+#   CLOUDFLARE_ACCOUNT_ID  Cloudflare account
+#   RETRIEVER_DATABASE_URL retriever Supabase pooler URL (alembic DATABASE_URL)
+#   PETDATA_DATABASE_URL   petdata Supabase pooler URL
+#
+# Hyperdrive (issue #109) is deferred: the migration and the containers connect
+# directly to the Supabase pooler via the *_DATABASE_URL secrets. When #109
+# lands, only the connection string behind these secrets changes.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Never cancel a production deploy mid-migration/cutover; PR previews are cheap
+# to leave running.
+concurrency:
+  group: deploy-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  deployments: write
+  pull-requests: write
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      petdata: ${{ steps.filter.outputs.petdata }}
+      retriever: ${{ steps.filter.outputs.retriever }}
+      stacker: ${{ steps.filter.outputs.stacker }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            petdata:
+              - 'services/petdata/**'
+              - '.github/workflows/deploy.yml'
+            retriever:
+              - 'services/retriever/**'
+              - '.github/workflows/deploy.yml'
+            stacker:
+              - 'apps/stacker/**'
+              - '.github/workflows/deploy.yml'
+
+  deploy-stacker:
+    needs: changes
+    if: ${{ needs.changes.outputs.stacker == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/stacker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/stacker/package-lock.json
+      - run: cp .env.example .env
+      - run: npm ci
+      - run: npm run build
+      # Push to main -> production branch deploy; PR head branch -> preview deploy
+      # (Cloudflare Pages treats any non-production branch as a preview). Project
+      # name and build-output dir come from apps/stacker/wrangler.toml.
+      # DEPLOY_BRANCH is passed as an env var and referenced with quoted shell
+      # expansion (not GitHub template interpolation) so an attacker-controlled
+      # PR branch name cannot inject into the deploy command.
+      - name: Deploy to Cloudflare Pages
+        env:
+          DEPLOY_BRANCH: ${{ github.event_name == 'push' && github.ref_name || github.head_ref }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          workingDirectory: apps/stacker
+          command: pages deploy --branch="$DEPLOY_BRANCH"
+
+  deploy-retriever:
+    needs: changes
+    if: ${{ needs.changes.outputs.retriever == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/retriever
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: services/retriever/uv.lock
+      - run: uv sync
+      # Gated migration (production only): must succeed before the new container
+      # revision takes traffic (ADR 0008). A failure here fails the job, so the
+      # wrangler deploy step below never runs and production keeps the old revision.
+      - name: Migrate database (gated, production only)
+        if: ${{ github.event_name == 'push' }}
+        env:
+          DATABASE_URL: ${{ secrets.RETRIEVER_DATABASE_URL }}
+        run: uv run alembic upgrade head
+      # Production cutover on merge to main: builds the container image from the
+      # Dockerfile and deploys the Worker + Container, shifting traffic.
+      - name: Deploy container (production)
+        if: ${{ github.event_name == 'push' }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: services/retriever
+          command: deploy
+      # Preview on PRs: upload a new version (with its container image) that gets
+      # a preview URL and takes no production traffic. No migration runs against
+      # the production database for previews.
+      - name: Upload preview version (pull request)
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: services/retriever
+          command: versions upload
+
+  deploy-petdata:
+    needs: changes
+    if: ${{ needs.changes.outputs.petdata == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/petdata
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: services/petdata/uv.lock
+      - run: uv sync --extra dev
+      # Gated migration (production only): see deploy-retriever for rationale.
+      # petdata's alembic env reads PETDATA_DATABASE_URL.
+      - name: Migrate database (gated, production only)
+        if: ${{ github.event_name == 'push' }}
+        env:
+          PETDATA_DATABASE_URL: ${{ secrets.PETDATA_DATABASE_URL }}
+        run: uv run alembic upgrade head
+      - name: Deploy container (production)
+        if: ${{ github.event_name == 'push' }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: services/petdata
+          command: deploy
+      - name: Upload preview version (pull request)
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: services/petdata
+          command: versions upload
