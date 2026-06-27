@@ -15,6 +15,11 @@ name: Deploy
 #   RETRIEVER_DATABASE_URL retriever Supabase pooler URL (alembic DATABASE_URL)
 #   PETDATA_DATABASE_URL   petdata Supabase pooler URL
 #
+# Until an operator configures CLOUDFLARE_API_TOKEN (the issue's operator step),
+# the preflight job below reports the secret as absent and every deploy job is
+# skipped, not failed. The same skip covers pull requests from forks, which do
+# not receive repository secrets. Once the token is set, deploys and previews run.
+#
 # Hyperdrive (issue #109) is deferred: the migration and the containers connect
 # directly to the Supabase pooler via the *_DATABASE_URL secrets. When #109
 # lands, only the connection string behind these secrets changes.
@@ -34,6 +39,12 @@ permissions:
   contents: read
   deployments: write
   pull-requests: write
+
+# wrangler-action installs an old default Wrangler (3.90) when no local install
+# exists, and that version predates wrangler.jsonc support, so it cannot read the
+# backends' container config. Pin a modern Wrangler for every deploy step.
+env:
+  WRANGLER_VERSION: "4.105.0"
 
 jobs:
   changes:
@@ -58,9 +69,28 @@ jobs:
               - 'apps/stacker/**'
               - '.github/workflows/deploy.yml'
 
+  # Secrets cannot be read in a job-level `if`, so detect the Cloudflare token in
+  # a step and expose the result as an output the deploy jobs gate on. When it is
+  # absent (operator has not set it yet, or a fork PR), the deploy jobs skip.
+  preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      configured: ${{ steps.check.outputs.configured }}
+    steps:
+      - id: check
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::CLOUDFLARE_API_TOKEN is not set; skipping all deploy jobs."
+          fi
+
   deploy-stacker:
-    needs: changes
-    if: ${{ needs.changes.outputs.stacker == 'true' }}
+    needs: [changes, preflight]
+    if: ${{ needs.changes.outputs.stacker == 'true' && needs.preflight.outputs.configured == 'true' }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -89,12 +119,13 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          wranglerVersion: ${{ env.WRANGLER_VERSION }}
           workingDirectory: apps/stacker
           command: pages deploy --branch="$DEPLOY_BRANCH"
 
   deploy-retriever:
-    needs: changes
-    if: ${{ needs.changes.outputs.retriever == 'true' }}
+    needs: [changes, preflight]
+    if: ${{ needs.changes.outputs.retriever == 'true' && needs.preflight.outputs.configured == 'true' }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -122,6 +153,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: ${{ env.WRANGLER_VERSION }}
           workingDirectory: services/retriever
           command: deploy
       # Preview on PRs: upload a new version (with its container image) that gets
@@ -133,12 +165,13 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: ${{ env.WRANGLER_VERSION }}
           workingDirectory: services/retriever
           command: versions upload
 
   deploy-petdata:
-    needs: changes
-    if: ${{ needs.changes.outputs.petdata == 'true' }}
+    needs: [changes, preflight]
+    if: ${{ needs.changes.outputs.petdata == 'true' && needs.preflight.outputs.configured == 'true' }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -163,6 +196,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: ${{ env.WRANGLER_VERSION }}
           workingDirectory: services/petdata
           command: deploy
       - name: Upload preview version (pull request)
@@ -171,5 +205,6 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: ${{ env.WRANGLER_VERSION }}
           workingDirectory: services/petdata
           command: versions upload
