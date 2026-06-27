@@ -1,0 +1,52 @@
+{
+  // Wrangler config for the Worker that fronts the retriever FastAPI backend as
+  // a Cloudflare Container (ADR 0008). The Worker is a thin router; all
+  // application code lives in the container image and references no Cloudflare
+  // primitives.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "retriever",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-06-01",
+
+  // One container, built from the existing multi-stage Dockerfile. The build
+  // context is the service root (this directory), so the Dockerfile's
+  // `COPY pyproject.toml ... src/ ...` paths resolve unchanged.
+  "containers": [
+    {
+      "class_name": "RetrieverContainer",
+      "image": "./Dockerfile",
+      "max_instances": 3,
+      "instance_type": "standard"
+    }
+  ],
+
+  // Cloudflare Containers are backed by a Durable Object. The container class is
+  // bound here and registered as a new SQLite-backed class in the migration
+  // below (both are required by Cloudflare Containers).
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "RetrieverContainer",
+        "name": "RETRIEVER_CONTAINER"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["RetrieverContainer"]
+    }
+  ],
+
+  // Non-secret environment. The container binds 0.0.0.0:${PORT}.
+  // Secrets (DATABASE_URL, LLM_GATEWAY_TOKEN, SUPABASE_URL, etc.) are injected
+  // via `wrangler secret put <NAME>` / Wrangler secret bindings and forwarded
+  // into the container by worker/index.ts. They are NEVER committed here.
+  //
+  // The retriever connects directly to the Supabase pooler via DATABASE_URL.
+  // No Hyperdrive binding is configured: Hyperdrive in front of Supabase is
+  // deferred to issue #109.
+  "vars": {
+    "PORT": "8000"
+  }
+}
