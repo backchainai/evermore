@@ -81,5 +81,10 @@ docker-compose.test.yml
 # Misc project files
 TODO.md
 
+# Cloudflare deployment-boundary files (ADR 0008): never enter the image
+worker/
+wrangler.jsonc
+node_modules/
+
 # Plan files
 .claude/

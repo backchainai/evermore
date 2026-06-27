@@ -1,0 +1,18 @@
+{
+  "name": "petdata-worker",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Cloudflare Worker router fronting the petdata FastAPI container (ADR 0008). Deployment-boundary only; not part of the Python package.",
+  "type": "module",
+  "scripts": {
+    "cf-typegen": "wrangler types --config ../wrangler.jsonc",
+    "dev": "wrangler dev --config ../wrangler.jsonc",
+    "deploy": "wrangler deploy --config ../wrangler.jsonc"
+  },
+  "devDependencies": {
+    "@cloudflare/containers": "^0.3.7",
+    "@cloudflare/workers-types": "^4.20260627.1",
+    "typescript": "^5.9.2",
+    "wrangler": "^4.105.0"
+  }
+}
