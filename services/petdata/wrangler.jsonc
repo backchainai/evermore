@@ -28,7 +28,7 @@
       "class_name": "PetdataContainer",
       "image": "./Dockerfile",
       "max_instances": 3,
-      "instance_type": "standard"
+      "instance_type": "standard-1"
     }
   ],
 
