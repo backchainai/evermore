@@ -171,17 +171,19 @@ issue #111).
    by hand against Supabase:
    ```bash
    cd services/retriever
-   DATABASE_URL="postgresql+asyncpg://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres" \
+   DATABASE_URL="postgresql+asyncpg://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:5432/postgres" \
        uv run alembic upgrade head
    ```
 4. Configure RLS policies for the `messages`, `documents`, and `users` tables.
 
 ### Connection String
 
-Use the Supabase connection pooler URL (port 6543) for `DATABASE_URL`:
+Use the Supabase **session** pooler URL (port 5432) for `DATABASE_URL`. The
+transaction pooler (port 6543) does not support prepared statements and breaks
+asyncpg migrations; see ADR 0009 (`docs/adr/0009-per-service-supabase-projects.md`).
 
 ```
-postgresql+asyncpg://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres
+postgresql+asyncpg://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:5432/postgres
 ```
 
 ---
