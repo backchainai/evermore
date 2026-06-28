@@ -137,6 +137,18 @@ jobs:
           enable-cache: true
           cache-dependency-glob: services/retriever/uv.lock
       - run: uv sync
+      # The Worker entry (worker/index.ts) imports @cloudflare/containers from the
+      # Worker's isolated npm project (worker/package.json). wrangler's esbuild
+      # bundler resolves it from worker/node_modules, so install those deps before
+      # any wrangler step or the build fails with "Could not resolve".
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: services/retriever/worker/package-lock.json
+      - name: Install Worker dependencies
+        working-directory: services/retriever/worker
+        run: npm ci
       # Gated migration (production only): must succeed before the new container
       # revision takes traffic (ADR 0008). A failure here fails the job, so the
       # wrangler deploy step below never runs and production keeps the old revision.
@@ -183,6 +195,18 @@ jobs:
           enable-cache: true
           cache-dependency-glob: services/petdata/uv.lock
       - run: uv sync --extra dev
+      # The Worker entry (worker/index.ts) imports @cloudflare/containers from the
+      # Worker's isolated npm project (worker/package.json). wrangler's esbuild
+      # bundler resolves it from worker/node_modules, so install those deps before
+      # any wrangler step or the build fails with "Could not resolve".
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: services/petdata/worker/package-lock.json
+      - name: Install Worker dependencies
+        working-directory: services/petdata/worker
+        run: npm ci
       # Gated migration (production only): see deploy-retriever for rationale.
       # petdata's alembic env reads PETDATA_DATABASE_URL.
       - name: Migrate database (gated, production only)
