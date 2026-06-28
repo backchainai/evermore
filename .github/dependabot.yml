@@ -1,0 +1,15 @@
+# Dependabot keeps the SHA-pinned GitHub Actions current.
+# It updates each `uses:` SHA and its trailing `# vX.Y.Z` comment together,
+# so the pins in .github/workflows/ stay current without losing immutability.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "chore(actions)"
