@@ -76,9 +76,11 @@ The Worker forwards these bindings into the container as environment variables
 ## Deployment
 
 Live Cloudflare deployment is operator-gated: it requires Cloudflare account
-access and container-platform enablement, so it is not run from this guide.
-Continuous deployment (deploy on merge with the Cloudflare API token in CI) is
-deferred to issue #111. The manual command, for reference, is:
+access and container-platform enablement. Continuous deployment (deploy on merge
+with the Cloudflare API token in CI, plus per-PR preview deploys) runs from
+`.github/workflows/deploy.yml`; see the [Deployment Guide](./deployment.md) for
+the production topology, secrets, and the CD pipeline. The manual command, for
+reference, is:
 
 ```bash
 cd services/retriever/worker
