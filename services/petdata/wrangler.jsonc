@@ -8,6 +8,18 @@
   "main": "worker/index.ts",
   "compatibility_date": "2026-06-01",
 
+  // Production hostname (ADR 0008). `custom_domain: true` has Cloudflare
+  // provision the DNS record and edge route for this subdomain on the
+  // `backchain.app` zone. Applying it needs a deploy token with Zone Workers
+  // Routes + DNS edit on `backchain.app`; that token and the deploy itself are
+  // the operator's step.
+  "routes": [
+    {
+      "pattern": "petdata.evermore.backchain.app",
+      "custom_domain": true
+    }
+  ],
+
   // One container, built from the existing multi-stage Dockerfile. The build
   // context is the service root (this directory), so the Dockerfile's
   // `COPY pyproject.toml ... src/ ...` paths resolve unchanged.
@@ -47,7 +59,14 @@
   // The container connects directly to the Supabase pooler via
   // PETDATA_DATABASE_URL. No Hyperdrive binding is configured: Hyperdrive in
   // front of Supabase is deferred to issue #109.
+  //
+  // PETDATA_ALLOWED_ORIGINS is the production CORS allow-list (not a secret).
+  // The Python `allowed_origins: list[str]` field is parsed from this env var as
+  // JSON by pydantic-settings, so the value is a JSON array, not a bare string.
+  // worker/index.ts forwards it into the container; `allow_credentials=True`
+  // forbids a `*` wildcard.
   "vars": {
-    "PORT": "8000"
+    "PORT": "8000",
+    "PETDATA_ALLOWED_ORIGINS": "[\"https://evermore.backchain.app\"]"
   }
 }

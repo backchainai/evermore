@@ -16,6 +16,11 @@ export interface Env {
 
   // Non-secret config, from wrangler.jsonc `vars`.
   PORT: string;
+  // Production CORS allow-list, from `vars`. Comma-separated string, parsed into
+  // a list by config.py (`allowed_origins` -> `allowed_origins_list`). Optional
+  // at the type level so local dev (no `vars` override) falls back to config.py's
+  // default origins.
+  ALLOWED_ORIGINS?: string;
 
   // Secrets, injected via `wrangler secret put` (NOT committed). Optional at the
   // type level so `wrangler types` / local dev do not require them to be present.
@@ -38,6 +43,9 @@ export class RetrieverContainer extends Container<Env> {
   // forwarded here so the container receives them at runtime.
   envVars = {
     PORT: this.env.PORT ?? "8000",
+    ...(this.env.ALLOWED_ORIGINS
+      ? { ALLOWED_ORIGINS: this.env.ALLOWED_ORIGINS }
+      : {}),
     ...(this.env.DATABASE_URL ? { DATABASE_URL: this.env.DATABASE_URL } : {}),
     ...(this.env.LLM_GATEWAY_TOKEN
       ? { LLM_GATEWAY_TOKEN: this.env.LLM_GATEWAY_TOKEN }

@@ -8,6 +8,18 @@
   "main": "worker/index.ts",
   "compatibility_date": "2026-06-01",
 
+  // Production hostname (ADR 0008). `custom_domain: true` has Cloudflare
+  // provision the DNS record and edge route for this subdomain on the
+  // `backchain.app` zone. Applying it needs a deploy token with Zone Workers
+  // Routes + DNS edit on `backchain.app`; that token and the deploy itself are
+  // the operator's step.
+  "routes": [
+    {
+      "pattern": "retriever.evermore.backchain.app",
+      "custom_domain": true
+    }
+  ],
+
   // One container, built from the existing multi-stage Dockerfile. The build
   // context is the service root (this directory), so the Dockerfile's
   // `COPY pyproject.toml ... src/ ...` paths resolve unchanged.
@@ -46,7 +58,15 @@
   // The retriever connects directly to the Supabase pooler via DATABASE_URL.
   // No Hyperdrive binding is configured: Hyperdrive in front of Supabase is
   // deferred to issue #109.
+  //
+  // ALLOWED_ORIGINS is the production CORS allow-list (not a secret). The
+  // container's FastAPI CORS middleware reads it via pydantic-settings
+  // (`allowed_origins`, comma-separated, parsed into `allowed_origins_list`);
+  // worker/index.ts forwards it into the container. The portal origin is the
+  // only production caller; `allow_credentials=True` forbids a `*` wildcard,
+  // which config.py rejects.
   "vars": {
-    "PORT": "8000"
+    "PORT": "8000",
+    "ALLOWED_ORIGINS": "https://evermore.backchain.app"
   }
 }
