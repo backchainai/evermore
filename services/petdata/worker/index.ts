@@ -9,12 +9,14 @@
 
 import { Container, getContainer } from "@cloudflare/containers";
 
-// Deployment-specific secrets and config forwarded into the container when set.
-// Cloudflare cannot wildcard-forward bindings, so each key is named explicitly;
-// the forwarding mechanism itself is expressed once (see `envVars` below). This
-// is a deliberate subset of the PETDATA_ settings: the tunables that carry safe
-// code defaults (pool sizing, retries, CORS) are intentionally not forwarded.
-// All use the PETDATA_ prefix the Python app reads via pydantic-settings.
+// Deployment-specific secrets forwarded into the container when set. Cloudflare
+// cannot wildcard-forward bindings, so each key is named explicitly; the
+// forwarding mechanism itself is expressed once (see `envVars` below). This is a
+// deliberate subset of the PETDATA_ settings: the tunables that carry safe code
+// defaults (pool sizing, retries) are intentionally not forwarded. The
+// production CORS origin is forwarded too, but as a non-secret `vars` value
+// (PETDATA_ALLOWED_ORIGINS, below), not a secret. All use the PETDATA_ prefix
+// the Python app reads via pydantic-settings.
 const FORWARDED_ENV_KEYS = [
   "PETDATA_DATABASE_URL",
   "PETDATA_DATABASE_REQUIRE_SSL",
@@ -32,6 +34,11 @@ export type Env = {
 
   // Non-secret config, from wrangler.jsonc `vars`.
   PORT: string;
+  // Production CORS allow-list, from `vars`. JSON-encoded array because the
+  // Python `allowed_origins: list[str]` field is parsed from env as JSON by
+  // pydantic-settings. Optional so local dev (no `vars` override) falls back to
+  // config.py's default origins.
+  PETDATA_ALLOWED_ORIGINS?: string;
 } & {
   // Each forwarded binding, injected via `wrangler secret put` (NOT committed).
   // Optional at the type level so `wrangler types` / local dev do not require
@@ -55,6 +62,9 @@ export class PetdataContainer extends Container<Env> {
   // runtime.
   envVars = {
     PORT: this.env.PORT ?? "8000",
+    ...(this.env.PETDATA_ALLOWED_ORIGINS
+      ? { PETDATA_ALLOWED_ORIGINS: this.env.PETDATA_ALLOWED_ORIGINS }
+      : {}),
     ...Object.fromEntries(
       FORWARDED_ENV_KEYS.flatMap((key) => {
         const value = this.env[key];
