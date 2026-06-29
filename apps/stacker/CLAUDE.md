@@ -58,6 +58,15 @@ npm run test:e2e
 4. Register in `src/lib/portal/config.ts` MODULE_REGISTRY
 5. Add `PUBLIC_{ID}_API_URL` to `.env.example`
 
+## Auth (invite-only)
+
+Access is invite-only / admin-provisioned (issue #153); open self-serve signup is disabled (`enable_signup = false` in `supabase/config.toml`).
+
+- `src/routes/login/` — Sign In (`signInWithPassword`) plus an invite-acceptance affordance.
+- `src/routes/auth/confirm/+server.ts` — verifies the email link `token_hash` (`verifyOtp`) and establishes the SSR session. The invite email template (`supabase/templates/invite.html`) routes here with `type=invite&next=/invite/accept`.
+- `src/routes/invite/accept/` — an invited (already-authenticated) user sets a password (`updateUser`); renders an invalid/expired state without a valid invite session.
+- Provisioning: admins issue invites with `auth.admin.inviteUserByEmail` (Supabase Studio or a service-role call). Deployment note: the invite link uses Supabase `site_url`, so set it to the portal origin per environment.
+
 ## Gotchas
 
 **Svelte 5 runes only:** Use `$state`, `$derived`, `$effect`, `$props`. No `writable()` stores.
