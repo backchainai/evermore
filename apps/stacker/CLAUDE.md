@@ -63,9 +63,12 @@ npm run test:e2e
 Access is invite-only / admin-provisioned (issue #153); open self-serve signup is disabled (`enable_signup = false` in `supabase/config.toml`).
 
 - `src/routes/login/` — Sign In (`signInWithPassword`) plus an invite-acceptance affordance.
-- `src/routes/auth/confirm/+server.ts` — verifies the email link `token_hash` (`verifyOtp`) and establishes the SSR session. The invite email template (`supabase/templates/invite.html`) routes here with `type=invite&next=/invite/accept`.
+- `src/routes/auth/confirm/+server.ts` — verifies the email link `token_hash` (`verifyOtp`) and establishes the SSR session, then redirects to `next` (default `/app`). Generic over OTP type. On any failure it redirects to `/auth/error`.
 - `src/routes/invite/accept/` — an invited (already-authenticated) user sets a password (`updateUser`); renders an invalid/expired state without a valid invite session.
-- Provisioning: admins issue invites with `auth.admin.inviteUserByEmail` (Supabase Studio or a service-role call). Deployment note: the invite link uses Supabase `site_url`, so set it to the portal origin per environment.
+- `src/routes/auth/error/` — neutral expired/invalid-link page shown when `/auth/confirm` cannot verify a link.
+- Email templates (`supabase/templates/`): `invite.html` routes here with `type=invite&next=/invite/accept` (lands on the set-password page); `magic_link.html` uses `type=magiclink&next=/app` (lands authenticated on the portal home, no password). Both are registered in `supabase/config.toml` under `[auth.email.template.*]`.
+- Provisioning: admins create a user and issue an invite (`auth.admin.inviteUserByEmail`) or a magic link via Supabase Studio or a service-role call.
+- **Hosted deployment note:** `config.toml` and `supabase/templates/*` govern only local/self-hosted. A hosted project needs its Site URL, redirect allow-list, and email templates set in the Dashboard / Management API. In particular the hosted **Magic Link** template must carry the `token_hash` URL (`{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=magiclink&next=/app`); the hosted default (`ConfirmationURL`) points at the native `/auth/v1/verify` endpoint, which the app cannot complete.
 
 ## Gotchas
 
