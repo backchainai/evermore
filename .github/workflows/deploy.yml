@@ -103,22 +103,22 @@ jobs:
           cache: npm
           cache-dependency-path: apps/stacker/package-lock.json
       # Inline the production public env at build time. SvelteKit bakes
-      # $env/static/public values (PUBLIC_SUPABASE_URL/ANON_KEY, the backend
+      # $env/static/public values (PUBLIC_SUPABASE_URL/PUBLISHABLE_KEY, the backend
       # URLs) into the bundle during `npm run build`, so they must be the
       # production values here rather than the localhost defaults in
-      # .env.example. Supabase values come from Actions secrets (the anon key
+      # .env.example. Supabase values come from Actions secrets (the publishable key
       # is browser-safe but managed as a secret); the backend URLs default to
       # the production subdomains and can be overridden by Actions variables.
       - name: Write production env
         env:
           PUBLIC_SUPABASE_URL: ${{ secrets.STACKER_PUBLIC_SUPABASE_URL }}
-          PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.STACKER_PUBLIC_SUPABASE_ANON_KEY }}
+          PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.STACKER_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
           PUBLIC_RETRIEVER_API_URL: ${{ vars.STACKER_PUBLIC_RETRIEVER_API_URL || 'https://retriever.evermore.backchain.app' }}
           PUBLIC_PETDATA_API_URL: ${{ vars.STACKER_PUBLIC_PETDATA_API_URL || 'https://petdata.evermore.backchain.app' }}
         run: |
           {
             echo "PUBLIC_SUPABASE_URL=$PUBLIC_SUPABASE_URL"
-            echo "PUBLIC_SUPABASE_ANON_KEY=$PUBLIC_SUPABASE_ANON_KEY"
+            echo "PUBLIC_SUPABASE_PUBLISHABLE_KEY=$PUBLIC_SUPABASE_PUBLISHABLE_KEY"
             echo "PUBLIC_RETRIEVER_API_URL=$PUBLIC_RETRIEVER_API_URL"
             echo "PUBLIC_PETDATA_API_URL=$PUBLIC_PETDATA_API_URL"
             echo "PUBLIC_ENABLED_MODULES=retriever"

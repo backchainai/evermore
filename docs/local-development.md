@@ -75,14 +75,14 @@ The first run pulls Docker images and can take a few minutes.
 
 ### 4. Copy the Supabase anon key into the portal
 
-`apps/stacker/.env` ships a `PUBLIC_SUPABASE_ANON_KEY=your-anon-key`
+`apps/stacker/.env` ships a `PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key`
 placeholder. Replace it with the real key:
 
 ```
 cd apps/stacker && supabase status -o json
 ```
 
-Copy the `ANON_KEY` value into `PUBLIC_SUPABASE_ANON_KEY`. Login fails while the
+Copy the `ANON_KEY` value into `PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Login fails while the
 placeholder is in place.
 
 ### 5. Start everything else
@@ -153,7 +153,7 @@ Confirm the Supabase keys after `supabase start`:
 cd apps/stacker && supabase status -o json
 ```
 
-Copy `ANON_KEY` into `apps/stacker/.env` (`PUBLIC_SUPABASE_ANON_KEY`).
+Copy `ANON_KEY` into `apps/stacker/.env` (`PUBLIC_SUPABASE_PUBLISHABLE_KEY`).
 
 ## Module feature flags
 

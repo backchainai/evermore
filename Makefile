@@ -31,7 +31,7 @@ env:
 	@echo ""
 	@echo "Populate these before 'make dev':"
 	@echo "  $(RETRIEVER_DIR)/.env  -> LLM_GATEWAY_TOKEN, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_GATEWAY_ID  (required; chat fails fast without them)"
-	@echo "  $(STACKER_DIR)/.env    -> PUBLIC_SUPABASE_ANON_KEY  (from: cd $(STACKER_DIR) && supabase status -o json, after 'make supabase-up')"
+	@echo "  $(STACKER_DIR)/.env    -> PUBLIC_SUPABASE_PUBLISHABLE_KEY  (from: cd $(STACKER_DIR) && supabase status -o json, after 'make supabase-up')"
 	@echo ""
 	@echo "To retain config across worktrees instead, use 'make link-env' (see docs/local-development.md)."
 

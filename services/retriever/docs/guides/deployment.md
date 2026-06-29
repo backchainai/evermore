@@ -193,7 +193,7 @@ postgresql+asyncpg://postgres.[project-ref]:[password]@aws-0-[region].pooler.sup
 | `DATABASE_URL` | Yes | Supabase Postgres connection string (asyncpg) |
 | `LLM_GATEWAY_TOKEN` | Yes | BYOK token for the LLM gateway; provider keys live in the gateway |
 | `SUPABASE_URL` | Yes | Supabase project URL |
-| `SUPABASE_ANON_KEY` | Yes | Supabase anonymous key |
+| `SUPABASE_PUBLISHABLE_KEY` | Yes | Supabase publishable key (`sb_publishable_…`) |
 | `CLOUDFLARE_ACCOUNT_ID` | Yes¹ | Cloudflare account ID; derives the AI Gateway compat URL |
 | `CLOUDFLARE_GATEWAY_ID` | Yes¹ | Cloudflare gateway ID; derives the AI Gateway compat URL |
 | `LLM_GATEWAY_URL` | No | Override to point at any OpenAI-compatible gateway (replaces the two Cloudflare IDs) |
