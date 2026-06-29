@@ -55,7 +55,7 @@
 				class="text-base font-semibold tracking-tight text-[var(--portal-sidebar-text)]"
 				style:font-family="'Outfit', system-ui, sans-serif"
 			>
-				Portal
+				Evermore
 			</span>
 			<button
 				type="button"
