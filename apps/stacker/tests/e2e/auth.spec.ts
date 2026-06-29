@@ -33,4 +33,20 @@ test.describe('Authentication', () => {
 		await expect(emailInput).toBeEnabled();
 		await expect(submitButton).toBeEnabled();
 	});
+
+	test('login page offers an invite-acceptance affordance', async ({ page }) => {
+		await page.goto('/login');
+		await expect(page.getByText(/accounts are created by invitation/i)).toBeVisible();
+		await expect(page.getByRole('link', { name: /accept an invitation/i })).toHaveAttribute(
+			'href',
+			'/invite/accept'
+		);
+	});
+
+	test('invite accept page without a valid invite shows the expired state', async ({ page }) => {
+		await page.goto('/invite/accept');
+		await expect(page.getByRole('heading', { name: 'Accept Invitation' })).toBeVisible();
+		await expect(page.getByText(/invitation link is invalid or has expired/i)).toBeVisible();
+		await expect(page.getByRole('link', { name: 'Back to Sign In' })).toBeVisible();
+	});
 });

@@ -1,9 +1,10 @@
 -- Supabase local seed (runs on `supabase db reset`).
 --
--- No seed users are created here. To get a local account, start the stack
--- (`make dev`) and sign up through the portal at http://localhost:5173/login.
--- Email confirmations are disabled in config.toml (enable_confirmations = false),
--- so signup is instant.
+-- No seed users are created here. Access is invite-only (issue #153): open
+-- self-serve signup is disabled in config.toml (enable_signup = false). To get a
+-- local account, invite a user (e.g. from Supabase Studio or via
+-- `auth.admin.inviteUserByEmail`); the invite link routes through the portal's
+-- /auth/confirm handler to /invite/accept, where the invited user sets a password.
 --
 -- This file exists so the `[db.seed] sql_paths = ["./seed.sql"]` reference in
 -- config.toml resolves. Add local-only fixtures below as the demo grows.

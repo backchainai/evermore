@@ -66,5 +66,12 @@
 				{/if}
 			</button>
 		</form>
+
+		<div class="border-surface-200-800 border-t pt-4 text-center text-sm">
+			<p class="text-surface-600-400">
+				Accounts are created by invitation. Check your email for an invite link, then
+				<a href="/invite/accept" class="anchor">accept an invitation</a>.
+			</p>
+		</div>
 	</div>
 </div>
