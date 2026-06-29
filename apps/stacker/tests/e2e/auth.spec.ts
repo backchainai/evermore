@@ -11,6 +11,11 @@ test.describe('Authentication', () => {
 		await expect(page).toHaveURL(/\/login/);
 	});
 
+	test('unauthenticated user is redirected from /app to /login', async ({ page }) => {
+		await page.goto('/app');
+		await expect(page).toHaveURL(/\/login/);
+	});
+
 	test('login page renders form', async ({ page }) => {
 		await page.goto('/login');
 		await expect(page.getByRole('heading', { name: 'Sign In' })).toBeVisible();

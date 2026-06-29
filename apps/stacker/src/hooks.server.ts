@@ -43,7 +43,7 @@ const authGuard: Handle = async ({ event, resolve }) => {
 	}
 
 	if (session && event.url.pathname === '/login') {
-		redirect(303, '/app/retriever/chat');
+		redirect(303, '/app');
 	}
 
 	return resolve(event);

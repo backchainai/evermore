@@ -9,7 +9,7 @@
 </script>
 
 <svelte:head>
-	<title>Portal</title>
+	<title>Evermore</title>
 </svelte:head>
 
 <div class="mx-auto max-w-4xl p-6">
@@ -17,14 +17,14 @@
 		class="mb-2 text-2xl font-bold"
 		style:font-family="'Outfit', system-ui, sans-serif"
 	>
-		Welcome back
+		Welcome to Evermore
 	</h1>
 	<p class="mb-8 text-sm opacity-60">Select a module to get started.</p>
 
 	<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 		{#each modules as mod}
 			{@const isActive = mod.status === 'active'}
-			{@const statusLabel = mod.status === 'disabled' ? 'In development' : 'Coming Soon'}
+			{@const statusLabel = mod.status === 'disabled' ? 'In development' : 'Locked'}
 			{@const href = isActive && mod.navItems.length > 0
 				? mod.basePath + mod.navItems[0].href
 				: isActive
