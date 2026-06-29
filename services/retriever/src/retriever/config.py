@@ -52,8 +52,8 @@ class Settings(BaseSettings):
 
     # Supabase
     supabase_url: str = ""
-    supabase_anon_key: SecretStr = SecretStr("")
-    supabase_service_role_key: SecretStr = SecretStr("")
+    supabase_publishable_key: SecretStr = SecretStr("")
+    supabase_secret_key: SecretStr = SecretStr("")
     database_url: SecretStr = SecretStr("")
 
     # Langfuse
