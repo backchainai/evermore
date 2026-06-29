@@ -37,12 +37,31 @@ dependencies = [
     "langfuse>=3.0",
     "opentelemetry-exporter-otlp-proto-grpc>=1.28",
     "easyocr>=1.7.2",
+    # Direct deps so the CPU-only index pin below applies (uv [tool.uv.sources]
+    # only governs direct dependencies, not transitive ones). torch/torchvision
+    # arrive transitively via easyocr and docling; pinning them here forces the
+    # CPU wheels. See issue #142.
+    "torch>=2.6",
+    "torchvision>=0.21",
 ]
 
 [project.urls]
 Homepage = "https://dev.krough.org"
 Repository = "https://github.com/ckrough/retriever"
 Documentation = "https://github.com/ckrough/retriever/tree/main/docs"
+
+# Cloudflare Containers are CPU-only, so the default CUDA wheels that torch and
+# torchvision pull in (the nvidia-*-cu12 stack, ~6GB) are never executed and
+# push the image over Cloudflare's 8000MB cap. Pin both to the PyTorch CPU
+# index so uv resolves CPU-only builds. See issue #142.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu" }]
+torchvision = [{ index = "pytorch-cpu" }]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/retriever"]
