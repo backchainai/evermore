@@ -9,6 +9,12 @@ name: Deploy
 # runs. On pull requests: preview deploys only (no production traffic, no
 # migration against the production database).
 #
+# Manual runs (workflow_dispatch) behave as a production deploy: the operator
+# triggers one for the first cutover and for redeploys after setting secrets,
+# without needing a code change. A manual run deploys all three services by
+# default; the `service` input narrows it to a single service. Like a push, a
+# manual run runs the gated migration and cutover (never a preview).
+#
 # Secrets (never committed) come from Actions secrets:
 #   CLOUDFLARE_API_TOKEN   scoped token: Pages + Workers + Containers deploy
 #   CLOUDFLARE_ACCOUNT_ID  Cloudflare account
@@ -18,7 +24,8 @@ name: Deploy
 # Until an operator configures CLOUDFLARE_API_TOKEN (the issue's operator step),
 # the preflight job below reports the secret as absent and every deploy job is
 # skipped, not failed. The same skip covers pull requests from forks, which do
-# not receive repository secrets. Once the token is set, deploys and previews run.
+# not receive repository secrets, and manual runs before the token is set. Once
+# the token is set, deploys and previews run.
 #
 # Hyperdrive (issue #109) is deferred: the migration and the containers connect
 # directly to the Supabase pooler via the *_DATABASE_URL secrets. When #109
@@ -28,6 +35,17 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: "Service to deploy"
+        type: choice
+        default: all
+        options:
+          - all
+          - petdata
+          - retriever
+          - stacker
 
 # Never cancel a production deploy mid-migration/cutover; PR previews are cheap
 # to leave running.
@@ -50,13 +68,17 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
-      petdata: ${{ steps.filter.outputs.petdata }}
-      retriever: ${{ steps.filter.outputs.retriever }}
-      stacker: ${{ steps.filter.outputs.stacker }}
+      petdata: ${{ steps.resolve.outputs.petdata }}
+      retriever: ${{ steps.resolve.outputs.retriever }}
+      stacker: ${{ steps.resolve.outputs.stacker }}
     steps:
       - uses: actions/checkout@v7
+      # paths-filter needs a diff base, which a manual dispatch has no commit
+      # range for, so run it only for push/pull_request and resolve manual runs
+      # from the `service` input below.
       - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
         id: filter
+        if: ${{ github.event_name != 'workflow_dispatch' }}
         with:
           filters: |
             petdata:
@@ -68,6 +90,30 @@ jobs:
             stacker:
               - 'apps/stacker/**'
               - '.github/workflows/deploy.yml'
+      # On manual dispatch, select services from the `service` input ('all' picks
+      # all three); otherwise pass the paths-filter results through unchanged.
+      - id: resolve
+        env:
+          SERVICE: ${{ github.event.inputs.service }}
+          FILTER_PETDATA: ${{ steps.filter.outputs.petdata }}
+          FILTER_RETRIEVER: ${{ steps.filter.outputs.retriever }}
+          FILTER_STACKER: ${{ steps.filter.outputs.stacker }}
+        run: |
+          {
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+              for svc in petdata retriever stacker; do
+                if [ "$SERVICE" = "all" ] || [ "$SERVICE" = "$svc" ]; then
+                  echo "$svc=true"
+                else
+                  echo "$svc=false"
+                fi
+              done
+            else
+              echo "petdata=$FILTER_PETDATA"
+              echo "retriever=$FILTER_RETRIEVER"
+              echo "stacker=$FILTER_STACKER"
+            fi
+          } >> "$GITHUB_OUTPUT"
 
   # Secrets cannot be read in a job-level `if`, so detect the Cloudflare token in
   # a step and expose the result as an output the deploy jobs gate on. When it is
@@ -125,15 +171,16 @@ jobs:
           } > .env
       - run: npm ci
       - run: npm run build
-      # Push to main -> production branch deploy; PR head branch -> preview deploy
-      # (Cloudflare Pages treats any non-production branch as a preview). Project
-      # name and build-output dir come from apps/stacker/wrangler.toml.
-      # DEPLOY_BRANCH is passed as an env var and referenced with quoted shell
-      # expansion (not GitHub template interpolation) so an attacker-controlled
-      # PR branch name cannot inject into the deploy command.
+      # push or manual dispatch -> production branch deploy; PR head branch ->
+      # preview deploy (Cloudflare Pages treats any non-production branch as a
+      # preview). Project name and build-output dir come from
+      # apps/stacker/wrangler.toml. DEPLOY_BRANCH is passed as an env var and
+      # referenced with quoted shell expansion (not GitHub template
+      # interpolation) so an attacker-controlled PR branch name cannot inject
+      # into the deploy command.
       - name: Deploy to Cloudflare Pages
         env:
-          DEPLOY_BRANCH: ${{ github.event_name == 'push' && github.ref_name || github.head_ref }}
+          DEPLOY_BRANCH: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name || github.head_ref }}
         uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -172,15 +219,17 @@ jobs:
       # Gated migration (production only): must succeed before the new container
       # revision takes traffic (ADR 0008). A failure here fails the job, so the
       # wrangler deploy step below never runs and production keeps the old revision.
+      # Push and manual dispatch are production; pull requests are not.
       - name: Migrate database (gated, production only)
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
         env:
           DATABASE_URL: ${{ secrets.RETRIEVER_DATABASE_URL }}
         run: uv run alembic upgrade head
-      # Production cutover on merge to main: builds the container image from the
-      # Dockerfile and deploys the Worker + Container, shifting traffic.
+      # Production cutover on merge to main or manual dispatch: builds the
+      # container image from the Dockerfile and deploys the Worker + Container,
+      # shifting traffic.
       - name: Deploy container (production)
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
         uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -228,14 +277,15 @@ jobs:
         working-directory: services/petdata/worker
         run: npm ci
       # Gated migration (production only): see deploy-retriever for rationale.
-      # petdata's alembic env reads PETDATA_DATABASE_URL.
+      # petdata's alembic env reads PETDATA_DATABASE_URL. Push and manual
+      # dispatch are production; pull requests are not.
       - name: Migrate database (gated, production only)
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
         env:
           PETDATA_DATABASE_URL: ${{ secrets.PETDATA_DATABASE_URL }}
         run: uv run alembic upgrade head
       - name: Deploy container (production)
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
         uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
