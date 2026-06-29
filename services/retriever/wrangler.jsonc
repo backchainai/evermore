@@ -68,5 +68,14 @@
   "vars": {
     "PORT": "8000",
     "ALLOWED_ORIGINS": "https://evermore.backchain.app"
+  },
+
+  // Observability is declarative in wrangler config: each deploy resets it to
+  // the value committed here, so logging must live in config to persist across
+  // deploys (issue #145). Invocation logs surface container boot errors and
+  // Python tracebacks in the dashboard Logs and `wrangler tail`. Traces off.
+  "observability": {
+    "logs": { "enabled": true, "invocation_logs": true },
+    "traces": { "enabled": false }
   }
 }
