@@ -230,6 +230,16 @@ otp_expiry = 3600
 subject = "You have been invited"
 content_path = "./supabase/templates/invite.html"
 
+# Magic-link sign-in: routes the link through /auth/confirm with
+# type=magiclink&next=/app so an admin-provisioned user (created in the Supabase
+# dashboard, then "Send magic link") lands authenticated on the portal home
+# without setting a password. The hosted-project Magic Link template must carry
+# the same token_hash URL; the hosted default (ConfirmationURL) points at the
+# native /auth/v1/verify endpoint, which the app cannot complete.
+[auth.email.template.magic_link]
+subject = "Sign in to Evermore"
+content_path = "./supabase/templates/magic_link.html"
+
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
 # enabled = true
