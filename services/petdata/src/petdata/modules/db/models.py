@@ -64,6 +64,7 @@ class Animal(BaseModel):
     name: str
     aka: str | None = None
     breed: str | None = None
+    species: str | None = None  # dog/cat
     weight_lbs: float | None = None
     birth_date: str | None = None  # ISO format date
     intake_date: str | None = None  # ISO format date

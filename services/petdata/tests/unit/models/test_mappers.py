@@ -12,6 +12,7 @@ def test_animal_round_trip_preserves_fields() -> None:
     model = pyd.Animal(
         id="A-00000",
         name="Buddy",
+        species="dog",
         weight_lbs=70.0,
         birth_date="2020-01-15",
         intake_date="2024-03-01",
@@ -25,6 +26,7 @@ def test_animal_round_trip_preserves_fields() -> None:
 
     row = mappers.animal_to_row(model)
     assert row.id == "A-00000"
+    assert row.species == "dog"
     assert row.weight_lbs == 70.0
     assert row.birth_date == datetime.date(2020, 1, 15)
     assert row.intake_date == datetime.date(2024, 3, 1)
@@ -35,6 +37,7 @@ def test_animal_round_trip_preserves_fields() -> None:
 
     back = mappers.animal_from_row(row)
     assert back.id == "A-00000"
+    assert back.species == "dog"
     assert back.birth_date == "2020-01-15"
     assert back.behavior_mod_tags == ["leash", "shy"]
     assert back.is_in_kennel is True
