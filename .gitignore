@@ -24,7 +24,7 @@ build/
 
 # Third-party research papers: copyright-protected, not ours to redistribute, and
 # heavy binaries. Kept on disk and indexed at runtime from a private store. Our own
-# derived work (docs/research/extractions, README, manifest) stays tracked.
+# derived work (docs/research/distilled, README, manifest) stays tracked.
 /docs/research/source-research/
 /docs/research/reference-library/
 
