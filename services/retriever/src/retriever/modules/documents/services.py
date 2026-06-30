@@ -276,6 +276,7 @@ class DocumentService:
                     file_size_bytes=doc.file_size_bytes,
                     is_indexed=doc.is_indexed,
                     created_at=doc.created_at,
+                    last_updated_at=doc.updated_at,
                     description=doc.description,
                 )
                 for doc in documents
@@ -312,6 +313,7 @@ class DocumentService:
             file_size_bytes=document.file_size_bytes,
             is_indexed=document.is_indexed,
             created_at=document.created_at,
+            last_updated_at=document.updated_at,
             description=document.description,
         )
 

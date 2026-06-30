@@ -23,6 +23,7 @@ class DocumentResponse(BaseModel):
     file_size_bytes: int
     is_indexed: bool
     created_at: datetime
+    last_updated_at: datetime
     description: str | None
 
 

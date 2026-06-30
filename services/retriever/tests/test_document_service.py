@@ -286,6 +286,8 @@ async def test_list_documents_returns_all() -> None:
     assert len(result.documents) == 2
     assert result.documents[0].filename == "a.md"
     assert result.documents[1].filename == "b.txt"
+    assert result.documents[0].last_updated_at == docs[0].updated_at
+    assert result.documents[1].last_updated_at == docs[1].updated_at
 
 
 @pytest.mark.asyncio
@@ -313,6 +315,7 @@ async def test_get_document_found() -> None:
 
     assert result.id == doc.id
     assert result.filename == doc.filename
+    assert result.last_updated_at == doc.updated_at
 
 
 @pytest.mark.asyncio
