@@ -46,7 +46,7 @@
 		}
 	}
 
-	function ratingBar(value: number | null, max: number = 5): string {
+	function ratingBar(value: number | null | undefined, max: number = 5): string {
 		if (value == null) return '—';
 		return '●'.repeat(value) + '○'.repeat(max - value);
 	}

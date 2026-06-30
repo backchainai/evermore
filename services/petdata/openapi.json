@@ -1,0 +1,727 @@
+{
+  "components": {
+    "schemas": {
+      "AnimalDetailResponse": {
+        "description": "Full animal detail with related data.",
+        "properties": {
+          "animal": {
+            "$ref": "#/components/schemas/AnimalResponse"
+          },
+          "kennel_card": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/KennelCardResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "staff_assessments": {
+            "items": {
+              "$ref": "#/components/schemas/StaffAssessmentResponse"
+            },
+            "title": "Staff Assessments",
+            "type": "array"
+          },
+          "volunteer_notes": {
+            "items": {
+              "$ref": "#/components/schemas/VolunteerNoteResponse"
+            },
+            "title": "Volunteer Notes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "animal",
+          "volunteer_notes",
+          "staff_assessments"
+        ],
+        "title": "AnimalDetailResponse",
+        "type": "object"
+      },
+      "AnimalListResponse": {
+        "description": "Paginated animal list.",
+        "properties": {
+          "animals": {
+            "items": {
+              "$ref": "#/components/schemas/AnimalResponse"
+            },
+            "title": "Animals",
+            "type": "array"
+          },
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "animals",
+          "count"
+        ],
+        "title": "AnimalListResponse",
+        "type": "object"
+      },
+      "AnimalResponse": {
+        "description": "Animal summary for list views.",
+        "properties": {
+          "age_years": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age Years"
+          },
+          "aka": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aka"
+          },
+          "behavior_mod_tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Behavior Mod Tags"
+          },
+          "birth_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Date"
+          },
+          "breed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breed"
+          },
+          "color_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color Category"
+          },
+          "days_in_shelter": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days In Shelter"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "intake_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intake Date"
+          },
+          "is_adoptable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Adoptable"
+          },
+          "is_foster_care": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Foster Care"
+          },
+          "is_in_kennel": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is In Kennel"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "photo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo Url"
+          },
+          "public_profile_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Public Profile Url"
+          },
+          "weight_lbs": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weight Lbs"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "AnimalResponse",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HealthResponse": {
+        "description": "Health check response.",
+        "properties": {
+          "database": {
+            "enum": [
+              "connected",
+              "unavailable"
+            ],
+            "title": "Database",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "healthy",
+              "degraded"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "version",
+          "database"
+        ],
+        "title": "HealthResponse",
+        "type": "object"
+      },
+      "KennelCardResponse": {
+        "description": "Kennel card information.",
+        "properties": {
+          "about_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "About Text"
+          },
+          "animal_id": {
+            "title": "Animal Id",
+            "type": "string"
+          },
+          "cats_compatibility": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cats Compatibility"
+          },
+          "commands_known": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commands Known"
+          },
+          "dogs_compatibility": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dogs Compatibility"
+          },
+          "housebreaking_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Housebreaking Status"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "kids_compatibility": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kids Compatibility"
+          },
+          "things_dislikes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Things Dislikes"
+          },
+          "things_likes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Things Likes"
+          }
+        },
+        "required": [
+          "animal_id"
+        ],
+        "title": "KennelCardResponse",
+        "type": "object"
+      },
+      "StaffAssessmentResponse": {
+        "description": "Staff behavioral assessment.",
+        "properties": {
+          "animal_id": {
+            "title": "Animal Id",
+            "type": "string"
+          },
+          "assessment_tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessment Tags"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "recorded_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recorded At"
+          }
+        },
+        "required": [
+          "animal_id"
+        ],
+        "title": "StaffAssessmentResponse",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "VolunteerNoteResponse": {
+        "description": "Volunteer behavioral observation.",
+        "properties": {
+          "animal_id": {
+            "title": "Animal Id",
+            "type": "string"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "note_date": {
+            "title": "Note Date",
+            "type": "string"
+          },
+          "note_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note Text"
+          },
+          "rating_jumpy_mouthy": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rating Jumpy Mouthy"
+          },
+          "rating_leash_reactivity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rating Leash Reactivity"
+          },
+          "rating_shy_fearful": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rating Shy Fearful"
+          },
+          "rating_strong_on_leash": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rating Strong On Leash"
+          },
+          "volunteer_name": {
+            "title": "Volunteer Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "animal_id",
+          "volunteer_name",
+          "note_date"
+        ],
+        "title": "VolunteerNoteResponse",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Behavioral observations and adoption data",
+    "title": "Pet Data",
+    "version": "1.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/animals": {
+      "get": {
+        "description": "List animals with pagination.",
+        "operationId": "list_animals_api_v1_animals_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnimalListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Animals",
+        "tags": [
+          "animals"
+        ]
+      }
+    },
+    "/api/v1/animals/{animal_id}": {
+      "get": {
+        "description": "Get animal detail with notes, kennel card, and assessments.",
+        "operationId": "get_animal_api_v1_animals__animal_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "animal_id",
+            "required": true,
+            "schema": {
+              "title": "Animal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnimalDetailResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Animal",
+        "tags": [
+          "animals"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "description": "Health check endpoint. Verifies database connectivity.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health"
+      }
+    }
+  }
+}

@@ -1,68 +1,25 @@
-export interface AskRequest {
-	question: string;
-}
+/**
+ * Thin alias module over the generated OpenAPI types.
+ *
+ * Source of truth: `services/retriever/openapi.json` (committed by the backend).
+ * Regenerate `types.generated.ts` with `npm run gen:types`; CI fails on drift.
+ * These aliases preserve the names that downstream code imports.
+ */
+import type { components } from './types.generated';
 
-export interface ChunkWithScore {
-	content: string;
-	source: string;
-	section: string;
-	score: number;
-	title: string;
-}
+type Schemas = components['schemas'];
 
-export type ConfidenceLevel = 'high' | 'medium' | 'low';
-export type MessageRole = 'user' | 'assistant';
+export type AskRequest = Schemas['AskRequest'];
+export type AskResponse = Schemas['AskResponse'];
+export type ChunkWithScore = Schemas['ChunkWithScore'];
+export type MessageResponse = Schemas['MessageResponse'];
+export type MessageHistoryResponse = Schemas['MessageHistoryResponse'];
+export type ClearHistoryResponse = Schemas['ClearHistoryResponse'];
+export type DocumentResponse = Schemas['DocumentResponse'];
+export type DocumentListResponse = Schemas['DocumentListResponse'];
+export type DocumentUploadResponse = Schemas['DocumentUploadResponse'];
+export type DocumentDeleteResponse = Schemas['DocumentDeleteResponse'];
 
-export interface AskResponse {
-	answer: string;
-	chunks_used: ChunkWithScore[];
-	confidence_level: ConfidenceLevel;
-	confidence_score: number;
-	blocked: boolean;
-	blocked_reason: string | null;
-}
-
-export interface MessageResponse {
-	id: string;
-	role: MessageRole;
-	content: string;
-	created_at: string;
-}
-
-export interface MessageHistoryResponse {
-	messages: MessageResponse[];
-	count: number;
-}
-
-export interface ClearHistoryResponse {
-	deleted_count: number;
-	message: string;
-}
-
-export interface DocumentResponse {
-	id: string;
-	filename: string;
-	title: string;
-	file_type: string;
-	file_size_bytes: number;
-	is_indexed: boolean;
-	created_at: string;
-	description: string | null;
-}
-
-export interface DocumentListResponse {
-	documents: DocumentResponse[];
-	count: number;
-}
-
-export interface DocumentUploadResponse {
-	id: string;
-	filename: string;
-	title: string;
-	chunks_created: number;
-	message: string;
-}
-
-export interface DocumentDeleteResponse {
-	message: string;
-}
+// Enum-ish types not emitted as standalone schemas; derive from the parent.
+export type ConfidenceLevel = Schemas['AskResponse']['confidence_level'];
+export type MessageRole = Schemas['MessageResponse']['role'];

@@ -53,7 +53,7 @@
 		try {
 			const history = await api.getHistory();
 			messages = history.messages.map((m) => ({
-				role: m.role,
+				role: m.role as ChatMsg['role'],
 				content: m.content,
 				createdAt: m.created_at
 			}));
