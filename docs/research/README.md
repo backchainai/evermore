@@ -6,11 +6,11 @@ Two tiers feed the **BioWriter** module (kennel cards and adoption profiles), an
 
 ## What is committed
 
-Only Tier 2 extractions (our distilled rules and templates, each citing the underlying research) are committed to this repository. The Tier 1 source PDFs in `source-research/` and `reference-library/` are third-party copyrighted material: they are kept local-only and git-ignored, never committed. Cite them from the extractions rather than redistributing the papers.
+Only the Tier 2 distilled rules and templates (each citing the underlying research) are committed to this repository. The Tier 1 source PDFs in `source-research/` and `reference-library/` are third-party copyrighted material: they are kept local-only and git-ignored, never committed. Cite them from the distilled rules rather than redistributing the papers.
 
 ## Layout
 
-### `extractions/` — Tier 2: compiled, purpose-built generation inputs
+### `distilled/` — Tier 2: compiled, purpose-built generation inputs
 Distilled findings and templates derived from the primary research, written to drive LLM generation directly. These are the rules BioWriter applies and grades against.
 
 - `key-adoption-profile-research-findings-summary.md` — the central thesis (central-route persuasion), effect sizes, and the Top 10 Do's / Don'ts.
@@ -19,7 +19,7 @@ Distilled findings and templates derived from the primary research, written to d
 - `shelter-dog-adoption-success-rates.md` — success-factor overview (foster care, behavioral prep, advocacy).
 
 ### `source-research/` — Tier 1: primary peer-reviewed sources (searchable, citable; local-only, not committed)
-The studies behind the extractions. Indexable by a Retriever collection so BioWriter can cite the paper a recommendation came from. Third-party copyrighted PDFs: kept locally and git-ignored, never committed.
+The studies behind the distilled rules. Indexable by a Retriever collection so BioWriter can cite the paper a recommendation came from. Third-party copyrighted PDFs: kept locally and git-ignored, never committed.
 
 - `adoption-advertising/` — directly backs the kennel-card wedge:
   - `putting-your-best-pet-forward_markowitz_2020.pdf` (Markowitz 2020; 184,805 Petfinder profiles)
@@ -41,4 +41,4 @@ How-to material for shelter staff and volunteers, not generation inputs. Suited 
 
 - This corpus was not pre-curated. Off-use-case material (`.mp4` videos, DPFL impact/marketing reports and infographics, and Spanish-language cheat-sheet translations) was removed from the active corpus.
 - Existing per-folder PDFs already followed a lowercase-hyphen naming convention and were preserved. Files with spaces or special characters (the two adoption-advertising sources and the training archive) were renamed to the convention.
-- Tooling: file content was identified from the Tier-2 summaries and corpus taxonomy. `drover` (LLM auto-naming) was unavailable in this environment (no local Ollama backend); names were applied by hand to the same convention.
+- Tooling: file content was identified from the Tier-2 distilled summaries and corpus taxonomy. `drover` (LLM auto-naming) was unavailable in this environment (no local Ollama backend); names were applied by hand to the same convention.

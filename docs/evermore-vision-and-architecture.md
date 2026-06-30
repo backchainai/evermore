@@ -56,7 +56,7 @@ Two capabilities, both grounded in the research rubric:
 Lives in `docs/research/` (see `docs/research/README.md`).
 
 - **Tier 1, source-research:** primary peer-reviewed studies, indexable by a Retriever collection for citation. The kennel-card backbone is Markowitz (2020, 184,805 Petfinder profiles) and Kelling et al.
-- **Tier 2, distilled rules:** compiled summaries, templates, and rubrics that drive generation directly. The kennel-card template and rubric already exist (currently in `docs/research/extractions/`, to be renamed `distilled/`).
+- **Tier 2, distilled rules:** compiled summaries, templates, and rubrics that drive generation directly. The kennel-card template and rubric already exist (in `docs/research/distilled/`).
 - **Known coverage gap:** the behavior-and-welfare and shelter-outcomes papers are only partially distilled; distilling them is backlog behind the Behavior & Trend Analysis module.
 
 ## Design principles
