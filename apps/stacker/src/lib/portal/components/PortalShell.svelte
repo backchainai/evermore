@@ -12,10 +12,21 @@
 		user: { email: string; role?: string } | null;
 		session: { access_token?: string } | null;
 		petdataApiUrl: string;
+		showAnimalSelector?: boolean;
+		showThemeToggle?: boolean;
 		children: Snippet;
 	}
 
-	let { modules, activeModuleId, user, session, petdataApiUrl, children }: Props = $props();
+	let {
+		modules,
+		activeModuleId,
+		user,
+		session,
+		petdataApiUrl,
+		showAnimalSelector = true,
+		showThemeToggle = true,
+		children
+	}: Props = $props();
 
 	let mobileMenuOpen = $state(false);
 	let gatedModule: ModuleDefinition | null = $state(null);
@@ -68,6 +79,8 @@
 			{activeModule}
 			{session}
 			{petdataApiUrl}
+			{showAnimalSelector}
+			{showThemeToggle}
 			onmenuclick={closeMobileMenu}
 		/>
 

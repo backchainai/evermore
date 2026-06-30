@@ -1,7 +1,8 @@
 <script lang="ts">
 	/**
-	 * Sidebar footer account menu — the primary account control. Shows the
-	 * user avatar, a display name, and email, with a dropdown for sign-out.
+	 * Sidebar footer account control. The account button opens a dropdown with
+	 * account detail; a separate logout icon button is the primary sign-out
+	 * affordance and posts the existing `POST /logout` form.
 	 */
 	import { LogOut, ChevronDown } from '@lucide/svelte';
 	import { initialsFromEmail, displayNameFromEmail } from '$lib/portal/user-display';
@@ -16,6 +17,9 @@
 
 	let initials = $derived(initialsFromEmail(user?.email));
 	let displayName = $derived(displayNameFromEmail(user?.email));
+
+	// TODO(#154): derive org name from org context
+	const orgName = 'Your Organization';
 
 	function handleClickOutside(event: MouseEvent): void {
 		const target = event.target as HTMLElement;
@@ -43,23 +47,33 @@
 <svelte:window onkeydown={open ? handleKeydown : undefined} />
 
 <div class="user-menu relative">
-	<button
-		type="button"
-		class="footer-btn flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors"
-		onclick={() => (open = !open)}
-		aria-expanded={open}
-		aria-haspopup="menu"
-		aria-label="Account menu"
-	>
-		<span class="avatar" aria-hidden="true">{initials}</span>
-		<span class="flex min-w-0 flex-1 flex-col leading-tight">
-			<span class="name truncate">{displayName}</span>
-			{#if user}
-				<span class="email truncate">{user.email}</span>
-			{/if}
-		</span>
-		<ChevronDown size={14} class="shrink-0 opacity-50" />
-	</button>
+	<div class="flex items-center gap-1.5">
+		<button
+			type="button"
+			class="footer-btn flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors"
+			onclick={() => (open = !open)}
+			aria-expanded={open}
+			aria-haspopup="menu"
+			aria-label="Account menu"
+		>
+			<span class="avatar" aria-hidden="true">{initials}</span>
+			<span class="flex min-w-0 flex-1 flex-col leading-tight">
+				<span class="name truncate">{displayName}</span>
+				<span class="org truncate">{orgName}</span>
+			</span>
+			<ChevronDown size={14} class="shrink-0 opacity-50" />
+		</button>
+
+		<form method="POST" action="/logout">
+			<button
+				type="submit"
+				class="logout-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors"
+				aria-label="Sign out"
+			>
+				<LogOut size={16} />
+			</button>
+		</form>
+	</div>
 
 	{#if open}
 		<div
@@ -95,6 +109,25 @@
 		background-color: color-mix(in srgb, var(--portal-sidebar-text) 8%, transparent);
 	}
 
+	.footer-btn:focus-visible {
+		outline: 2px solid var(--color-primary-500);
+		outline-offset: 2px;
+	}
+
+	.logout-btn {
+		color: color-mix(in srgb, var(--portal-sidebar-text) 72%, transparent);
+	}
+
+	.logout-btn:hover {
+		background-color: color-mix(in srgb, var(--portal-sidebar-text) 8%, transparent);
+		color: var(--portal-sidebar-text);
+	}
+
+	.logout-btn:focus-visible {
+		outline: 2px solid var(--color-primary-500);
+		outline-offset: 2px;
+	}
+
 	.avatar {
 		display: inline-flex;
 		height: 32px;
@@ -114,7 +147,7 @@
 		font-weight: 600;
 	}
 
-	.email {
+	.org {
 		font-size: 11px;
 		color: color-mix(in srgb, var(--portal-sidebar-text) 55%, transparent);
 	}

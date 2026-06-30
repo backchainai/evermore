@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { ModuleDefinition } from '$lib/portal/types';
 	import { Menu } from '@lucide/svelte';
-	import ModuleGlyph from './ModuleGlyph.svelte';
+	import ModuleIcon from './ModuleIcon.svelte';
 	import ThemePicker from './ThemePicker.svelte';
 	import AnimalSubjectSelector from './AnimalSubjectSelector.svelte';
 
@@ -10,15 +10,24 @@
 		session: { access_token?: string } | null;
 		petdataApiUrl: string;
 		onmenuclick: () => void;
+		showAnimalSelector?: boolean;
+		showThemeToggle?: boolean;
 	}
 
-	let { activeModule, session, petdataApiUrl, onmenuclick }: Props = $props();
+	let {
+		activeModule,
+		session,
+		petdataApiUrl,
+		onmenuclick,
+		showAnimalSelector = true,
+		showThemeToggle = true
+	}: Props = $props();
 </script>
 
 <header
 	class="flex h-14 shrink-0 items-center border-b border-[var(--portal-border-color)] bg-[var(--portal-card-bg)] px-4"
 >
-	<!-- Lead: hamburger (mobile) + module mark + name -->
+	<!-- Lead: hamburger (mobile) + module mark + name (or "Home" on the portal root) -->
 	<div class="flex items-center gap-3">
 		<button
 			type="button"
@@ -31,7 +40,7 @@
 
 		{#if activeModule}
 			<div class="flex items-center gap-2.5">
-				<ModuleGlyph glyph={activeModule.glyph} size={26} radius={6} solid />
+				<ModuleIcon icon={activeModule.icon} svgSize={16} />
 				<span
 					class="text-base font-semibold"
 					style:font-family="'Outfit', system-ui, sans-serif"
@@ -39,12 +48,23 @@
 					{activeModule.name}
 				</span>
 			</div>
+		{:else}
+			<span
+				class="text-base font-semibold"
+				style:font-family="'Outfit', system-ui, sans-serif"
+			>
+				Home
+			</span>
 		{/if}
 	</div>
 
 	<!-- Trail: persistent animal subject + theme -->
 	<div class="ml-auto flex items-center gap-2">
-		<AnimalSubjectSelector {session} {petdataApiUrl} />
-		<ThemePicker />
+		{#if showAnimalSelector}
+			<AnimalSubjectSelector {session} {petdataApiUrl} />
+		{/if}
+		{#if showThemeToggle}
+			<ThemePicker />
+		{/if}
 	</div>
 </header>
