@@ -10,10 +10,12 @@
 		modules: ModuleDefinition[];
 		activeModuleId: string | null;
 		user: { email: string; role?: string } | null;
+		session: { access_token?: string } | null;
+		petdataApiUrl: string;
 		children: Snippet;
 	}
 
-	let { modules, activeModuleId, user, children }: Props = $props();
+	let { modules, activeModuleId, user, session, petdataApiUrl, children }: Props = $props();
 
 	let mobileMenuOpen = $state(false);
 	let gatedModule: ModuleDefinition | null = $state(null);
@@ -64,7 +66,8 @@
 	<div class="flex min-h-0 min-w-0 flex-col">
 		<PortalAppBar
 			{activeModule}
-			{user}
+			{session}
+			{petdataApiUrl}
 			onmenuclick={closeMobileMenu}
 		/>
 

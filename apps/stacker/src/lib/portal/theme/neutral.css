@@ -243,7 +243,7 @@
 	/* --- Portal Extensions --- */
 	--portal-accent-decorative: oklch(0.734 0.150 61.93); /* Amber #EF8E1F — non-text decorative use */
 	--portal-cta-bg: var(--color-primary-500); /* Slate */
-	--portal-sidebar-bg: oklch(0.343 0.056 247.17); /* Slate #1F3B54 */
+	--portal-sidebar-bg: oklch(0.267 0.043 251); /* Dark slate #15273A — app shell chrome (handoff v1_2026-06-30) */
 	--portal-card-bg: oklch(1.000 0 0); /* White */
 	--portal-border-color: oklch(0.935 0.010 242); /* Cool hairline */
 	--portal-hover-bg: oklch(0.970 0.005 240); /* Cool off-white */

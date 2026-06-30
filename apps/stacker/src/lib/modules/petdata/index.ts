@@ -5,6 +5,7 @@ export const PETDATA_MODULE: Omit<ModuleDefinition, 'status'> & { status: 'activ
 	id: 'petdata',
 	name: 'Pet Data',
 	description: 'Behavioral observations and adoption profile data for shelter animals.',
+	glyph: 'PD',
 	icon: PawPrint,
 	basePath: '/app/petdata',
 	status: 'active',
