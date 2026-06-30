@@ -49,4 +49,36 @@ const authGuard: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
-export const handle: Handle = sequence(supabaseHandle, authGuard);
+// Strict Content-Security-Policy shipped in Report-Only mode. It is intentionally
+// not enforcing: SvelteKit injects inline hydration scripts (an enforcing
+// `script-src 'self'` would break hydration without SvelteKit's hash/nonce
+// integration), and Supabase JS connects to a per-environment external URL
+// (an enforcing `connect-src 'self'` would break auth). Report-Only collects
+// violation reports while the enforcing migration (SvelteKit `kit.csp`) lands.
+// See docs/adr/0011-supabase-auth-cookie-non-httponly.md.
+const CONTENT_SECURITY_POLICY_REPORT_ONLY = [
+	"default-src 'self'",
+	"base-uri 'self'",
+	"object-src 'none'",
+	"frame-ancestors 'self'",
+	"form-action 'self'",
+	"img-src 'self' data:",
+	"font-src 'self'",
+	"style-src 'self' 'unsafe-inline'",
+	"script-src 'self'",
+	"connect-src 'self' https:"
+].join('; ');
+
+// Compensating controls for the non-HttpOnly Supabase auth cookie (ADR 0011):
+// hardening headers plus a Report-Only CSP set on every response.
+const securityHeaders: Handle = async ({ event, resolve }) => {
+	const response = await resolve(event);
+	response.headers.set('X-Content-Type-Options', 'nosniff');
+	response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+	response.headers.set('X-Frame-Options', 'DENY');
+	response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+	response.headers.set('Content-Security-Policy-Report-Only', CONTENT_SECURITY_POLICY_REPORT_ONLY);
+	return response;
+};
+
+export const handle: Handle = sequence(supabaseHandle, authGuard, securityHeaders);
