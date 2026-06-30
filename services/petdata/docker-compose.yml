@@ -1,0 +1,35 @@
+# Local development: persistent application database for the Pet Data service.
+#
+# Topology (see ../../docs/local-development.md):
+#   - pgvector Postgres on host 5434, database `petdata`, data persisted in a
+#     named volume so records survive `down` (use `down -v` to wipe).
+#   - Pet Data and the other services run natively (uvicorn / vite), not here.
+#
+# Usage:
+#   docker compose up -d        # start the Pet Data database
+#   docker compose down         # stop it (data persists in the named volume)
+#   docker compose down -v      # stop and wipe data
+#
+# 5434 (not 5432/5433) keeps Pet Data's database clear of a host Postgres,
+# Supabase's bundled DB, and the Retriever app database (5433). The ephemeral
+# test database in docker-compose.test.yml also uses 5434, so run dev and the
+# integration tests one at a time.
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: petdata
+    volumes:
+      - petdata_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d petdata"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  petdata_pgdata:

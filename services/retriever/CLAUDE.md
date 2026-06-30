@@ -32,7 +32,7 @@ Evermore uses GitHub Issues for tracking (see ADR 0002 and the root `CLAUDE.md`)
 uv sync --dev
 
 # Run development server
-uv run uvicorn retriever.main:app --reload --port 8000
+uv run uvicorn retriever.main:app --reload --port 8001
 
 # Linting and formatting
 uv run ruff check src/ tests/ --fix
@@ -55,6 +55,8 @@ uv run ruff check src/ tests/ --fix && uv run ruff format src/ tests/ && uv run 
 
 The dev workflow runs infrastructure in Docker + Supabase CLI, with the backend running natively for fast live reload. The frontend lives in the [`apps/stacker`](../../apps/stacker/) portal.
 
+For the integrated stack (Supabase + databases + Retriever + Pet Data + portal in one command), use the root `Makefile` (`make dev` or `make dev-full`); see `../../docs/local-development.md`. The standalone steps below run the same pieces by hand. The app database is pgvector Postgres on host **5433** (database `retriever`), and Retriever runs on port **8001** — the port the portal expects (`PUBLIC_RETRIEVER_API_URL`).
+
 ```bash
 # 1. Start Supabase (auth, realtime, storage)
 supabase start
@@ -65,7 +67,7 @@ docker compose up -d
 # 3. Backend
 cd services/retriever && uv sync --dev
 uv run alembic upgrade head          # first time / after migrations
-uv run uvicorn retriever.main:app --reload --port 8000
+uv run uvicorn retriever.main:app --reload --port 8001
 
 # 4. Stop everything
 docker compose down && supabase stop

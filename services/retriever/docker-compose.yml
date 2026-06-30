@@ -1,3 +1,11 @@
+# Standalone Retriever infrastructure: pgvector Postgres + Jaeger.
+#
+# The integrated local stack (root Makefile, `make dev`/`make dev-full`) uses
+# the app database in apps/stacker/docker-compose.yml, which also publishes
+# host 5433 with database `retriever`. This compose mirrors that port and
+# database so a Retriever-only workflow connects with the same DATABASE_URL
+# (host 5433). The two app-database containers are mutually exclusive: bring up
+# one or the other, not both.
 services:
   postgres:
     image: pgvector/pgvector:pg17
@@ -6,7 +14,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
