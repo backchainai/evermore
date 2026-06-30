@@ -4,7 +4,8 @@ import { MessageSquare, FileText, Search } from '@lucide/svelte';
 export const RETRIEVER_MODULE: Omit<ModuleDefinition, 'status'> & { status: 'active' } = {
 	id: 'retriever',
 	name: 'Retriever',
-	description: "AI-powered Q&A from your organization's policy and procedure documents.",
+	description: "AI Q&A from your shelter's policy and procedure documents.",
+	glyph: 'RT',
 	icon: Search,
 	basePath: '/app/retriever',
 	status: 'active',

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { ModuleDefinition } from '$lib/portal/types';
-	import { Globe, PanelLeftClose, PanelLeftOpen } from '@lucide/svelte';
+	import { page } from '$app/stores';
 	import ModuleCard from './ModuleCard.svelte';
 	import UserMenu from './UserMenu.svelte';
 
@@ -13,19 +13,11 @@
 		onlockedclick: (module: ModuleDefinition) => void;
 	}
 
-	let { modules, activeModuleId, user, collapsed, onmoduleclick, onlockedclick }: Props =
-		$props();
+	let { modules, activeModuleId, user, collapsed, onmoduleclick, onlockedclick }: Props = $props();
 
-	let internalCollapsed = $state(false);
-
-	// Sync internal state when prop changes
-	$effect(() => {
-		internalCollapsed = collapsed;
-	});
-
-	let isCollapsed = $derived(internalCollapsed);
-
+	let isCollapsed = $derived(collapsed);
 	let activeModule = $derived(modules.find((m) => m.id === activeModuleId) ?? null);
+	let currentPath = $derived($page.url.pathname);
 
 	function handleModuleClick(mod: ModuleDefinition): void {
 		if (mod.status === 'disabled') {
@@ -38,51 +30,27 @@
 		}
 	}
 
-	function toggleCollapse(): void {
-		internalCollapsed = !internalCollapsed;
+	function isNavActive(href: string): boolean {
+		return currentPath === href || currentPath.startsWith(href + '/');
 	}
 </script>
 
-<aside
-	class="portal-sidebar flex h-full flex-col overflow-y-auto"
-	class:portal-sidebar--collapsed={isCollapsed}
->
-	<!-- Header: wordmark + collapse toggle -->
-	<div class="flex min-h-[56px] shrink-0 items-center gap-2 border-b border-white/10 px-4">
-		<Globe size={22} class="shrink-0 text-[var(--portal-sidebar-accent)]" />
+<aside class="portal-sidebar flex h-full flex-col overflow-y-auto">
+	<!-- Header: blue dot + wordmark, links home -->
+	<a
+		href="/app"
+		class="header flex min-h-[56px] shrink-0 items-center gap-2.5 border-b border-white/[0.08] px-4"
+	>
+		<span class="dot" aria-hidden="true"></span>
 		{#if !isCollapsed}
-			<span
-				class="text-base font-semibold tracking-tight text-[var(--portal-sidebar-text)]"
-				style:font-family="'Outfit', system-ui, sans-serif"
-			>
-				Evermore
-			</span>
-			<button
-				type="button"
-				class="ml-auto flex min-h-[48px] min-w-[48px] items-center justify-center rounded-lg text-[var(--portal-sidebar-text)] opacity-60 transition-opacity hover:opacity-100"
-				onclick={toggleCollapse}
-				aria-label="Collapse sidebar"
-			>
-				<PanelLeftClose size={18} />
-			</button>
-		{:else}
-			<button
-				type="button"
-				class="ml-auto flex min-h-[48px] min-w-[48px] items-center justify-center rounded-lg text-[var(--portal-sidebar-text)] opacity-60 transition-opacity hover:opacity-100"
-				onclick={toggleCollapse}
-				aria-label="Expand sidebar"
-			>
-				<PanelLeftOpen size={18} />
-			</button>
+			<span class="wordmark">Evermore</span>
 		{/if}
-	</div>
+	</a>
 
 	<!-- Module list -->
 	<nav class="flex flex-1 flex-col gap-1 px-2 pt-4" aria-label="Modules">
 		{#if !isCollapsed}
-			<span class="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--portal-sidebar-text)] opacity-50">
-				Modules
-			</span>
+			<span class="eyebrow px-3">Modules</span>
 		{/if}
 
 		{#each modules as mod (mod.id)}
@@ -94,22 +62,23 @@
 			/>
 		{/each}
 
-		<!-- Active module nav items -->
+		<!-- Active module sub-nav -->
 		{#if activeModule && activeModule.navItems.length > 0}
-			<div class="mt-4 border-t border-white/10 pt-4">
+			<div class="mt-4 border-t border-white/[0.08] pt-4">
 				{#if !isCollapsed}
-					<span class="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--portal-sidebar-text)] opacity-50">
-						{activeModule.name}
-					</span>
+					<span class="eyebrow px-3">{activeModule.name}</span>
 				{/if}
 				{#each activeModule.navItems as navItem (navItem.label)}
+					{@const href = activeModule.basePath + navItem.href}
 					<a
-						href={activeModule.basePath + navItem.href}
-						class="nav-link flex items-center gap-3 rounded-lg px-3 text-sm text-[var(--portal-sidebar-text)] transition-colors hover:bg-[color-mix(in_oklch,var(--portal-sidebar-bg)_70%,white_30%)]"
-						class:nav-link--collapsed={isCollapsed}
+						{href}
+						class="sub-nav flex items-center gap-2.5"
+						class:sub-nav--active={isNavActive(href)}
+						class:sub-nav--collapsed={isCollapsed}
+						aria-current={isNavActive(href) ? 'page' : undefined}
 						title={isCollapsed ? navItem.label : undefined}
 					>
-						<navItem.icon size={18} class="shrink-0" />
+						<span class="marker" aria-hidden="true"></span>
 						{#if !isCollapsed}
 							<span class="truncate">{navItem.label}</span>
 						{/if}
@@ -119,9 +88,9 @@
 		{/if}
 	</nav>
 
-	<!-- Footer: user menu -->
-	<div class="mt-auto shrink-0 border-t border-white/10 p-2">
-		<UserMenu {user} compact={isCollapsed} />
+	<!-- Footer: account menu -->
+	<div class="mt-auto shrink-0 border-t border-white/[0.08] p-2">
+		<UserMenu {user} />
 	</div>
 </aside>
 
@@ -129,18 +98,77 @@
 	.portal-sidebar {
 		background-color: var(--portal-sidebar-bg);
 		width: 260px;
-		transition: width 0.2s ease;
 	}
 
-	.portal-sidebar--collapsed {
-		width: 72px;
+	.header {
+		text-decoration: none;
 	}
 
-	.nav-link {
-		min-height: 48px;
+	.header:hover {
+		text-decoration: none;
 	}
 
-	.nav-link--collapsed {
+	.dot {
+		height: 8px;
+		width: 8px;
+		flex-shrink: 0;
+		border-radius: 9999px;
+		background-color: var(--portal-sidebar-accent);
+	}
+
+	.wordmark {
+		font-family: 'Outfit', system-ui, sans-serif;
+		font-size: 16px;
+		font-weight: 600;
+		letter-spacing: -0.01em;
+		color: var(--portal-sidebar-text);
+	}
+
+	.eyebrow {
+		margin-bottom: 0.25rem;
+		font-size: 11px;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: color-mix(in srgb, var(--portal-sidebar-text) 50%, transparent);
+	}
+
+	.sub-nav {
+		min-height: 38px;
+		padding-inline: 12px;
+		border-radius: 8px;
+		font-size: 13px;
+		color: color-mix(in srgb, var(--portal-sidebar-text) 72%, transparent);
+		transition: background-color 0.2s ease, color 0.2s ease;
+	}
+
+	.sub-nav:hover {
+		background-color: color-mix(in srgb, var(--portal-sidebar-text) 6%, transparent);
+		color: var(--portal-sidebar-text);
+		text-decoration: none;
+	}
+
+	.sub-nav--active {
+		background-color: rgba(255, 255, 255, 0.08);
+		color: var(--portal-sidebar-text);
+		font-weight: 500;
+	}
+
+	.marker {
+		height: 6px;
+		width: 6px;
+		flex-shrink: 0;
+		border-radius: 9999px;
+		background-color: currentColor;
+		opacity: 0.55;
+	}
+
+	.sub-nav--active .marker {
+		opacity: 1;
+		background-color: var(--portal-sidebar-accent);
+	}
+
+	.sub-nav--collapsed {
 		justify-content: center;
 		padding-inline: 0;
 	}

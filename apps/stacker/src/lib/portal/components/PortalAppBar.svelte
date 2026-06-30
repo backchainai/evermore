@@ -1,26 +1,28 @@
 <script lang="ts">
 	import type { ModuleDefinition } from '$lib/portal/types';
 	import { Menu } from '@lucide/svelte';
+	import ModuleGlyph from './ModuleGlyph.svelte';
 	import ThemePicker from './ThemePicker.svelte';
-	import UserMenu from './UserMenu.svelte';
+	import AnimalSubjectSelector from './AnimalSubjectSelector.svelte';
 
 	interface Props {
 		activeModule: ModuleDefinition | null;
-		user: { email: string; role?: string } | null;
+		session: { access_token?: string } | null;
+		petdataApiUrl: string;
 		onmenuclick: () => void;
 	}
 
-	let { activeModule, user, onmenuclick }: Props = $props();
+	let { activeModule, session, petdataApiUrl, onmenuclick }: Props = $props();
 </script>
 
 <header
 	class="flex h-14 shrink-0 items-center border-b border-[var(--portal-border-color)] bg-[var(--portal-card-bg)] px-4"
 >
-	<!-- Lead: hamburger (mobile) + module name -->
+	<!-- Lead: hamburger (mobile) + module mark + name -->
 	<div class="flex items-center gap-3">
 		<button
 			type="button"
-			class="flex min-h-[48px] min-w-[48px] items-center justify-center rounded-lg transition-colors hover:bg-[var(--portal-hover-bg)] md:hidden"
+			class="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg transition-colors hover:bg-[var(--portal-hover-bg)] md:hidden"
 			onclick={onmenuclick}
 			aria-label="Toggle navigation"
 		>
@@ -28,8 +30,8 @@
 		</button>
 
 		{#if activeModule}
-			<div class="flex items-center gap-2">
-				<activeModule.icon size={20} class="text-[var(--color-primary-500)]" />
+			<div class="flex items-center gap-2.5">
+				<ModuleGlyph glyph={activeModule.glyph} size={26} radius={6} solid />
 				<span
 					class="text-base font-semibold"
 					style:font-family="'Outfit', system-ui, sans-serif"
@@ -40,9 +42,9 @@
 		{/if}
 	</div>
 
-	<!-- Trail: theme + user -->
-	<div class="ml-auto flex items-center gap-1">
+	<!-- Trail: persistent animal subject + theme -->
+	<div class="ml-auto flex items-center gap-2">
+		<AnimalSubjectSelector {session} {petdataApiUrl} />
 		<ThemePicker />
-		<UserMenu {user} compact={true} />
 	</div>
 </header>

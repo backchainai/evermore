@@ -242,7 +242,7 @@
 	/* --- Portal Extensions --- */
 	--portal-accent-decorative: oklch(0.790 0.140 63); /* Amber lightened — decorative on dark */
 	--portal-cta-bg: oklch(0.564 0.139 247.33); /* Blue #1A7AC2 — 4.56:1 with white text */
-	--portal-sidebar-bg: oklch(0.230 0.034 248); /* Darker navy */
+	--portal-sidebar-bg: oklch(0.267 0.043 251); /* Dark slate #15273A — app shell chrome (handoff v1_2026-06-30) */
 	--portal-card-bg: oklch(0.330 0.046 248); /* Close to body — cards use borders for distinction */
 	--portal-border-color: oklch(0.470 0.045 247); /* Brightened for visible card edges on dark */
 	--portal-hover-bg: oklch(0.360 0.046 248);
