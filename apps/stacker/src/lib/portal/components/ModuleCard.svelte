@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { ModuleDefinition } from '$lib/portal/types';
 	import { Lock } from '@lucide/svelte';
-	import ModuleGlyph from './ModuleGlyph.svelte';
+	import ModuleIcon from './ModuleIcon.svelte';
 
 	interface Props {
 		module: ModuleDefinition;
@@ -27,7 +27,7 @@
 	aria-current={active ? 'page' : undefined}
 	title={collapsed ? module.name : undefined}
 >
-	<ModuleGlyph glyph={module.glyph} size={30} radius={7} solid={active} />
+	<ModuleIcon icon={module.icon} size={26} svgSize={20} active={active} />
 	{#if !collapsed}
 		<span class="module-row__label truncate">{module.name}</span>
 		{#if isUnavailable}

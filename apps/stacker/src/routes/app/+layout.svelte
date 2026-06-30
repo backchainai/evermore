@@ -9,6 +9,9 @@
 	const subscriptions = $derived(new Set(data.subscriptions || []));
 	const modules = $derived(getModulesWithStatus(subscriptions));
 	const activeModule = $derived(getActiveModule($page.url.pathname));
+
+	// Home surface: no active module AND we are at the portal root (/app).
+	const isHome = $derived(activeModule === undefined && $page.url.pathname === '/app');
 </script>
 
 <PortalShell
@@ -17,6 +20,8 @@
 	user={data.user ? { email: data.user.email ?? '', role: data.user.role } : null}
 	session={data.session ?? null}
 	petdataApiUrl={PUBLIC_PETDATA_API_URL || 'http://localhost:8002'}
+	showAnimalSelector={!isHome}
+	showThemeToggle={!isHome}
 >
 	{@render children()}
 </PortalShell>
