@@ -1,0 +1,31 @@
+/* =============================================================
+ * @font-face — the three-font Evermore system
+ * Three variable font masters. No substitutes.
+ *   Inter          — all UI + content
+ *   Outfit         — brand/wordmark only
+ *   JetBrains Mono — code / IDs / versions
+ * ============================================================= */
+
+@font-face {
+  font-family: 'Inter';
+  src: url('../assets/fonts/Inter-Variable.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('../assets/fonts/Outfit-Variable.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('../assets/fonts/JetBrainsMono-Variable.ttf') format('truetype');
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}

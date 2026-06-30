@@ -1,0 +1,128 @@
+/* =============================================================
+ * COLOR TOKENS — Evermore
+ * A cool, clinical-but-warm SaaS palette: one confident blue for
+ * everything interactive, deep slate for structure, a single amber
+ * for attention/decoration, and green for positive state.
+ * Never pure black; white is reserved for card surfaces only.
+ * ============================================================= */
+
+:root {
+  /* --- Raw palette --- */
+  --color-blue:       #1A7AC2; /* primary — anything interactive */
+  --color-blue-soft:  #E3EEF6; /* tinted blue surface (avatars, selected rows) */
+  --color-slate:      #1F3B54; /* headings, emphasis, dark marks */
+  --color-gray:       #50636F; /* body text, hairline borders (via alpha) */
+  --color-amber:      #EF8E1F; /* attention + decorative accent */
+  --color-green:      #2FB85F; /* positive / success */
+  --color-surface-w:  #FFFFFF; /* card surfaces */
+  --color-canvas-c:   #F1F5F8; /* cool page canvas */
+  --color-canvas-c2:  #E9F1F7; /* secondary canvas (work surfaces) */
+
+  /* Compatibility aliases so name-compatible primitives resolve unchanged */
+  --color-cream:      #EEF3F7; /* on-accent / inverse light */
+  --color-charcoal:   #1F3B54; /* maps to slate */
+  --color-coral:      #EF8E1F; /* maps to amber (decorative accent) */
+  --color-off-white:  #FFFFFF;
+
+  /* --- Status --- */
+  --color-error:   #C0392B;
+  --color-success: #2FB85F;
+
+  /* --- Alpha scale (hairline borders, muted text) — gray-based --- */
+  --alpha-05: 0.05; /* @kind other */
+  --alpha-10: 0.10; /* @kind other */
+  --alpha-20: 0.20; /* @kind other */
+  --alpha-30: 0.30; /* @kind other */
+  --alpha-40: 0.40; /* @kind other */
+  --alpha-70: 0.70; /* @kind other */
+  --alpha-80: 0.80; /* @kind other */
+}
+
+/* =============================================================
+ * EVERMORE — light theme default (cool canvas).
+ * Applies at :root so consumers need no wrapper.
+ *
+ * Text-role convention:
+ *   Headings / labels / emphasis → slate   (--color-heading)
+ *   Default body paragraphs      → gray    (--color-body)
+ *   Eyebrows / section labels    → blue    (--color-label-accent)
+ * ============================================================= */
+:root,
+[data-brand="evermore"],
+.brand-evermore {
+  --color-canvas:           var(--color-canvas-c);
+  --color-canvas-work:      var(--color-canvas-c2);
+  --color-canvas-inverted:  var(--color-slate);
+  --color-surface:          var(--color-surface-w);
+  --color-surface-inverted: var(--color-slate);
+  --color-surface-soft:     var(--color-blue-soft);
+
+  /* Text roles */
+  --color-heading:        var(--color-slate);
+  --color-body:           var(--color-gray);
+  --color-text:           var(--color-slate);
+  --color-text-secondary: var(--color-gray);
+  --color-label-accent:   var(--color-blue);
+  --color-text-on-dark:   var(--color-cream);
+
+  /* Interactive */
+  --color-primary:    var(--color-blue);
+  --color-accent:     var(--color-amber);
+  --color-cta:        var(--color-blue);
+  --color-cta-text:   #FFFFFF;
+  --color-link:       var(--color-slate);
+  --color-link-hover: var(--color-blue);
+
+  /* Structure */
+  --color-border:     var(--color-gray);
+  --color-focus-ring: var(--color-blue);
+
+  /* Pre-mixed hairlines (so consumers don't re-derive color-mix) */
+  --border-card:        color-mix(in srgb, var(--color-gray) 14%, transparent);
+  --border-card-hover:  color-mix(in srgb, var(--color-gray) 28%, transparent);
+  --border-divider:     color-mix(in srgb, var(--color-gray) 12%, transparent);
+  --border-input:       color-mix(in srgb, var(--color-gray) 22%, transparent);
+  --border-btn-2:       color-mix(in srgb, var(--color-gray) 40%, transparent);
+}
+
+/* =============================================================
+ * DARK SECTION — deep navy-slate canvas. Apply via
+ * [data-brand="evermore-dark"] or .on-slate on a dark band.
+ * Cards composite as alpha-white rather than solid gray.
+ * ============================================================= */
+[data-brand="evermore-dark"],
+.brand-evermore-dark,
+.on-slate {
+  --color-canvas:           #16293B;
+  --color-canvas-work:      #1B3148;
+  --color-canvas-inverted:  var(--color-canvas-c);
+  --color-surface:          color-mix(in srgb, #FFFFFF 6%, transparent);
+  --color-surface-inverted: var(--color-surface-w);
+  --color-surface-soft:     color-mix(in srgb, var(--color-blue) 18%, transparent);
+
+  /* Text roles — inverted for dark canvas */
+  --color-heading:        #EAF1F7;
+  --color-body:           color-mix(in srgb, #EAF1F7 80%, transparent);
+  --color-text:           #EAF1F7;
+  --color-text-secondary: color-mix(in srgb, #EAF1F7 70%, transparent);
+  --color-label-accent:   #58A6DC;
+  --color-text-on-light:  var(--color-slate);
+
+  /* Interactive */
+  --color-primary:    #58A6DC;
+  --color-accent:     var(--color-amber);
+  --color-cta:        var(--color-blue);
+  --color-cta-text:   #FFFFFF;
+  --color-link:       #EAF1F7;
+  --color-link-hover: #58A6DC;
+
+  /* Structure */
+  --color-border:     #EAF1F7;
+  --color-focus-ring: #58A6DC;
+
+  --border-card:       color-mix(in srgb, #FFFFFF 10%, transparent);
+  --border-card-hover: color-mix(in srgb, #FFFFFF 20%, transparent);
+  --border-divider:    color-mix(in srgb, #FFFFFF 14%, transparent);
+  --border-input:      color-mix(in srgb, #FFFFFF 24%, transparent);
+  --border-btn-2:      color-mix(in srgb, #FFFFFF 40%, transparent);
+}

@@ -17,23 +17,23 @@
 		{
 			id: 'light',
 			name: 'Light',
-			dot: '#F5F0E8',
-			swatchLeft: '#F5F0E8',
-			swatchRight: '#A35945'
+			dot: '#F1F5F8',
+			swatchLeft: '#F1F5F8',
+			swatchRight: '#1A7AC2'
 		},
 		{
 			id: 'dark',
 			name: 'Dark',
-			dot: '#2F455B',
-			swatchLeft: '#1A2835',
-			swatchRight: '#E07A5F'
+			dot: '#16293B',
+			swatchLeft: '#16293B',
+			swatchRight: '#58A6DC'
 		},
 		{
 			id: 'neutral',
 			name: 'Neutral',
-			dot: '#FAFAF8',
-			swatchLeft: '#FAFAF8',
-			swatchRight: '#2F455B'
+			dot: '#F6F8FA',
+			swatchLeft: '#F6F8FA',
+			swatchRight: '#1F3B54'
 		}
 	];
 
@@ -78,7 +78,7 @@
 	>
 		<span
 			class="h-4 w-4 rounded-full border border-[var(--portal-border-color)]"
-			style:background-color={themes.find((t) => t.id === activeTheme)?.dot ?? '#F5F0E8'}
+			style:background-color={themes.find((t) => t.id === activeTheme)?.dot ?? '#F1F5F8'}
 		></span>
 		<ChevronDown size={14} class="opacity-60" />
 	</button>
