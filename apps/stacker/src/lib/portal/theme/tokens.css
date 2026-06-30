@@ -3,11 +3,19 @@
   --font-body: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Responsive type scale — HIG Dynamic Type equivalent */
-  --text-h1: clamp(2rem, 1.5rem + 2.5vw, 3rem);
-  --text-h2: clamp(1.75rem, 1.375rem + 1.875vw, 2.25rem);
-  --text-h3: clamp(1.25rem, 1.125rem + 0.625vw, 1.5rem);
-  --text-h4: clamp(1.125rem, 1.0625rem + 0.3125vw, 1.25rem);
-  --text-body: 1rem;
-  --text-small: 0.875rem;
+  /* Responsive type scale — Evermore fluid clamp() scale (mobile → desktop) */
+  --text-display: clamp(2.25rem, 1.5rem + 3.75vw, 3.75rem);    /* 36 → 60px — hero */
+  --text-h1: clamp(1.875rem, 1.5rem + 1.875vw, 2.25rem);       /* 30 → 36px */
+  --text-h2: clamp(1.5rem, 1.25rem + 1.25vw, 2rem);            /* 24 → 32px */
+  --text-h3: clamp(1.25rem, 1.125rem + 0.625vw, 1.5rem);       /* 20 → 24px */
+  --text-h4: clamp(1.125rem, 1.0625rem + 0.3125vw, 1.25rem);   /* 18 → 20px */
+  --text-body: 1rem;        /* 16px */
+  --text-small: 0.875rem;   /* 14px */
+  --text-xs: 0.75rem;       /* 12px — eyebrows (uppercase, wide track) */
+  --text-ui: 0.8125rem;     /* 13px — dense app UI text */
+  --text-ui-sm: 0.6875rem;  /* 11px — meta, secondary rows */
+
+  /* Tracking — gentle tight headlines, wide all-caps eyebrows */
+  --tracking-tight: -0.01em;
+  --tracking-wide: 0.06em;
 }

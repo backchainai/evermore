@@ -9,7 +9,7 @@
 /* --- Accessibility: Focus visible (WCAG 2.4.7) --- */
 :focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--portal-card-bg, #fff), 0 0 0 4px var(--portal-focus-ring, #41423D);
+  box-shadow: 0 0 0 2px var(--portal-card-bg, #fff), 0 0 0 4px var(--portal-focus-ring, #1A7AC2);
 }
 
 :focus:not(:focus-visible) {
@@ -35,9 +35,9 @@
   left: 1rem;
   z-index: 100;
   padding: 0.75rem 1.5rem;
-  background: var(--portal-card-bg, #F5F0E8);
-  color: var(--portal-focus-ring, #41423D);
-  border: 2px solid var(--portal-focus-ring, #41423D);
+  background: var(--portal-card-bg, #fff);
+  color: var(--portal-focus-ring, #1A7AC2);
+  border: 2px solid var(--portal-focus-ring, #1A7AC2);
   border-radius: 4px;
   font-size: 1rem;
   text-decoration: none;
