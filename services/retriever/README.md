@@ -56,10 +56,10 @@ docker compose up -d              # pgvector postgres + jaeger
 
 cd services/retriever && uv sync --dev
 uv run alembic upgrade head
-uv run uvicorn retriever.main:app --reload --port 8000
+uv run uvicorn retriever.main:app --reload --port 8001
 ```
 
-Backend API: [http://localhost:8000/docs](http://localhost:8000/docs). The frontend portal lives in [`apps/stacker`](../../apps/stacker/) in this monorepo.
+Backend API: [http://localhost:8001/docs](http://localhost:8001/docs) (port 8001 is what the portal expects via `PUBLIC_RETRIEVER_API_URL`). The frontend portal lives in [`apps/stacker`](../../apps/stacker/) in this monorepo.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for full development setup, quality checks, and workflow.
 
@@ -78,7 +78,7 @@ Retriever exposes a REST API for programmatic access:
 
 ```bash
 # Ask a question
-curl -X POST http://localhost:8000/api/v1/rag/ask \
+curl -X POST http://localhost:8001/api/v1/rag/ask \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{"question": "What is the check-in procedure?"}'
