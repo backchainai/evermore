@@ -13,16 +13,14 @@ once.
 """
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Annotated
+from typing import Annotated
 
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from evermore_auth.jwks import JwksValidator
 from evermore_auth.schemas import AuthUser
-
-if TYPE_CHECKING:
-    from evermore_auth.jwks import JwksValidator
 
 AuthDependency = Callable[..., AuthUser]
 

@@ -7,7 +7,7 @@ name = "retriever"
 version = "1.5.0"
 description = "AI-powered Q&A system for shelter volunteers"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.13"
 license = "Apache-2.0"
 authors = [{ name = "Chris Krough", email = "dev@krough.org" }]
 maintainers = [{ name = "Chris Krough", email = "dev@krough.org" }]

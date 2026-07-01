@@ -11,7 +11,7 @@
 # enter the image.
 
 # --- Build stage ---
-FROM python:3.14-slim AS builder
+FROM python:3.13-slim AS builder
 
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
@@ -37,7 +37,7 @@ COPY services/retriever/src/ ./src/
 RUN uv sync --frozen --no-dev --no-editable
 
 # --- Runtime stage ---
-FROM python:3.14-slim AS runtime
+FROM python:3.13-slim AS runtime
 
 # Install libpq for asyncpg and curl for the healthcheck
 RUN apt-get update && apt-get install -y --no-install-recommends libpq5 curl \
