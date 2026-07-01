@@ -19,7 +19,7 @@ petdata extracts animal data from shelter management systems, analyzes behaviora
 
 ### Phase 1: Data Extraction and Storage (✓ Complete)
 
-- **7 Pydantic data models:** Animal, VolunteerNote, KennelCard, StaffAssessment, WalkRecord, AnimalImage, SyncLog
+- **7 Pydantic data models:** Animal, VolunteerNote, BehaviorProfile, StaffAssessment, WalkRecord, AnimalImage, SyncLog
 - **Supabase Postgres + pgvector** accessed through async SQLAlchemy 2.0 (asyncpg), with foreign keys, indexes, and cascade deletes
 - **Repository pattern** with full async CRUD operations over a request-scoped session
 - **Alembic migrations** own the schema (`uv run alembic upgrade head`)

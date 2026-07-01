@@ -17,9 +17,7 @@ def test_animal_round_trip_preserves_fields() -> None:
         birth_date="2020-01-15",
         intake_date="2024-03-01",
         color_category="Green",
-        behavior_mod_tags=["leash", "shy"],
-        is_in_kennel=True,
-        is_foster_care=False,
+        custody_location="kennel",
         created_at="2026-06-01T12:00:00+00:00",
         last_synced_at="2026-06-02T08:30:00+00:00",
     )
@@ -30,17 +28,14 @@ def test_animal_round_trip_preserves_fields() -> None:
     assert row.weight_lbs == 70.0
     assert row.birth_date == datetime.date(2020, 1, 15)
     assert row.intake_date == datetime.date(2024, 3, 1)
-    assert row.behavior_mod_tags == ["leash", "shy"]
-    assert row.is_in_kennel is True
-    assert row.is_foster_care is False
+    assert row.custody_location == "kennel"
     assert row.created_at == datetime.datetime(2026, 6, 1, 12, 0, tzinfo=datetime.UTC)
 
     back = mappers.animal_from_row(row)
     assert back.id == "A-00000"
     assert back.species == "dog"
     assert back.birth_date == "2020-01-15"
-    assert back.behavior_mod_tags == ["leash", "shy"]
-    assert back.is_in_kennel is True
+    assert back.custody_location == "kennel"
     assert back.created_at == "2026-06-01T12:00:00+00:00"
     assert back.last_synced_at == "2026-06-02T08:30:00+00:00"
 
@@ -57,6 +52,37 @@ def test_birth_date_accepts_datetime_string() -> None:
     model = pyd.Animal(id="A-2", name="Mia", birth_date="2019-07-04T00:00:00")
     row = mappers.animal_to_row(model)
     assert row.birth_date == datetime.date(2019, 7, 4)
+
+
+def test_behavior_profile_round_trip_preserves_fields() -> None:
+    model = pyd.BehaviorProfile(
+        id=7,
+        animal_id="A-00000",
+        dogs_compatible=True,
+        knows_commands=True,
+        commands_notes="sit, stay",
+        housebroken=False,
+        housebreaking_notes="in progress",
+        behavior_mod_tags=["leash", "shy"],
+        things_likes=["walks"],
+    )
+
+    row = mappers.behavior_profile_to_row(model)
+    assert row.id == 7
+    assert row.knows_commands is True
+    assert row.commands_notes == "sit, stay"
+    assert row.housebroken is False
+    assert row.housebreaking_notes == "in progress"
+    assert row.behavior_mod_tags == ["leash", "shy"]
+
+    back = mappers.behavior_profile_from_row(row)
+    assert back.animal_id == "A-00000"
+    assert back.knows_commands is True
+    assert back.commands_notes == "sit, stay"
+    assert back.housebroken is False
+    assert back.housebreaking_notes == "in progress"
+    assert back.behavior_mod_tags == ["leash", "shy"]
+    assert back.things_likes == ["walks"]
 
 
 def test_volunteer_note_round_trip() -> None:

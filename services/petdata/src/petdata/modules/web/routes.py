@@ -18,7 +18,7 @@ from petdata.modules.web.schemas import (
     AnimalDetailResponse,
     AnimalListResponse,
     AnimalResponse,
-    KennelCardResponse,
+    BehaviorProfileResponse,
     StaffAssessmentResponse,
     VolunteerNoteResponse,
 )
@@ -42,13 +42,11 @@ def _animal_to_response(animal: Animal) -> AnimalResponse:
         intake_date=animal.intake_date,
         location=animal.location,
         color_category=animal.color_category,
-        behavior_mod_tags=animal.behavior_mod_tags,
-        is_in_kennel=animal.is_in_kennel,
-        is_foster_care=animal.is_foster_care,
+        custody_location=animal.custody_location,
         photo_url=animal.photo_url,
         public_profile_url=animal.public_profile_url,
         age_years=animal.age_years,
-        days_in_shelter=animal.days_in_shelter,
+        days_in_custody=animal.days_in_custody,
         is_adoptable=animal.is_adoptable,
         synced_at=animal.last_synced_at,
     )
@@ -73,19 +71,21 @@ async def get_animal(
     animal_id: str,
     repo: Database = Depends(get_repository),  # noqa: B008
 ) -> AnimalDetailResponse:
-    """Get animal detail with notes, kennel card, and assessments."""
+    """Get animal detail with notes, behavior profile, and assessments."""
     animal = await repo.get_animal(animal_id)
     if animal is None:
         raise HTTPException(status_code=404, detail="Animal not found")
 
-    kennel_card = await repo.get_kennel_card(animal_id)
+    behavior_profile = await repo.get_behavior_profile(animal_id)
     notes = await repo.get_notes_for_animal(animal_id)
     assessments = await repo.get_assessments_for_animal(animal_id)
 
     return AnimalDetailResponse(
         animal=_animal_to_response(animal),
-        kennel_card=KennelCardResponse.model_validate(kennel_card.model_dump())
-        if kennel_card
+        behavior_profile=BehaviorProfileResponse.model_validate(
+            behavior_profile.model_dump()
+        )
+        if behavior_profile
         else None,
         volunteer_notes=[
             VolunteerNoteResponse.model_validate(n.model_dump()) for n in notes

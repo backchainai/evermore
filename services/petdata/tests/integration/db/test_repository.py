@@ -14,7 +14,7 @@ import pytest
 from petdata.modules.db.models import (
     Animal,
     AnimalImage,
-    KennelCard,
+    BehaviorProfile,
     StaffAssessment,
     SyncLog,
     VolunteerNote,
@@ -49,10 +49,12 @@ async def test_insert_and_get_animal_round_trips_fields(session: AsyncSession) -
         weight_lbs=65.5,
         birth_date="2020-01-15",
         color_category="Green",
-        behavior_mod_tags=["leash", "shy"],
-        is_in_kennel=True,
+        custody_location="kennel",
     )
     await repo.insert_animal(animal)
+    await repo.upsert_behavior_profile(
+        BehaviorProfile(animal_id="A-100", behavior_mod_tags=["leash", "shy"])
+    )
 
     fetched = await repo.get_animal("A-100")
 
@@ -61,11 +63,14 @@ async def test_insert_and_get_animal_round_trips_fields(session: AsyncSession) -
     assert fetched.breed == "Lab"
     assert fetched.weight_lbs == 65.5
     assert fetched.birth_date == "2020-01-15"
-    assert fetched.behavior_mod_tags == ["leash", "shy"]
-    assert fetched.is_in_kennel is True
+    assert fetched.custody_location == "kennel"
     # Server defaults are populated on insert.
     assert fetched.created_at is not None
     assert fetched.updated_at is not None
+
+    profile = await repo.get_behavior_profile("A-100")
+    assert profile is not None
+    assert profile.behavior_mod_tags == ["leash", "shy"]
 
 
 async def test_get_animal_missing_returns_none(session: AsyncSession) -> None:
@@ -111,13 +116,15 @@ async def test_delete_animal_cascades_to_children(session: AsyncSession) -> None
             note_date="2026-06-01T10:00:00+00:00",
         )
     )
-    await repo.upsert_kennel_card(KennelCard(animal_id="A-300", about_text="hi"))
+    await repo.upsert_behavior_profile(
+        BehaviorProfile(animal_id="A-300", dogs_compatibility_notes="hi")
+    )
 
     await repo.delete_animal("A-300")
 
     assert await repo.get_animal("A-300") is None
     assert await repo.get_volunteer_note_by_id(note_id) is None
-    assert await repo.get_kennel_card("A-300") is None
+    assert await repo.get_behavior_profile("A-300") is None
 
 
 # ── VolunteerNote ────────────────────────────────────────────────────────────
@@ -202,40 +209,44 @@ async def test_update_and_delete_volunteer_notes(session: AsyncSession) -> None:
     assert await repo.get_notes_for_animal("A-420") == []
 
 
-# ── KennelCard (upsert) ──────────────────────────────────────────────────────
+# ── BehaviorProfile (upsert) ─────────────────────────────────────────────────
 
 
-async def test_upsert_kennel_card_inserts_then_updates_same_row(
+async def test_upsert_behavior_profile_inserts_then_updates_same_row(
     session: AsyncSession,
 ) -> None:
     repo = Database(session)
     await _insert_animal(repo, "A-500")
 
-    first_id = await repo.upsert_kennel_card(
-        KennelCard(animal_id="A-500", about_text="first", dogs_compatibility="Good")
+    first_id = await repo.upsert_behavior_profile(
+        BehaviorProfile(
+            animal_id="A-500",
+            dogs_compatible=True,
+            things_likes=["walks"],
+        )
     )
-    second_id = await repo.upsert_kennel_card(
-        KennelCard(animal_id="A-500", about_text="second")
+    second_id = await repo.upsert_behavior_profile(
+        BehaviorProfile(animal_id="A-500", things_likes=["treats"])
     )
 
     assert first_id == second_id
-    card = await repo.get_kennel_card("A-500")
-    assert card is not None
-    assert card.about_text == "second"
+    profile = await repo.get_behavior_profile("A-500")
+    assert profile is not None
+    assert profile.things_likes == ["treats"]
     # Omitted field keeps the prior value (conflict update skips unset columns).
-    assert card.dogs_compatibility == "Good"
+    assert profile.dogs_compatible is True
 
 
-async def test_get_kennel_card_by_id_and_delete(session: AsyncSession) -> None:
+async def test_get_behavior_profile_by_id_and_delete(session: AsyncSession) -> None:
     repo = Database(session)
     await _insert_animal(repo, "A-510")
-    card_id = await repo.upsert_kennel_card(
-        KennelCard(animal_id="A-510", about_text="x")
+    profile_id = await repo.upsert_behavior_profile(
+        BehaviorProfile(animal_id="A-510", cats_compatible=False)
     )
 
-    assert (await repo.get_kennel_card_by_id(card_id)) is not None
-    await repo.delete_kennel_card_for_animal("A-510")
-    assert await repo.get_kennel_card("A-510") is None
+    assert (await repo.get_behavior_profile_by_id(profile_id)) is not None
+    await repo.delete_behavior_profile_for_animal("A-510")
+    assert await repo.get_behavior_profile("A-510") is None
 
 
 # ── StaffAssessment ──────────────────────────────────────────────────────────

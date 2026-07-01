@@ -51,6 +51,16 @@
 		return '●'.repeat(value) + '○'.repeat(max - value);
 	}
 
+	function formatCompat(value: boolean | null | undefined): string {
+		if (value == null) return '—';
+		return value ? 'Yes' : 'No';
+	}
+
+	function formatList(value: string[] | null | undefined): string | null {
+		if (!value || value.length === 0) return null;
+		return value.join(', ');
+	}
+
 	function getBadgeClass(category: string | null): string {
 		switch (category?.toLowerCase()) {
 			case 'green':
@@ -112,49 +122,68 @@
 				<p class="font-medium">{a.weight_lbs != null ? `${a.weight_lbs} lbs` : '—'}</p>
 			</div>
 			<div class="preset-filled-surface-200-800 rounded-lg p-3">
-				<p class="text-xs text-surface-400">Days in shelter</p>
-				<p class="font-medium">{a.days_in_shelter ?? '—'}</p>
+				<p class="text-xs text-surface-400">Days in custody</p>
+				<p class="font-medium">{a.days_in_custody ?? '—'}</p>
 			</div>
 		</div>
 
-		<!-- Kennel Card -->
-		{#if detail.kennel_card}
-			{@const kc = detail.kennel_card}
+		<!-- Behavior Profile -->
+		{#if detail.behavior_profile}
+			{@const bp = detail.behavior_profile}
+			{@const likes = formatList(bp.things_likes)}
+			{@const dislikes = formatList(bp.things_dislikes)}
 			<section class="mb-6">
-				<h2 class="mb-3 text-lg font-semibold">Kennel Card</h2>
+				<h2 class="mb-3 text-lg font-semibold">Behavior Profile</h2>
 				<div class="preset-filled-surface-200-800 space-y-3 rounded-lg p-4">
-					{#if kc.about_text}
-						<div>
-							<p class="text-xs font-medium text-surface-400">About</p>
-							<p class="text-sm">{kc.about_text}</p>
-						</div>
-					{/if}
 					<div class="grid gap-3 sm:grid-cols-3">
 						<div>
 							<p class="text-xs font-medium text-surface-400">Dogs</p>
-							<p class="text-sm">{kc.dogs_compatibility ?? '—'}</p>
+							<p class="text-sm">{formatCompat(bp.dogs_compatible)}</p>
+							{#if bp.dogs_compatibility_notes}
+								<p class="text-xs text-surface-400">{bp.dogs_compatibility_notes}</p>
+							{/if}
 						</div>
 						<div>
 							<p class="text-xs font-medium text-surface-400">Cats</p>
-							<p class="text-sm">{kc.cats_compatibility ?? '—'}</p>
+							<p class="text-sm">{formatCompat(bp.cats_compatible)}</p>
+							{#if bp.cats_compatibility_notes}
+								<p class="text-xs text-surface-400">{bp.cats_compatibility_notes}</p>
+							{/if}
 						</div>
 						<div>
 							<p class="text-xs font-medium text-surface-400">Kids</p>
-							<p class="text-sm">{kc.kids_compatibility ?? '—'}</p>
+							<p class="text-sm">{formatCompat(bp.kids_compatible)}</p>
+							{#if bp.kids_compatibility_notes}
+								<p class="text-xs text-surface-400">{bp.kids_compatibility_notes}</p>
+							{/if}
+						</div>
+						<div>
+							<p class="text-xs font-medium text-surface-400">Commands</p>
+							<p class="text-sm">{formatCompat(bp.knows_commands)}</p>
+							{#if bp.commands_notes}
+								<p class="text-xs text-surface-400">{bp.commands_notes}</p>
+							{/if}
+						</div>
+						<div>
+							<p class="text-xs font-medium text-surface-400">Housebreaking</p>
+							<p class="text-sm">{formatCompat(bp.housebroken)}</p>
+							{#if bp.housebreaking_notes}
+								<p class="text-xs text-surface-400">{bp.housebreaking_notes}</p>
+							{/if}
 						</div>
 					</div>
-					{#if kc.things_likes || kc.things_dislikes}
+					{#if likes || dislikes}
 						<div class="grid gap-3 sm:grid-cols-2">
-							{#if kc.things_likes}
+							{#if likes}
 								<div>
 									<p class="text-xs font-medium text-surface-400">Likes</p>
-									<p class="text-sm">{kc.things_likes}</p>
+									<p class="text-sm">{likes}</p>
 								</div>
 							{/if}
-							{#if kc.things_dislikes}
+							{#if dislikes}
 								<div>
 									<p class="text-xs font-medium text-surface-400">Dislikes</p>
-									<p class="text-sm">{kc.things_dislikes}</p>
+									<p class="text-sm">{dislikes}</p>
 								</div>
 							{/if}
 						</div>
@@ -238,11 +267,11 @@
 		{/if}
 
 		<!-- Behavior tags -->
-		{#if a.behavior_mod_tags?.length}
+		{#if detail.behavior_profile?.behavior_mod_tags?.length}
 			<section class="mb-6">
 				<h2 class="mb-3 text-lg font-semibold">Behavior Tags</h2>
 				<div class="flex flex-wrap gap-2">
-					{#each a.behavior_mod_tags as tag}
+					{#each detail.behavior_profile.behavior_mod_tags as tag}
 						<span class="rounded-full bg-primary-500/20 px-3 py-1 text-sm text-primary-400">
 							{tag}
 						</span>

@@ -7,7 +7,7 @@ preserved decay-critical indexes.
 
 from __future__ import annotations
 
-from sqlalchemy import DateTime
+from sqlalchemy import Boolean, DateTime, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 
 from petdata.models.base import Base
@@ -15,7 +15,7 @@ from petdata.models.tables import TENANT_OWNED_TABLES
 
 _EXPECTED_TABLES = {
     "petdata_animals",
-    "petdata_kennel_cards",
+    "petdata_behavior_profiles",
     "petdata_volunteer_notes",
     "petdata_staff_assessments",
     "petdata_walk_records",
@@ -26,7 +26,7 @@ _EXPECTED_TABLES = {
 _EXPECTED_INDEXES = {
     "idx_animals_color_category",
     "idx_animals_last_synced",
-    "idx_kennel_cards_animal",
+    "idx_behavior_profiles_animal",
     "idx_volunteer_notes_animal_date",
     "idx_volunteer_notes_date",
     "idx_volunteer_notes_last_synced",
@@ -79,16 +79,22 @@ def test_animals_has_species_column() -> None:
     assert animals.columns["species"].nullable is True
 
 
-def test_tag_columns_are_jsonb() -> None:
+def test_animals_has_custody_location_column() -> None:
     animals = Base.metadata.tables["petdata_animals"]
-    assert isinstance(animals.columns["behavior_mod_tags"].type, JSONB)
+    assert isinstance(animals.columns["custody_location"].type, String)
+    assert animals.columns["custody_location"].nullable is True
+
+
+def test_tag_columns_are_jsonb() -> None:
     assessments = Base.metadata.tables["petdata_staff_assessments"]
     assert isinstance(assessments.columns["assessment_tags"].type, JSONB)
+    profile = Base.metadata.tables["petdata_behavior_profiles"]
+    assert isinstance(profile.columns["behavior_mod_tags"].type, JSONB)
 
 
 def test_animal_child_foreign_keys_cascade() -> None:
     for name in (
-        "petdata_kennel_cards",
+        "petdata_behavior_profiles",
         "petdata_volunteer_notes",
         "petdata_staff_assessments",
         "petdata_walk_records",
@@ -98,3 +104,21 @@ def test_animal_child_foreign_keys_cascade() -> None:
         fks = list(table.columns["animal_id"].foreign_keys)
         assert fks, f"{name}.animal_id has no foreign key"
         assert fks[0].ondelete == "CASCADE"
+
+
+def test_behavior_profile_column_shapes() -> None:
+    profile = Base.metadata.tables["petdata_behavior_profiles"]
+    columns = profile.columns
+    # Compatibility flags are booleans; their notes remain free text.
+    for species in ("dogs", "cats", "kids"):
+        assert isinstance(columns[f"{species}_compatible"].type, Boolean)
+        assert isinstance(columns[f"{species}_compatibility_notes"].type, Text)
+    # Commands and housebreaking are booleans with free-text notes alongside.
+    assert isinstance(columns["knows_commands"].type, Boolean)
+    assert isinstance(columns["commands_notes"].type, Text)
+    assert isinstance(columns["housebroken"].type, Boolean)
+    assert isinstance(columns["housebreaking_notes"].type, Text)
+    # Behavior-mod and preference lists are JSONB-backed.
+    assert isinstance(columns["behavior_mod_tags"].type, JSONB)
+    assert isinstance(columns["things_likes"].type, JSONB)
+    assert isinstance(columns["things_dislikes"].type, JSONB)

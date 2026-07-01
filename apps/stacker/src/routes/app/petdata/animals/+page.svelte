@@ -92,8 +92,8 @@
 						{#if animal.age_years != null}
 							<span>{animal.age_years} yrs</span>
 						{/if}
-						{#if animal.days_in_shelter != null}
-							<span>{animal.days_in_shelter}d in shelter</span>
+						{#if animal.days_in_custody != null}
+							<span>{animal.days_in_custody}d in custody</span>
 						{/if}
 						{#if animal.location}
 							<span>{animal.location}</span>

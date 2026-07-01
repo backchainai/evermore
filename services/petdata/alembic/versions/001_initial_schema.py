@@ -33,7 +33,7 @@ depends_on: str | Sequence[str] | None = None
 # Tenant-owned tables receiving ENABLE ROW LEVEL SECURITY + an inert policy.
 _TENANT_TABLES = (
     "petdata_animals",
-    "petdata_kennel_cards",
+    "petdata_behavior_profiles",
     "petdata_volunteer_notes",
     "petdata_staff_assessments",
     "petdata_walk_records",
@@ -67,9 +67,7 @@ def upgrade() -> None:
         sa.Column("intake_date", sa.Date(), nullable=True),
         sa.Column("location", sa.String(), nullable=True),
         sa.Column("color_category", sa.String(), nullable=True),
-        sa.Column("behavior_mod_tags", JSONB(), nullable=True),
-        sa.Column("is_in_kennel", sa.Boolean(), nullable=True),
-        sa.Column("is_foster_care", sa.Boolean(), nullable=True),
+        sa.Column("custody_location", sa.String(), nullable=True),
         sa.Column("photo_url", sa.String(), nullable=True),
         sa.Column("public_profile_url", sa.String(), nullable=True),
         sa.Column("source_record_id", sa.String(), nullable=True),
@@ -91,9 +89,9 @@ def upgrade() -> None:
     op.create_index("idx_animals_color_category", "petdata_animals", ["color_category"])
     op.create_index("idx_animals_last_synced", "petdata_animals", ["last_synced_at"])
 
-    # ── petdata_kennel_cards ──────────────────────────────────────────────────
+    # ── petdata_behavior_profiles ─────────────────────────────────────────────
     op.create_table(
-        "petdata_kennel_cards",
+        "petdata_behavior_profiles",
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
         sa.Column(
             "animal_id",
@@ -101,22 +99,26 @@ def upgrade() -> None:
             sa.ForeignKey("petdata_animals.id", ondelete="CASCADE"),
             nullable=False,
         ),
-        sa.Column("about_text", sa.Text(), nullable=True),
-        sa.Column("dogs_compatibility", sa.String(), nullable=True),
+        sa.Column("dogs_compatible", sa.Boolean(), nullable=True),
         sa.Column("dogs_compatibility_notes", sa.Text(), nullable=True),
-        sa.Column("cats_compatibility", sa.String(), nullable=True),
+        sa.Column("cats_compatible", sa.Boolean(), nullable=True),
         sa.Column("cats_compatibility_notes", sa.Text(), nullable=True),
-        sa.Column("kids_compatibility", sa.String(), nullable=True),
+        sa.Column("kids_compatible", sa.Boolean(), nullable=True),
         sa.Column("kids_compatibility_notes", sa.Text(), nullable=True),
-        sa.Column("commands_known", sa.Text(), nullable=True),
-        sa.Column("housebreaking_status", sa.String(), nullable=True),
-        sa.Column("things_likes", sa.Text(), nullable=True),
-        sa.Column("things_dislikes", sa.Text(), nullable=True),
+        sa.Column("knows_commands", sa.Boolean(), nullable=True),
+        sa.Column("commands_notes", sa.Text(), nullable=True),
+        sa.Column("housebroken", sa.Boolean(), nullable=True),
+        sa.Column("housebreaking_notes", sa.Text(), nullable=True),
+        sa.Column("behavior_mod_tags", JSONB(), nullable=True),
+        sa.Column("things_likes", JSONB(), nullable=True),
+        sa.Column("things_dislikes", JSONB(), nullable=True),
         sa.Column("last_synced_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("tenant_id", UUID(as_uuid=True), nullable=False),
-        sa.UniqueConstraint("animal_id", name="uq_kennel_cards_animal"),
+        sa.UniqueConstraint("animal_id", name="uq_behavior_profiles_animal"),
     )
-    op.create_index("idx_kennel_cards_animal", "petdata_kennel_cards", ["animal_id"])
+    op.create_index(
+        "idx_behavior_profiles_animal", "petdata_behavior_profiles", ["animal_id"]
+    )
 
     # ── petdata_volunteer_notes ───────────────────────────────────────────────
     op.create_table(
@@ -282,5 +284,5 @@ def downgrade() -> None:
     op.drop_table("petdata_walk_records")
     op.drop_table("petdata_staff_assessments")
     op.drop_table("petdata_volunteer_notes")
-    op.drop_table("petdata_kennel_cards")
+    op.drop_table("petdata_behavior_profiles")
     op.drop_table("petdata_animals")

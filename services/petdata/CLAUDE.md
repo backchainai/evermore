@@ -130,7 +130,7 @@ The repository converts between them via `to_row` / `from_row` in `mappers.py`; 
 
 **Model features:**
 - Type-safe field validation with Pydantic `Field` constraints
-- Computed properties (`age_years`, `days_in_shelter`, `is_adoptable`)
+- Computed properties (`age_years`, `days_in_custody`, `is_adoptable`)
 - List/JSON fields map to Postgres JSONB
 
 ### Repository pattern (async)

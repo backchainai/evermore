@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from petdata.modules.db.models import (
         Animal,
         AnimalImage,
-        KennelCard,
+        BehaviorProfile,
         StaffAssessment,
         SyncLog,
         VolunteerNote,
@@ -137,7 +137,7 @@ class Database:
     async def delete_animal(self, animal_id: str) -> None:
         """Delete an animal and all related records.
 
-        Related rows (images, walks, notes, assessments, kennel card) are
+        Related rows (images, walks, notes, assessments, behavior profile) are
         removed by the ``ON DELETE CASCADE`` foreign keys.
 
         Args:
@@ -241,29 +241,31 @@ class Database:
             delete(orm.VolunteerNote).where(orm.VolunteerNote.animal_id == animal_id)
         )
 
-    # Kennel card operations
+    # Behavior profile operations
 
-    async def upsert_kennel_card(self, card: KennelCard) -> int:
-        """Insert or update a kennel card (one per animal).
+    async def upsert_behavior_profile(self, profile: BehaviorProfile) -> int:
+        """Insert or update a behavior profile (one per animal).
 
         Args:
-            card: KennelCard to upsert.
+            profile: BehaviorProfile to upsert.
 
         Returns:
-            ID of upserted card.
+            ID of upserted profile.
         """
-        row = mappers.kennel_card_to_row(card)
+        row = mappers.behavior_profile_to_row(profile)
         insert_values: dict[str, Any] = {
             "animal_id": row.animal_id,
-            "about_text": row.about_text,
-            "dogs_compatibility": row.dogs_compatibility,
+            "dogs_compatible": row.dogs_compatible,
             "dogs_compatibility_notes": row.dogs_compatibility_notes,
-            "cats_compatibility": row.cats_compatibility,
+            "cats_compatible": row.cats_compatible,
             "cats_compatibility_notes": row.cats_compatibility_notes,
-            "kids_compatibility": row.kids_compatibility,
+            "kids_compatible": row.kids_compatible,
             "kids_compatibility_notes": row.kids_compatibility_notes,
-            "commands_known": row.commands_known,
-            "housebreaking_status": row.housebreaking_status,
+            "knows_commands": row.knows_commands,
+            "commands_notes": row.commands_notes,
+            "housebroken": row.housebroken,
+            "housebreaking_notes": row.housebreaking_notes,
+            "behavior_mod_tags": row.behavior_mod_tags,
             "things_likes": row.things_likes,
             "things_dislikes": row.things_dislikes,
             "last_synced_at": row.last_synced_at,
@@ -273,49 +275,55 @@ class Database:
         present = {k: v for k, v in insert_values.items() if v is not None}
         update_set = {k: v for k, v in present.items() if k != "animal_id"}
         stmt = (
-            pg_insert(orm.KennelCard)
+            pg_insert(orm.BehaviorProfile)
             .values(**present)
             .on_conflict_do_update(index_elements=["animal_id"], set_=update_set)
-            .returning(orm.KennelCard.id)
+            .returning(orm.BehaviorProfile.id)
         )
         result = await self._session.execute(stmt)
         await self._session.flush()
-        card_id: int = result.scalar_one()
-        return card_id
+        profile_id: int = result.scalar_one()
+        return profile_id
 
-    async def get_kennel_card(self, animal_id: str) -> KennelCard | None:
-        """Get kennel card for an animal.
+    async def get_behavior_profile(self, animal_id: str) -> BehaviorProfile | None:
+        """Get behavior profile for an animal.
 
         Args:
             animal_id: Animal ID.
 
         Returns:
-            KennelCard if found, None otherwise.
+            BehaviorProfile if found, None otherwise.
         """
-        stmt = select(orm.KennelCard).where(orm.KennelCard.animal_id == animal_id)
+        stmt = select(orm.BehaviorProfile).where(
+            orm.BehaviorProfile.animal_id == animal_id
+        )
         row = (await self._session.execute(stmt)).scalar_one_or_none()
-        return mappers.kennel_card_from_row(row) if row else None
+        return mappers.behavior_profile_from_row(row) if row else None
 
-    async def get_kennel_card_by_id(self, card_id: int) -> KennelCard | None:
-        """Get a kennel card by ID.
+    async def get_behavior_profile_by_id(
+        self, profile_id: int
+    ) -> BehaviorProfile | None:
+        """Get a behavior profile by ID.
 
         Args:
-            card_id: Kennel card ID.
+            profile_id: Behavior profile ID.
 
         Returns:
-            KennelCard if found, None otherwise.
+            BehaviorProfile if found, None otherwise.
         """
-        row = await self._session.get(orm.KennelCard, card_id)
-        return mappers.kennel_card_from_row(row) if row else None
+        row = await self._session.get(orm.BehaviorProfile, profile_id)
+        return mappers.behavior_profile_from_row(row) if row else None
 
-    async def delete_kennel_card_for_animal(self, animal_id: str) -> None:
-        """Delete kennel card for an animal.
+    async def delete_behavior_profile_for_animal(self, animal_id: str) -> None:
+        """Delete behavior profile for an animal.
 
         Args:
             animal_id: Animal ID.
         """
         await self._session.execute(
-            delete(orm.KennelCard).where(orm.KennelCard.animal_id == animal_id)
+            delete(orm.BehaviorProfile).where(
+                orm.BehaviorProfile.animal_id == animal_id
+            )
         )
 
     # Staff assessment operations
