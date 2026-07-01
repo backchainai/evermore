@@ -28,9 +28,11 @@ jobs:
           filters: |
             petdata:
               - 'services/petdata/**'
+              - 'packages/**'
               - '.github/workflows/ci.yml'
             retriever:
               - 'services/retriever/**'
+              - 'packages/**'
               - '.github/workflows/ci.yml'
             stacker:
               - 'apps/stacker/**'
@@ -116,14 +118,40 @@ jobs:
       - run: npm run check
       - run: npm run build
 
+  container-build:
+    needs: changes
+    if: ${{ needs.changes.outputs.petdata == 'true' || needs.changes.outputs.retriever == 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [petdata, retriever]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v3
+      # Build the service container image from the repo-root context (matches each
+      # service's wrangler `image_build_context: "../.."`). No push, no Cloudflare
+      # secrets, so it also runs on fork PRs. Catches Dockerfile and dependency-
+      # resolution breaks (a packages/* floor a service's wheels cannot satisfy)
+      # that previously only surfaced at deploy time.
+      - name: Build ${{ matrix.service }} image (no push)
+        if: ${{ needs.changes.outputs[matrix.service] == 'true' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: services/${{ matrix.service }}/Dockerfile
+          push: false
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
   ci-success:
-    needs: [changes, petdata, retriever, stacker]
+    needs: [changes, petdata, retriever, stacker, container-build]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - name: Verify no job failed
         run: |
-          results='${{ needs.petdata.result }} ${{ needs.retriever.result }} ${{ needs.stacker.result }}'
+          results='${{ needs.petdata.result }} ${{ needs.retriever.result }} ${{ needs.stacker.result }} ${{ needs.container-build.result }}'
           echo "job results: $results"
           for r in $results; do
             if [ "$r" = "failure" ] || [ "$r" = "cancelled" ]; then
