@@ -127,6 +127,10 @@ export interface components {
             photo_url?: string | null;
             /** Public Profile Url */
             public_profile_url?: string | null;
+            /** Species */
+            species?: string | null;
+            /** Synced At */
+            synced_at?: string | null;
             /** Weight Lbs */
             weight_lbs?: number | null;
         };

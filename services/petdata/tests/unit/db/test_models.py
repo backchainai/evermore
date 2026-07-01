@@ -27,12 +27,23 @@ class TestAnimal:
         assert animal.name == "Buddy"
         assert animal.breed is None
 
+    def test_create_animal_with_species(self):
+        """Animal accepts and stores a species value."""
+        animal = Animal(id="A-00000", name="Buddy", species="dog")
+        assert animal.species == "dog"
+
+    def test_species_defaults_to_none(self):
+        """species defaults to None when not provided."""
+        animal = Animal(id="A-00000", name="Buddy")
+        assert animal.species is None
+
     def test_create_animal_full(self):
         """Animal can be created with all fields."""
         animal = Animal(
             id="A-00000",
             name="Buddy",
             aka="Bud",
+            species="dog",
             breed="Labrador",
             weight_lbs=65.5,
             birth_date="2022-01-15",

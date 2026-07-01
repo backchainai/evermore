@@ -36,6 +36,7 @@ def _animal_to_response(animal: Animal) -> AnimalResponse:
         name=animal.name,
         aka=animal.aka,
         breed=animal.breed,
+        species=animal.species,
         weight_lbs=animal.weight_lbs,
         birth_date=animal.birth_date,
         intake_date=animal.intake_date,
@@ -49,6 +50,7 @@ def _animal_to_response(animal: Animal) -> AnimalResponse:
         age_years=animal.age_years,
         days_in_shelter=animal.days_in_shelter,
         is_adoptable=animal.is_adoptable,
+        synced_at=animal.last_synced_at,
     )
 
 

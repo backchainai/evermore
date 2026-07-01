@@ -89,6 +89,35 @@ class TestParseAnimalResponse:
         assert animals[0].aka is None
         assert animals[0].breed is None
 
+    def test_species_field_mapped(self):
+        """parse_animal_response maps the SMS Species field to species."""
+        raw = {
+            "records": [
+                {
+                    "id": "sms123",
+                    "Animal ID": "A-001",
+                    "Name": "Buddy",
+                    "Species": "dog",
+                }
+            ]
+        }
+        animals = parse_animal_response(raw)
+        assert animals[0].species == "dog"
+
+    def test_species_absent_defaults_to_none(self):
+        """parse_animal_response leaves species None when absent."""
+        raw = {
+            "records": [
+                {
+                    "id": "sms123",
+                    "Animal ID": "A-001",
+                    "Name": "Buddy",
+                }
+            ]
+        }
+        animals = parse_animal_response(raw)
+        assert animals[0].species is None
+
     def test_multiple_animals_parsed(self):
         """parse_animal_response handles multiple records."""
         raw = {

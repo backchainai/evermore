@@ -14,6 +14,7 @@ class AnimalResponse(BaseModel):
     name: str
     aka: str | None = None
     breed: str | None = None
+    species: str | None = None
     weight_lbs: float | None = None
     birth_date: str | None = None
     intake_date: str | None = None
@@ -27,6 +28,7 @@ class AnimalResponse(BaseModel):
     age_years: float | None = None
     days_in_shelter: int | None = None
     is_adoptable: bool | None = None
+    synced_at: str | None = None
 
 
 class VolunteerNoteResponse(BaseModel):

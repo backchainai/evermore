@@ -53,6 +53,7 @@ def parse_animal_response(raw_data: dict[str, Any]) -> list[Animal]:
                 "name": record.get("Name", ""),
                 "aka": record.get("AKA"),
                 "breed": record.get("Breed"),
+                "species": record.get("Species"),  # PLACEHOLDER field name
                 "weight_lbs": record.get("Weight (lbs)"),
                 "birth_date": record.get("Birth Date"),
                 "intake_date": record.get("Intake Date"),

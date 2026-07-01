@@ -63,6 +63,7 @@ class Animal(Base):
     name: Mapped[str] = mapped_column(String, nullable=False)
     aka: Mapped[str | None] = mapped_column(String, nullable=True)
     breed: Mapped[str | None] = mapped_column(String, nullable=True)
+    species: Mapped[str | None] = mapped_column(String, nullable=True)
     weight_lbs: Mapped[float | None] = mapped_column(Float, nullable=True)
     birth_date: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
     intake_date: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)

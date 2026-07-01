@@ -73,6 +73,12 @@ def test_timestamp_columns_are_timezone_aware() -> None:
         assert col.type.timezone is True
 
 
+def test_animals_has_species_column() -> None:
+    animals = Base.metadata.tables["petdata_animals"]
+    assert "species" in animals.columns
+    assert animals.columns["species"].nullable is True
+
+
 def test_tag_columns_are_jsonb() -> None:
     animals = Base.metadata.tables["petdata_animals"]
     assert isinstance(animals.columns["behavior_mod_tags"].type, JSONB)
