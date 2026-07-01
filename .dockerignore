@@ -1,0 +1,16 @@
+# Repo-root Docker build context (petdata builds from here; wrangler
+# image_build_context: "../.."). Keeps the context lean. Other services
+# (retriever, stacker) build from their own service-root contexts and read
+# their own .dockerignore, so this file does not affect them.
+#
+# Do NOT exclude packages/ or services/ here: the repo-root-context build needs
+# both the service tree and its packages/* path-source dependencies.
+.git
+**/node_modules
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/*.pyc
+.DS_Store

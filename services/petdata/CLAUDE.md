@@ -117,6 +117,39 @@ uv run pytest tests/ --cov=src --cov-report=term-missing
 
 Note: locally, prefer `uv run python -m mypy src/` so the project's pinned mypy runs rather than a globally-installed one. CI uses `uv run mypy src/` on a clean runner.
 
+## Container build
+
+The petdata container builds from the **repo-root context**, not the service
+directory. `services/petdata/wrangler.jsonc` sets `image_build_context: "../.."`
+on the `containers` entry (`image` stays `./Dockerfile`, relative to the config
+dir). This is required because petdata depends on the sibling shared package
+`packages/schema` through a uv path source
+(`pyproject.toml -> ../../packages/schema`): a service-root context would place
+that path outside the build context and break `uv sync --frozen`.
+
+Consequences for the Dockerfile:
+
+- COPY paths are repo-root-relative (`COPY packages/schema/ ...`,
+  `COPY services/petdata/src/ ...`), and it copies only explicit paths (no
+  `COPY . .`), so no worker or env/secret files enter the image.
+- It replicates the workspace layout under `/app` (schema at
+  `/app/packages/schema`, service at `/app/services/petdata`), then runs
+  `uv sync --frozen --no-editable` so `evermore-schema` and `petdata` install as
+  built wheels into the venv (the runtime stage needs only the venv, not the
+  source trees).
+- Docker reads `.dockerignore` from the context root, so the repo-root
+  `.dockerignore` (not the service-local one) applies to this build.
+
+Any `services/*` module that consumes a `packages/*` sibling via a uv path
+source must follow this same pattern (repo-root `image_build_context`,
+repo-root-relative COPY paths, `--no-editable` install).
+
+To reproduce wrangler's build locally, from the repo root:
+
+```bash
+docker build -f services/petdata/Dockerfile -t petdata .
+```
+
 ## Coding Conventions
 
 ### Domain models (Pydantic) and ORM tables (SQLAlchemy)

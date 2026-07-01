@@ -20,13 +20,19 @@
     }
   ],
 
-  // One container, built from the existing multi-stage Dockerfile. The build
-  // context is the service root (this directory), so the Dockerfile's
-  // `COPY pyproject.toml ... src/ ...` paths resolve unchanged.
+  // One container, built from the existing multi-stage Dockerfile. `image` is
+  // relative to this config's directory, so `./Dockerfile` is
+  // services/petdata/Dockerfile. `image_build_context: "../.."` sets the Docker
+  // build context to the repo root so the `packages/schema` path dependency
+  // (services/petdata/pyproject.toml -> ../../packages/schema) sits inside the
+  // context; without it `uv sync --frozen` cannot resolve the sibling and the
+  // build fails. Consequently the Dockerfile's COPY paths are repo-root-relative
+  // (e.g. `COPY services/petdata/src/ ...`).
   "containers": [
     {
       "class_name": "PetdataContainer",
       "image": "./Dockerfile",
+      "image_build_context": "../..",
       "max_instances": 3,
       "instance_type": "standard-1"
     }
