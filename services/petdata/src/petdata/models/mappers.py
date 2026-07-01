@@ -14,6 +14,7 @@ field).
 """
 
 import datetime
+from typing import Literal, cast
 
 from petdata.models import tables as orm
 from petdata.modules.db import models as pyd
@@ -57,9 +58,7 @@ def animal_to_row(model: pyd.Animal) -> orm.Animal:
         intake_date=_parse_date(model.intake_date),
         location=model.location,
         color_category=model.color_category,
-        behavior_mod_tags=model.behavior_mod_tags,
-        is_in_kennel=model.is_in_kennel,
-        is_foster_care=model.is_foster_care,
+        custody_location=model.custody_location,
         photo_url=model.photo_url,
         public_profile_url=model.public_profile_url,
         source_record_id=model.source_record_id,
@@ -86,9 +85,9 @@ def animal_from_row(row: orm.Animal) -> pyd.Animal:
         intake_date=_fmt_date(row.intake_date),
         location=row.location,
         color_category=row.color_category,
-        behavior_mod_tags=row.behavior_mod_tags,
-        is_in_kennel=row.is_in_kennel,
-        is_foster_care=row.is_foster_care,
+        custody_location=cast(
+            'Literal["kennel", "foster"] | None', row.custody_location
+        ),
         photo_url=row.photo_url,
         public_profile_url=row.public_profile_url,
         source_record_id=row.source_record_id,
@@ -108,8 +107,11 @@ def behavior_profile_to_row(model: pyd.BehaviorProfile) -> orm.BehaviorProfile:
         cats_compatibility_notes=model.cats_compatibility_notes,
         kids_compatible=model.kids_compatible,
         kids_compatibility_notes=model.kids_compatibility_notes,
-        commands_known=model.commands_known,
-        housebreaking_status=model.housebreaking_status,
+        knows_commands=model.knows_commands,
+        commands_notes=model.commands_notes,
+        housebroken=model.housebroken,
+        housebreaking_notes=model.housebreaking_notes,
+        behavior_mod_tags=model.behavior_mod_tags,
         things_likes=model.things_likes,
         things_dislikes=model.things_dislikes,
         last_synced_at=_parse_dt(model.last_synced_at),
@@ -130,8 +132,11 @@ def behavior_profile_from_row(row: orm.BehaviorProfile) -> pyd.BehaviorProfile:
         cats_compatibility_notes=row.cats_compatibility_notes,
         kids_compatible=row.kids_compatible,
         kids_compatibility_notes=row.kids_compatibility_notes,
-        commands_known=row.commands_known,
-        housebreaking_status=row.housebreaking_status,
+        knows_commands=row.knows_commands,
+        commands_notes=row.commands_notes,
+        housebroken=row.housebroken,
+        housebreaking_notes=row.housebreaking_notes,
+        behavior_mod_tags=row.behavior_mod_tags,
         things_likes=row.things_likes,
         things_dislikes=row.things_dislikes,
         last_synced_at=_fmt_dt(row.last_synced_at),

@@ -157,6 +157,20 @@
 								<p class="text-xs text-surface-400">{bp.kids_compatibility_notes}</p>
 							{/if}
 						</div>
+						<div>
+							<p class="text-xs font-medium text-surface-400">Commands</p>
+							<p class="text-sm">{formatCompat(bp.knows_commands)}</p>
+							{#if bp.commands_notes}
+								<p class="text-xs text-surface-400">{bp.commands_notes}</p>
+							{/if}
+						</div>
+						<div>
+							<p class="text-xs font-medium text-surface-400">Housebreaking</p>
+							<p class="text-sm">{formatCompat(bp.housebroken)}</p>
+							{#if bp.housebreaking_notes}
+								<p class="text-xs text-surface-400">{bp.housebreaking_notes}</p>
+							{/if}
+						</div>
 					</div>
 					{#if likes || dislikes}
 						<div class="grid gap-3 sm:grid-cols-2">
@@ -253,11 +267,11 @@
 		{/if}
 
 		<!-- Behavior tags -->
-		{#if a.behavior_mod_tags?.length}
+		{#if detail.behavior_profile?.behavior_mod_tags?.length}
 			<section class="mb-6">
 				<h2 class="mb-3 text-lg font-semibold">Behavior Tags</h2>
 				<div class="flex flex-wrap gap-2">
-					{#each a.behavior_mod_tags as tag}
+					{#each detail.behavior_profile.behavior_mod_tags as tag}
 						<span class="rounded-full bg-primary-500/20 px-3 py-1 text-sm text-primary-400">
 							{tag}
 						</span>

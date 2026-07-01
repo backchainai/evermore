@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 
 import pytest
+from pydantic import ValidationError
 
 from petdata.modules.db.models import (
     Animal,
@@ -50,15 +51,13 @@ class TestAnimal:
             intake_date="2024-06-01",
             location="Line 3, 3A",
             color_category="Green",
-            behavior_mod_tags=["Shy"],
-            is_in_kennel=True,
-            is_foster_care=False,
+            custody_location="kennel",
             photo_url="https://example.com/photo.jpg",
             public_profile_url="https://example.org/pet/buddy/",
             source_record_id="abc123",
         )
         assert animal.weight_lbs == 65.5
-        assert animal.is_in_kennel is True
+        assert animal.custody_location == "kennel"
         assert animal.color_category == "Green"
 
     def test_model_dump_excludes_none(self):
@@ -76,107 +75,25 @@ class TestAnimal:
         assert "aka" in data  # None field included
         assert data["aka"] is None
 
-    def test_sqlite_bool_conversion_from_dict(self):
-        """model_validate(dict) correctly converts SQLite bools."""
-        row_dict = {
-            "id": "A-00000",
-            "name": "Buddy",
-            "aka": None,
-            "breed": "Labrador",
-            "weight_lbs": 65.5,
-            "birth_date": "2022-01-15",
-            "intake_date": "2024-06-01",
-            "location": "Line 3",
-            "color_category": "Green",
-            "behavior_mod_tags": None,
-            "is_in_kennel": 1,  # SQLite stores as int
-            "is_foster_care": 0,
-            "photo_url": None,
-            "public_profile_url": None,
-            "source_record_id": "abc123",
-            "created_at": "2024-01-15T10:00:00",
-            "updated_at": "2024-01-15T10:00:00",
-            "last_synced_at": None,
-        }
+    def test_custody_location_kennel(self):
+        """custody_location accepts the 'kennel' literal."""
+        animal = Animal(id="A-00000", name="Buddy", custody_location="kennel")
+        assert animal.custody_location == "kennel"
 
-        animal = Animal.model_validate(row_dict)
-        assert animal.id == "A-00000"
-        assert animal.name == "Buddy"
-        assert animal.is_in_kennel is True  # Converted from 1
-        assert animal.is_foster_care is False  # Converted from 0
+    def test_custody_location_foster(self):
+        """custody_location accepts the 'foster' literal."""
+        animal = Animal(id="A-00000", name="Buddy", custody_location="foster")
+        assert animal.custody_location == "foster"
 
-    def test_sqlite_bool_none_preserved(self):
-        """None values in boolean fields are preserved."""
-        animal = Animal.model_validate(
-            {
-                "id": "TEST-1",
-                "name": "Test",
-                "is_in_kennel": None,
-                "is_foster_care": None,
-            }
-        )
-        assert animal.is_in_kennel is None
-        assert animal.is_foster_care is None
+    def test_custody_location_defaults_to_none(self):
+        """custody_location defaults to None when not provided."""
+        animal = Animal(id="TEST-1", name="Test")
+        assert animal.custody_location is None
 
-    def test_sqlite_bool_direct_bool_passthrough(self):
-        """Direct boolean values pass through unchanged."""
-        animal = Animal(
-            id="TEST-1", name="Test", is_in_kennel=True, is_foster_care=False
-        )
-        assert animal.is_in_kennel is True
-        assert animal.is_foster_care is False
-
-    def test_animal_behavior_tags_from_json_string(self):
-        """Validator parses JSON string from database."""
-        animal = Animal(id="TEST-1", name="Test", behavior_mod_tags='["Shy"]')
-        assert animal.behavior_mod_tags == ["Shy"]
-
-    def test_animal_behavior_tags_from_list(self):
-        """Direct list instantiation works."""
-        animal = Animal(id="TEST-1", name="Test", behavior_mod_tags=["Shy"])
-        assert animal.behavior_mod_tags == ["Shy"]
-
-    def test_animal_behavior_tags_none(self):
-        """None values handled gracefully."""
-        animal = Animal(id="TEST-1", name="Test", behavior_mod_tags=None)
-        assert animal.behavior_mod_tags is None
-
-    def test_animal_behavior_tags_empty_string(self):
-        """Empty strings become None."""
-        animal = Animal(id="TEST-1", name="Test", behavior_mod_tags="")
-        assert animal.behavior_mod_tags is None
-
-    def test_animal_behavior_tags_empty_array(self):
-        """Empty arrays are preserved."""
-        animal = Animal(id="TEST-1", name="Test", behavior_mod_tags="[]")
-        assert animal.behavior_mod_tags == []
-
-    def test_animal_behavior_tags_invalid_json(self):
-        """Invalid JSON raises ValueError."""
-        with pytest.raises(ValueError, match="Invalid JSON"):
-            Animal(id="TEST-1", name="Test", behavior_mod_tags="[invalid")
-
-    def test_animal_behavior_tags_non_array_json(self):
-        """Non-array JSON raises ValueError."""
-        with pytest.raises(ValueError, match="Expected JSON array"):
-            Animal(id="TEST-1", name="Test", behavior_mod_tags='"string"')
-
-    def test_animal_model_dump_serializes_tags(self):
-        """model_dump(mode='json') serializes back to JSON string."""
-        animal = Animal(id="TEST-1", name="Test", behavior_mod_tags=["Shy", "Reactive"])
-        data = animal.model_dump(mode="json", exclude_none=True)
-        assert data["behavior_mod_tags"] == '["Shy", "Reactive"]'
-
-    def test_animal_behavior_tags_coerces_to_strings(self):
-        """Validator coerces non-string values to strings."""
-        animal = Animal(id="TEST-1", name="Test", behavior_mod_tags="[1, true, null]")
-        assert animal.behavior_mod_tags == ["1", "True", "None"]
-
-    def test_animal_behavior_tags_size_limit(self):
-        """Validator rejects JSON exceeding 10KB."""
-        large_json = '["' + "x" * 10001 + '"]'
-        with pytest.raises(ValueError, match="exceeds maximum size"):
-            Animal(id="TEST-1", name="Test", behavior_mod_tags=large_json)
+    def test_custody_location_invalid_raises(self):
+        """An out-of-set custody_location value raises a validation error."""
+        with pytest.raises(ValidationError):
+            Animal(id="TEST-1", name="Test", custody_location="backyard")
 
     def test_age_years_with_birth_date(self):
         """age_years computed property calculates age from birth_date."""
@@ -342,6 +259,76 @@ class TestBehaviorProfile:
         assert profile.cats_compatible is None
         assert profile.things_likes == ["belly rubs", "tennis balls"]
         assert profile.things_dislikes == ["thunderstorms"]
+
+    def test_create_behavior_profile_commands_and_housebreaking(self):
+        """BehaviorProfile stores command/housebreaking booleans with notes."""
+        profile = BehaviorProfile(
+            animal_id="A-00000",
+            knows_commands=True,
+            commands_notes="sit, stay, down",
+            housebroken=False,
+            housebreaking_notes="in progress",
+        )
+        assert profile.knows_commands is True
+        assert profile.commands_notes == "sit, stay, down"
+        assert profile.housebroken is False
+        assert profile.housebreaking_notes == "in progress"
+
+    def test_behavior_mod_tags_from_json_string(self):
+        """Validator parses JSON string from database."""
+        profile = BehaviorProfile(animal_id="TEST-1", behavior_mod_tags='["Shy"]')
+        assert profile.behavior_mod_tags == ["Shy"]
+
+    def test_behavior_mod_tags_from_list(self):
+        """Direct list instantiation works."""
+        profile = BehaviorProfile(animal_id="TEST-1", behavior_mod_tags=["Shy"])
+        assert profile.behavior_mod_tags == ["Shy"]
+
+    def test_behavior_mod_tags_none(self):
+        """None values handled gracefully."""
+        profile = BehaviorProfile(animal_id="TEST-1", behavior_mod_tags=None)
+        assert profile.behavior_mod_tags is None
+
+    def test_behavior_mod_tags_empty_string(self):
+        """Empty strings become None."""
+        profile = BehaviorProfile(animal_id="TEST-1", behavior_mod_tags="")
+        assert profile.behavior_mod_tags is None
+
+    def test_behavior_mod_tags_empty_array(self):
+        """Empty arrays are preserved."""
+        profile = BehaviorProfile(animal_id="TEST-1", behavior_mod_tags="[]")
+        assert profile.behavior_mod_tags == []
+
+    def test_behavior_mod_tags_invalid_json(self):
+        """Invalid JSON raises ValueError."""
+        with pytest.raises(ValueError, match="Invalid JSON"):
+            BehaviorProfile(animal_id="TEST-1", behavior_mod_tags="[invalid")
+
+    def test_behavior_mod_tags_non_array_json(self):
+        """Non-array JSON raises ValueError."""
+        with pytest.raises(ValueError, match="Expected JSON array"):
+            BehaviorProfile(animal_id="TEST-1", behavior_mod_tags='"string"')
+
+    def test_behavior_mod_tags_model_dump_serializes(self):
+        """model_dump(mode='json') serializes back to JSON string."""
+        profile = BehaviorProfile(
+            animal_id="TEST-1", behavior_mod_tags=["Shy", "Reactive"]
+        )
+        data = profile.model_dump(mode="json", exclude_none=True)
+        assert data["behavior_mod_tags"] == '["Shy", "Reactive"]'
+
+    def test_behavior_mod_tags_coerces_to_strings(self):
+        """Validator coerces non-string values to strings."""
+        profile = BehaviorProfile(
+            animal_id="TEST-1", behavior_mod_tags="[1, true, null]"
+        )
+        assert profile.behavior_mod_tags == ["1", "True", "None"]
+
+    def test_behavior_mod_tags_size_limit(self):
+        """Validator rejects JSON exceeding 10KB."""
+        large_json = '["' + "x" * 10001 + '"]'
+        with pytest.raises(ValueError, match="exceeds maximum size"):
+            BehaviorProfile(animal_id="TEST-1", behavior_mod_tags=large_json)
 
 
 class TestStaffAssessment:

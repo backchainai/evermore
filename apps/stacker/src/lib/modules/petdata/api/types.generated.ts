@@ -99,14 +99,14 @@ export interface components {
             age_years?: number | null;
             /** Aka */
             aka?: string | null;
-            /** Behavior Mod Tags */
-            behavior_mod_tags?: string[] | null;
             /** Birth Date */
             birth_date?: string | null;
             /** Breed */
             breed?: string | null;
             /** Color Category */
             color_category?: string | null;
+            /** Custody Location */
+            custody_location?: string | null;
             /** Days In Custody */
             days_in_custody?: number | null;
             /** Id */
@@ -115,10 +115,6 @@ export interface components {
             intake_date?: string | null;
             /** Is Adoptable */
             is_adoptable?: boolean | null;
-            /** Is Foster Care */
-            is_foster_care?: boolean | null;
-            /** Is In Kennel */
-            is_in_kennel?: boolean | null;
             /** Location */
             location?: string | null;
             /** Name */
@@ -141,24 +137,30 @@ export interface components {
         BehaviorProfileResponse: {
             /** Animal Id */
             animal_id: string;
+            /** Behavior Mod Tags */
+            behavior_mod_tags?: string[] | null;
             /** Cats Compatibility Notes */
             cats_compatibility_notes?: string | null;
             /** Cats Compatible */
             cats_compatible?: boolean | null;
-            /** Commands Known */
-            commands_known?: string | null;
+            /** Commands Notes */
+            commands_notes?: string | null;
             /** Dogs Compatibility Notes */
             dogs_compatibility_notes?: string | null;
             /** Dogs Compatible */
             dogs_compatible?: boolean | null;
-            /** Housebreaking Status */
-            housebreaking_status?: string | null;
+            /** Housebreaking Notes */
+            housebreaking_notes?: string | null;
+            /** Housebroken */
+            housebroken?: boolean | null;
             /** Id */
             id?: number | null;
             /** Kids Compatibility Notes */
             kids_compatibility_notes?: string | null;
             /** Kids Compatible */
             kids_compatible?: boolean | null;
+            /** Knows Commands */
+            knows_commands?: boolean | null;
             /** Things Dislikes */
             things_dislikes?: string[] | null;
             /** Things Likes */

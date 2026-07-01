@@ -49,10 +49,12 @@ async def test_insert_and_get_animal_round_trips_fields(session: AsyncSession) -
         weight_lbs=65.5,
         birth_date="2020-01-15",
         color_category="Green",
-        behavior_mod_tags=["leash", "shy"],
-        is_in_kennel=True,
+        custody_location="kennel",
     )
     await repo.insert_animal(animal)
+    await repo.upsert_behavior_profile(
+        BehaviorProfile(animal_id="A-100", behavior_mod_tags=["leash", "shy"])
+    )
 
     fetched = await repo.get_animal("A-100")
 
@@ -61,11 +63,14 @@ async def test_insert_and_get_animal_round_trips_fields(session: AsyncSession) -
     assert fetched.breed == "Lab"
     assert fetched.weight_lbs == 65.5
     assert fetched.birth_date == "2020-01-15"
-    assert fetched.behavior_mod_tags == ["leash", "shy"]
-    assert fetched.is_in_kennel is True
+    assert fetched.custody_location == "kennel"
     # Server defaults are populated on insert.
     assert fetched.created_at is not None
     assert fetched.updated_at is not None
+
+    profile = await repo.get_behavior_profile("A-100")
+    assert profile is not None
+    assert profile.behavior_mod_tags == ["leash", "shy"]
 
 
 async def test_get_animal_missing_returns_none(session: AsyncSession) -> None:

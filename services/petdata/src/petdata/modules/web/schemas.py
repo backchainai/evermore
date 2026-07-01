@@ -20,9 +20,7 @@ class AnimalResponse(BaseModel):
     intake_date: str | None = None
     location: str | None = None
     color_category: str | None = None
-    behavior_mod_tags: list[str] | None = None
-    is_in_kennel: bool | None = None
-    is_foster_care: bool | None = None
+    custody_location: str | None = None
     photo_url: str | None = None
     public_profile_url: str | None = None
     age_years: float | None = None
@@ -60,8 +58,11 @@ class BehaviorProfileResponse(BaseModel):
     dogs_compatibility_notes: str | None = None
     cats_compatibility_notes: str | None = None
     kids_compatibility_notes: str | None = None
-    commands_known: str | None = None
-    housebreaking_status: str | None = None
+    knows_commands: bool | None = None
+    commands_notes: str | None = None
+    housebroken: bool | None = None
+    housebreaking_notes: str | None = None
+    behavior_mod_tags: list[str] | None = None
     things_likes: list[str] | None = None
     things_dislikes: list[str] | None = None
 

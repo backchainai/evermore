@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
+import pytest
+from pydantic import ValidationError
+
 from evermore_schema import (
     Animal,
     AnimalImage,
@@ -52,16 +55,50 @@ class TestAnimalComputedProperties:
         """A missing color category yields None."""
         assert Animal(id="A-1", name="Buddy").is_adoptable is None
 
+    def test_custody_location_accepts_kennel_and_foster(self):
+        """custody_location accepts the two allowed literal values."""
+        assert (
+            Animal(id="A-1", name="Buddy", custody_location="kennel").custody_location
+            == "kennel"
+        )
+        assert (
+            Animal(id="A-1", name="Buddy", custody_location="foster").custody_location
+            == "foster"
+        )
+
+    def test_custody_location_rejects_invalid_value(self):
+        """An unknown custody_location raises ValidationError."""
+        with pytest.raises(ValidationError):
+            Animal(id="A-1", name="Buddy", custody_location="offsite")
+
+
+class TestBehaviorProfile:
+    """Tests for BehaviorProfile fields relocated/reshaped in this change."""
+
     def test_behavior_mod_tags_parsed_from_json(self):
         """behavior_mod_tags parses a JSON string into a list."""
-        animal = Animal(id="A-1", name="Buddy", behavior_mod_tags='["shy", "leash"]')
-        assert animal.behavior_mod_tags == ["shy", "leash"]
+        profile = BehaviorProfile(animal_id="A-1", behavior_mod_tags='["shy", "leash"]')
+        assert profile.behavior_mod_tags == ["shy", "leash"]
 
     def test_behavior_mod_tags_serialized_to_json(self):
         """behavior_mod_tags serializes back to a JSON string in json mode."""
-        animal = Animal(id="A-1", name="Buddy", behavior_mod_tags=["shy"])
-        dumped = animal.model_dump(mode="json")
+        profile = BehaviorProfile(animal_id="A-1", behavior_mod_tags=["shy"])
+        dumped = profile.model_dump(mode="json")
         assert dumped["behavior_mod_tags"] == '["shy"]'
+
+    def test_commands_and_housebreaking_booleans_with_notes(self):
+        """knows_commands/housebroken booleans carry companion notes."""
+        profile = BehaviorProfile(
+            animal_id="A-1",
+            knows_commands=True,
+            commands_notes="sit, stay, down",
+            housebroken=False,
+            housebreaking_notes="in progress",
+        )
+        assert profile.knows_commands is True
+        assert profile.commands_notes == "sit, stay, down"
+        assert profile.housebroken is False
+        assert profile.housebreaking_notes == "in progress"
 
 
 class TestAnimalRecord:

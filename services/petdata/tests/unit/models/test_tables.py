@@ -7,7 +7,7 @@ preserved decay-critical indexes.
 
 from __future__ import annotations
 
-from sqlalchemy import Boolean, DateTime, Text
+from sqlalchemy import Boolean, DateTime, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 
 from petdata.models.base import Base
@@ -79,11 +79,17 @@ def test_animals_has_species_column() -> None:
     assert animals.columns["species"].nullable is True
 
 
-def test_tag_columns_are_jsonb() -> None:
+def test_animals_has_custody_location_column() -> None:
     animals = Base.metadata.tables["petdata_animals"]
-    assert isinstance(animals.columns["behavior_mod_tags"].type, JSONB)
+    assert isinstance(animals.columns["custody_location"].type, String)
+    assert animals.columns["custody_location"].nullable is True
+
+
+def test_tag_columns_are_jsonb() -> None:
     assessments = Base.metadata.tables["petdata_staff_assessments"]
     assert isinstance(assessments.columns["assessment_tags"].type, JSONB)
+    profile = Base.metadata.tables["petdata_behavior_profiles"]
+    assert isinstance(profile.columns["behavior_mod_tags"].type, JSONB)
 
 
 def test_animal_child_foreign_keys_cascade() -> None:
@@ -109,6 +115,12 @@ def test_behavior_profile_column_shapes() -> None:
     for species in ("dogs", "cats", "kids"):
         assert isinstance(columns[f"{species}_compatible"].type, Boolean)
         assert isinstance(columns[f"{species}_compatibility_notes"].type, Text)
-    # Preference lists are JSONB-backed.
+    # Commands and housebreaking are booleans with free-text notes alongside.
+    assert isinstance(columns["knows_commands"].type, Boolean)
+    assert isinstance(columns["commands_notes"].type, Text)
+    assert isinstance(columns["housebroken"].type, Boolean)
+    assert isinstance(columns["housebreaking_notes"].type, Text)
+    # Behavior-mod and preference lists are JSONB-backed.
+    assert isinstance(columns["behavior_mod_tags"].type, JSONB)
     assert isinstance(columns["things_likes"].type, JSONB)
     assert isinstance(columns["things_dislikes"].type, JSONB)

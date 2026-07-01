@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 from datetime import date, datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
@@ -79,36 +80,13 @@ class Animal(BaseModel):
     intake_date: str | None = None  # ISO format date
     location: str | None = None
     color_category: str | None = None  # Green/Yellow/Orange/Senior/Designated
-    behavior_mod_tags: list[str] | None = None
-    is_in_kennel: bool | None = None
-    is_foster_care: bool | None = None
+    custody_location: Literal["kennel", "foster"] | None = None
     photo_url: str | None = None
     public_profile_url: str | None = None
     source_record_id: str | None = None
     created_at: str | None = None
     updated_at: str | None = None
     last_synced_at: str | None = None
-
-    @field_validator("behavior_mod_tags", mode="before")
-    @classmethod
-    def parse_behavior_mod_tags(cls, v: str | list[str] | None) -> list[str] | None:
-        """Parse JSON string to list[str], or pass through if already parsed."""
-        return _parse_json_tags(v)
-
-    @field_serializer("behavior_mod_tags", when_used="json")
-    def serialize_behavior_mod_tags(self, v: list[str] | None) -> str | None:
-        """Serialize list[str] back to JSON string for database storage."""
-        return _serialize_json_tags(v)
-
-    @field_validator("is_in_kennel", "is_foster_care", mode="before")
-    @classmethod
-    def validate_sqlite_bool(cls, v: int | bool | None) -> bool | None:
-        """Convert SQLite integer (0/1) to bool, preserving None."""
-        if v is None:
-            return None
-        if isinstance(v, bool):
-            return v  # Already boolean (direct instantiation)
-        return bool(v)  # Convert 0/1 to False/True
 
     @property
     def age_years(self) -> float | None:
@@ -192,19 +170,26 @@ class BehaviorProfile(BaseModel):
     cats_compatibility_notes: str | None = None
     kids_compatible: bool | None = None
     kids_compatibility_notes: str | None = None
-    commands_known: str | None = None
-    housebreaking_status: str | None = None
+    knows_commands: bool | None = None
+    commands_notes: str | None = None
+    housebroken: bool | None = None
+    housebreaking_notes: str | None = None
+    behavior_mod_tags: list[str] | None = None
     things_likes: list[str] | None = None
     things_dislikes: list[str] | None = None
     last_synced_at: str | None = None
 
-    @field_validator("things_likes", "things_dislikes", mode="before")
+    @field_validator(
+        "things_likes", "things_dislikes", "behavior_mod_tags", mode="before"
+    )
     @classmethod
     def parse_preference_tags(cls, v: str | list[str] | None) -> list[str] | None:
         """Parse JSON string to list[str], or pass through if already parsed."""
         return _parse_json_tags(v)
 
-    @field_serializer("things_likes", "things_dislikes", when_used="json")
+    @field_serializer(
+        "things_likes", "things_dislikes", "behavior_mod_tags", when_used="json"
+    )
     def serialize_preference_tags(self, v: list[str] | None) -> str | None:
         """Serialize list[str] back to JSON string for database storage."""
         return _serialize_json_tags(v)
