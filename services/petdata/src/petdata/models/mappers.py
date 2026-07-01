@@ -98,16 +98,15 @@ def animal_from_row(row: orm.Animal) -> pyd.Animal:
     )
 
 
-def kennel_card_to_row(model: pyd.KennelCard) -> orm.KennelCard:
-    """Map a KennelCard contract model to an ORM row."""
-    row = orm.KennelCard(
+def behavior_profile_to_row(model: pyd.BehaviorProfile) -> orm.BehaviorProfile:
+    """Map a BehaviorProfile contract model to an ORM row."""
+    row = orm.BehaviorProfile(
         animal_id=model.animal_id,
-        about_text=model.about_text,
-        dogs_compatibility=model.dogs_compatibility,
+        dogs_compatible=model.dogs_compatible,
         dogs_compatibility_notes=model.dogs_compatibility_notes,
-        cats_compatibility=model.cats_compatibility,
+        cats_compatible=model.cats_compatible,
         cats_compatibility_notes=model.cats_compatibility_notes,
-        kids_compatibility=model.kids_compatibility,
+        kids_compatible=model.kids_compatible,
         kids_compatibility_notes=model.kids_compatibility_notes,
         commands_known=model.commands_known,
         housebreaking_status=model.housebreaking_status,
@@ -120,17 +119,16 @@ def kennel_card_to_row(model: pyd.KennelCard) -> orm.KennelCard:
     return row
 
 
-def kennel_card_from_row(row: orm.KennelCard) -> pyd.KennelCard:
-    """Map an ORM KennelCard row back to the contract model."""
-    return pyd.KennelCard(
+def behavior_profile_from_row(row: orm.BehaviorProfile) -> pyd.BehaviorProfile:
+    """Map an ORM BehaviorProfile row back to the contract model."""
+    return pyd.BehaviorProfile(
         id=row.id,
         animal_id=row.animal_id,
-        about_text=row.about_text,
-        dogs_compatibility=row.dogs_compatibility,
+        dogs_compatible=row.dogs_compatible,
         dogs_compatibility_notes=row.dogs_compatibility_notes,
-        cats_compatibility=row.cats_compatibility,
+        cats_compatible=row.cats_compatible,
         cats_compatibility_notes=row.cats_compatibility_notes,
-        kids_compatibility=row.kids_compatibility,
+        kids_compatible=row.kids_compatible,
         kids_compatibility_notes=row.kids_compatibility_notes,
         commands_known=row.commands_known,
         housebreaking_status=row.housebreaking_status,

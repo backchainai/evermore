@@ -7,10 +7,10 @@
           "animal": {
             "$ref": "#/components/schemas/AnimalResponse"
           },
-          "kennel_card": {
+          "behavior_profile": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/KennelCardResponse"
+                "$ref": "#/components/schemas/BehaviorProfileResponse"
               },
               {
                 "type": "null"
@@ -134,7 +134,7 @@
             ],
             "title": "Color Category"
           },
-          "days_in_shelter": {
+          "days_in_custody": {
             "anyOf": [
               {
                 "type": "integer"
@@ -143,7 +143,7 @@
                 "type": "null"
               }
             ],
-            "title": "Days In Shelter"
+            "title": "Days In Custody"
           },
           "id": {
             "title": "Id",
@@ -271,6 +271,147 @@
         "title": "AnimalResponse",
         "type": "object"
       },
+      "BehaviorProfileResponse": {
+        "description": "Behavior, social, and preferences profile information.",
+        "properties": {
+          "animal_id": {
+            "title": "Animal Id",
+            "type": "string"
+          },
+          "cats_compatibility_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cats Compatibility Notes"
+          },
+          "cats_compatible": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cats Compatible"
+          },
+          "commands_known": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commands Known"
+          },
+          "dogs_compatibility_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dogs Compatibility Notes"
+          },
+          "dogs_compatible": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dogs Compatible"
+          },
+          "housebreaking_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Housebreaking Status"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "kids_compatibility_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kids Compatibility Notes"
+          },
+          "kids_compatible": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kids Compatible"
+          },
+          "things_dislikes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Things Dislikes"
+          },
+          "things_likes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Things Likes"
+          }
+        },
+        "required": [
+          "animal_id"
+        ],
+        "title": "BehaviorProfileResponse",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -314,119 +455,6 @@
           "database"
         ],
         "title": "HealthResponse",
-        "type": "object"
-      },
-      "KennelCardResponse": {
-        "description": "Kennel card information.",
-        "properties": {
-          "about_text": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "About Text"
-          },
-          "animal_id": {
-            "title": "Animal Id",
-            "type": "string"
-          },
-          "cats_compatibility": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cats Compatibility"
-          },
-          "commands_known": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Commands Known"
-          },
-          "dogs_compatibility": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Dogs Compatibility"
-          },
-          "housebreaking_status": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Housebreaking Status"
-          },
-          "id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id"
-          },
-          "kids_compatibility": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Kids Compatibility"
-          },
-          "things_dislikes": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Things Dislikes"
-          },
-          "things_likes": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Things Likes"
-          }
-        },
-        "required": [
-          "animal_id"
-        ],
-        "title": "KennelCardResponse",
         "type": "object"
       },
       "StaffAssessmentResponse": {
@@ -685,7 +713,7 @@
     },
     "/api/v1/animals/{animal_id}": {
       "get": {
-        "description": "Get animal detail with notes, kennel card, and assessments.",
+        "description": "Get animal detail with notes, behavior profile, and assessments.",
         "operationId": "get_animal_api_v1_animals__animal_id__get",
         "parameters": [
           {

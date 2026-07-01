@@ -3,7 +3,7 @@
 from petdata.modules.db.models import (
     Animal,
     AnimalImage,
-    KennelCard,
+    BehaviorProfile,
     StaffAssessment,
     SyncLog,
     VolunteerNote,
@@ -14,8 +14,8 @@ from petdata.modules.db.repository import Database
 __all__ = [
     "Animal",
     "AnimalImage",
+    "BehaviorProfile",
     "Database",
-    "KennelCard",
     "StaffAssessment",
     "SyncLog",
     "VolunteerNote",

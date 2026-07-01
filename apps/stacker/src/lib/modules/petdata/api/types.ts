@@ -11,7 +11,7 @@ type Schemas = components['schemas'];
 
 export type Animal = Schemas['AnimalResponse'];
 export type VolunteerNote = Schemas['VolunteerNoteResponse'];
-export type KennelCard = Schemas['KennelCardResponse'];
+export type BehaviorProfile = Schemas['BehaviorProfileResponse'];
 export type StaffAssessment = Schemas['StaffAssessmentResponse'];
 export type AnimalListResponse = Schemas['AnimalListResponse'];
 export type AnimalDetailResponse = Schemas['AnimalDetailResponse'];

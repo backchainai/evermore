@@ -26,7 +26,7 @@ class AnimalResponse(BaseModel):
     photo_url: str | None = None
     public_profile_url: str | None = None
     age_years: float | None = None
-    days_in_shelter: int | None = None
+    days_in_custody: int | None = None
     is_adoptable: bool | None = None
     synced_at: str | None = None
 
@@ -47,21 +47,23 @@ class VolunteerNoteResponse(BaseModel):
     rating_jumpy_mouthy: int | None = None
 
 
-class KennelCardResponse(BaseModel):
-    """Kennel card information."""
+class BehaviorProfileResponse(BaseModel):
+    """Behavior, social, and preferences profile information."""
 
     model_config = ConfigDict(frozen=True)
 
     id: int | None = None
     animal_id: str
-    about_text: str | None = None
-    dogs_compatibility: str | None = None
-    cats_compatibility: str | None = None
-    kids_compatibility: str | None = None
+    dogs_compatible: bool | None = None
+    cats_compatible: bool | None = None
+    kids_compatible: bool | None = None
+    dogs_compatibility_notes: str | None = None
+    cats_compatibility_notes: str | None = None
+    kids_compatibility_notes: str | None = None
     commands_known: str | None = None
     housebreaking_status: str | None = None
-    things_likes: str | None = None
-    things_dislikes: str | None = None
+    things_likes: list[str] | None = None
+    things_dislikes: list[str] | None = None
 
 
 class StaffAssessmentResponse(BaseModel):
@@ -91,6 +93,6 @@ class AnimalDetailResponse(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     animal: AnimalResponse
-    kennel_card: KennelCardResponse | None = None
+    behavior_profile: BehaviorProfileResponse | None = None
     volunteer_notes: list[VolunteerNoteResponse]
     staff_assessments: list[StaffAssessmentResponse]

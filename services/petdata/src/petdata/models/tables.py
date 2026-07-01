@@ -18,6 +18,7 @@ import datetime
 import uuid
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     Date,
     DateTime,
@@ -90,30 +91,29 @@ class Animal(Base):
     tenant_id: Mapped[uuid.UUID] = _tenant_column()
 
 
-class KennelCard(Base):
-    """Structured kennel-card information for one animal."""
+class BehaviorProfile(Base):
+    """Structured behavior, social, and preferences profile for one animal."""
 
-    __tablename__ = "petdata_kennel_cards"
+    __tablename__ = "petdata_behavior_profiles"
     __table_args__ = (
-        UniqueConstraint("animal_id", name="uq_kennel_cards_animal"),
-        Index("idx_kennel_cards_animal", "animal_id"),
+        UniqueConstraint("animal_id", name="uq_behavior_profiles_animal"),
+        Index("idx_behavior_profiles_animal", "animal_id"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     animal_id: Mapped[str] = mapped_column(
         ForeignKey("petdata_animals.id", ondelete="CASCADE"), nullable=False
     )
-    about_text: Mapped[str | None] = mapped_column(Text, nullable=True)
-    dogs_compatibility: Mapped[str | None] = mapped_column(String, nullable=True)
+    dogs_compatible: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     dogs_compatibility_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    cats_compatibility: Mapped[str | None] = mapped_column(String, nullable=True)
+    cats_compatible: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     cats_compatibility_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    kids_compatibility: Mapped[str | None] = mapped_column(String, nullable=True)
+    kids_compatible: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     kids_compatibility_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     commands_known: Mapped[str | None] = mapped_column(Text, nullable=True)
     housebreaking_status: Mapped[str | None] = mapped_column(String, nullable=True)
-    things_likes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    things_dislikes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    things_likes: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
+    things_dislikes: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
     last_synced_at: Mapped[datetime.datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
@@ -279,7 +279,7 @@ class SyncLog(Base):
 #: Tables that carry a tenant_id and receive an inert RLS policy in migration 001.
 TENANT_OWNED_TABLES = (
     Animal.__tablename__,
-    KennelCard.__tablename__,
+    BehaviorProfile.__tablename__,
     VolunteerNote.__tablename__,
     StaffAssessment.__tablename__,
     WalkRecord.__tablename__,

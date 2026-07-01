@@ -9,7 +9,7 @@ import pytest
 from petdata.modules.db.models import (
     Animal,
     AnimalImage,
-    KennelCard,
+    BehaviorProfile,
     StaffAssessment,
     SyncLog,
     VolunteerNote,
@@ -202,29 +202,29 @@ class TestAnimal:
         animal = Animal(id="TEST-1", name="Test", birth_date=future_date)
         assert animal.age_years is None
 
-    def test_days_in_shelter_with_intake_date(self):
-        """days_in_shelter computed property calculates days from intake."""
+    def test_days_in_custody_with_intake_date(self):
+        """days_in_custody computed property calculates days from intake."""
         animal = Animal(id="TEST-1", name="Test", intake_date="2024-01-01")
-        days = animal.days_in_shelter
+        days = animal.days_in_custody
         assert days is not None
         assert days >= 0  # Should be some days
         assert isinstance(days, int)
 
-    def test_days_in_shelter_without_intake_date(self):
-        """days_in_shelter returns None when intake_date is not set."""
+    def test_days_in_custody_without_intake_date(self):
+        """days_in_custody returns None when intake_date is not set."""
         animal = Animal(id="TEST-1", name="Test")
-        assert animal.days_in_shelter is None
+        assert animal.days_in_custody is None
 
-    def test_days_in_shelter_with_invalid_date(self):
-        """days_in_shelter returns None for invalid date format."""
+    def test_days_in_custody_with_invalid_date(self):
+        """days_in_custody returns None for invalid date format."""
         animal = Animal(id="TEST-1", name="Test", intake_date="not-a-date")
-        assert animal.days_in_shelter is None
+        assert animal.days_in_custody is None
 
-    def test_days_in_shelter_with_future_date(self):
-        """days_in_shelter returns None for future intake dates."""
+    def test_days_in_custody_with_future_date(self):
+        """days_in_custody returns None for future intake dates."""
         future_date = "2030-06-15"
         animal = Animal(id="TEST-1", name="Test", intake_date=future_date)
-        assert animal.days_in_shelter is None
+        assert animal.days_in_custody is None
 
     def test_is_adoptable_green_category(self):
         """is_adoptable returns True for Green category."""
@@ -323,22 +323,25 @@ class TestVolunteerNote:
         assert data["id"] == 42
 
 
-class TestKennelCard:
-    """Tests for KennelCard model."""
+class TestBehaviorProfile:
+    """Tests for BehaviorProfile model."""
 
-    def test_create_kennel_card(self):
-        """KennelCard stores compatibility info."""
-        card = KennelCard(
+    def test_create_behavior_profile(self):
+        """BehaviorProfile stores compatibility info and preferences."""
+        profile = BehaviorProfile(
             animal_id="A-00000",
-            about_text="Friendly and playful dog",
-            dogs_compatibility="Good",
+            dogs_compatible=True,
             dogs_compatibility_notes="Gets along with most dogs",
-            cats_compatibility="Unknown",
-            kids_compatibility="Good",
+            cats_compatible=None,
+            kids_compatible=True,
             kids_compatibility_notes="Great with kids over 8",
+            things_likes=["belly rubs", "tennis balls"],
+            things_dislikes=["thunderstorms"],
         )
-        assert card.dogs_compatibility == "Good"
-        assert card.cats_compatibility == "Unknown"
+        assert profile.dogs_compatible is True
+        assert profile.cats_compatible is None
+        assert profile.things_likes == ["belly rubs", "tennis balls"]
+        assert profile.things_dislikes == ["thunderstorms"]
 
 
 class TestStaffAssessment:

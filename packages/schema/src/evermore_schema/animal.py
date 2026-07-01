@@ -4,7 +4,7 @@
 """Canonical Animal Record contracts for the Evermore data spine.
 
 These are the normalized domain models for one animal: the core ``Animal``
-record plus its related evidence (kennel card, volunteer notes, staff
+record plus its related evidence (behavior profile, volunteer notes, staff
 assessments, walk records, images) and the ``SyncLog`` that tracks extraction.
 The composite ``AnimalRecord`` aggregates one animal with all of its evidence.
 
@@ -60,13 +60,9 @@ def _serialize_json_tags(v: list[str] | None) -> str | None:
 class Animal(BaseModel):
     """Core animal record from a shelter management system (SMS).
 
-    Usage: Mutable models for repository pattern.
-      1. Fetch:  animal = db.get_animal(id)
-      2. Modify: animal.weight_lbs = 70.0
-      3. Persist: db.update_animal(animal)
-
-    Note: Mutations outside repository methods may cause data inconsistency.
-    Always use repository update methods to persist changes.
+    Mutable domain model with pydantic ``validate_assignment=True``: fetch it,
+    mutate attributes, and persist through the repository (validation runs on
+    assignment).
     """
 
     model_config = ConfigDict(
@@ -134,11 +130,11 @@ class Animal(BaseModel):
             return None
 
     @property
-    def days_in_shelter(self) -> int | None:
-        """Calculate days in shelter from intake_date.
+    def days_in_custody(self) -> int | None:
+        """Calculate days in custody from intake_date.
 
         Returns:
-            Number of days in shelter, or None if intake_date is not set or
+            Number of days in custody, or None if intake_date is not set or
             in the future
         """
         if not self.intake_date:
@@ -170,11 +166,18 @@ class Animal(BaseModel):
         return self.color_category.lower() in adoptable_categories
 
 
-class KennelCard(BaseModel):
-    """Structured kennel card information.
+class BehaviorProfile(BaseModel):
+    """The animal's behavior, social, and preferences profile.
 
-    Usage: Mutable models for repository pattern.
-    Fetch, modify, persist via repository update methods.
+    Source-of-truth structured record of how one animal behaves and what it
+    prefers: species/kids compatibility, known commands, housebreaking status,
+    and likes/dislikes. It is attached to exactly one animal and is source
+    data, not a generated public document (that belongs to the Composition
+    layer).
+
+    Mutable domain model with pydantic ``validate_assignment=True``: fetch it,
+    mutate attributes, and persist through the repository (validation runs on
+    assignment).
     """
 
     model_config = ConfigDict(
@@ -183,18 +186,28 @@ class KennelCard(BaseModel):
 
     id: int | None = None
     animal_id: str = ""
-    about_text: str | None = None
-    dogs_compatibility: str | None = None  # Unknown/Good/Bad
+    dogs_compatible: bool | None = None
     dogs_compatibility_notes: str | None = None
-    cats_compatibility: str | None = None
+    cats_compatible: bool | None = None
     cats_compatibility_notes: str | None = None
-    kids_compatibility: str | None = None
+    kids_compatible: bool | None = None
     kids_compatibility_notes: str | None = None
     commands_known: str | None = None
     housebreaking_status: str | None = None
-    things_likes: str | None = None
-    things_dislikes: str | None = None
+    things_likes: list[str] | None = None
+    things_dislikes: list[str] | None = None
     last_synced_at: str | None = None
+
+    @field_validator("things_likes", "things_dislikes", mode="before")
+    @classmethod
+    def parse_preference_tags(cls, v: str | list[str] | None) -> list[str] | None:
+        """Parse JSON string to list[str], or pass through if already parsed."""
+        return _parse_json_tags(v)
+
+    @field_serializer("things_likes", "things_dislikes", when_used="json")
+    def serialize_preference_tags(self, v: list[str] | None) -> str | None:
+        """Serialize list[str] back to JSON string for database storage."""
+        return _serialize_json_tags(v)
 
 
 class VolunteerNote(BaseModel):
@@ -202,8 +215,9 @@ class VolunteerNote(BaseModel):
 
     Critical for time-decay analysis - timestamps enable weighting recent observations.
 
-    Usage: Mutable models for repository pattern.
-    Fetch, modify, persist via repository update methods.
+    Mutable domain model with pydantic ``validate_assignment=True``: fetch it,
+    mutate attributes, and persist through the repository (validation runs on
+    assignment).
     """
 
     model_config = ConfigDict(
@@ -227,8 +241,9 @@ class VolunteerNote(BaseModel):
 class StaffAssessment(BaseModel):
     """Staff behavioral assessment with structured tags.
 
-    Usage: Mutable models for repository pattern.
-    Fetch, modify, persist via repository update methods.
+    Mutable domain model with pydantic ``validate_assignment=True``: fetch it,
+    mutate attributes, and persist through the repository (validation runs on
+    assignment).
     """
 
     model_config = ConfigDict(
@@ -257,8 +272,9 @@ class StaffAssessment(BaseModel):
 class WalkRecord(BaseModel):
     """Walk check-in/check-out record.
 
-    Usage: Mutable models for repository pattern.
-    Fetch, modify, persist via repository update methods.
+    Mutable domain model with pydantic ``validate_assignment=True``: fetch it,
+    mutate attributes, and persist through the repository (validation runs on
+    assignment).
     """
 
     model_config = ConfigDict(
@@ -277,8 +293,12 @@ class WalkRecord(BaseModel):
 class AnimalImage(BaseModel):
     """Animal photo URL reference.
 
-    Usage: Mutable models for repository pattern.
-    Fetch, modify, persist via repository update methods.
+    Mutable domain model with pydantic ``validate_assignment=True``: fetch it,
+    mutate attributes, and persist through the repository (validation runs on
+    assignment).
+
+    Planned: an animal will support multiple images with one designated the
+    Primary ("hero") image. That field is not modeled yet.
     """
 
     model_config = ConfigDict(
@@ -295,8 +315,9 @@ class AnimalImage(BaseModel):
 class SyncLog(BaseModel):
     """Sync operation tracking for extraction.
 
-    Usage: Mutable models for repository pattern.
-    Fetch, modify, persist via repository update methods.
+    Mutable domain model with pydantic ``validate_assignment=True``: fetch it,
+    mutate attributes, and persist through the repository (validation runs on
+    assignment).
     """
 
     model_config = ConfigDict(
@@ -326,9 +347,10 @@ class SyncLog(BaseModel):
 class AnimalRecord(BaseModel):
     """Composite Animal Record: one animal with all of its related evidence.
 
-    Aggregates the canonical ``Animal`` with the kennel card, volunteer notes,
-    staff assessments, walk records, and images that describe it. This is the
-    normalized view PetData owns and the raw material a Package is curated from.
+    Aggregates the canonical ``Animal`` with the behavior profile, volunteer
+    notes, staff assessments, walk records, and images that describe it. This is
+    the normalized view PetData owns and the raw material a Package is curated
+    from.
     """
 
     model_config = ConfigDict(
@@ -336,7 +358,7 @@ class AnimalRecord(BaseModel):
     )
 
     animal: Animal
-    kennel_card: KennelCard | None = None
+    behavior_profile: BehaviorProfile | None = None
     volunteer_notes: list[VolunteerNote] = Field(default_factory=list)
     staff_assessments: list[StaffAssessment] = Field(default_factory=list)
     walk_records: list[WalkRecord] = Field(default_factory=list)

@@ -8,7 +8,7 @@ from evermore_schema import (
     Animal,
     AnimalImage,
     AnimalRecord,
-    KennelCard,
+    BehaviorProfile,
     StaffAssessment,
     VolunteerNote,
     WalkRecord,
@@ -33,11 +33,11 @@ class TestAnimalComputedProperties:
         future = (date.today() + timedelta(days=30)).isoformat()
         assert Animal(id="A-1", name="Buddy", birth_date=future).age_years is None
 
-    def test_days_in_shelter(self):
-        """days_in_shelter derives from intake_date."""
+    def test_days_in_custody(self):
+        """days_in_custody derives from intake_date."""
         ten_days_ago = (date.today() - timedelta(days=10)).isoformat()
         animal = Animal(id="A-1", name="Buddy", intake_date=ten_days_ago)
-        assert animal.days_in_shelter == 10
+        assert animal.days_in_custody == 10
 
     def test_is_adoptable_true(self):
         """Green/Yellow/Orange color categories are adoptable."""
@@ -71,7 +71,7 @@ class TestAnimalRecord:
         """AnimalRecord aggregates an animal with empty evidence defaults."""
         record = AnimalRecord(animal=Animal(id="A-1", name="Buddy"))
         assert record.animal.name == "Buddy"
-        assert record.kennel_card is None
+        assert record.behavior_profile is None
         assert record.volunteer_notes == []
         assert record.staff_assessments == []
         assert record.walk_records == []
@@ -88,13 +88,20 @@ class TestAnimalRecord:
         """AnimalRecord holds all related evidence types."""
         record = AnimalRecord(
             animal=Animal(id="A-1", name="Buddy"),
-            kennel_card=KennelCard(animal_id="A-1", about_text="Good boy"),
+            behavior_profile=BehaviorProfile(
+                animal_id="A-1",
+                dogs_compatible=True,
+                things_likes=["walks", "treats"],
+                things_dislikes=["baths"],
+            ),
             volunteer_notes=[VolunteerNote(animal_id="A-1", volunteer_name="v")],
             staff_assessments=[StaffAssessment(animal_id="A-1")],
             walk_records=[WalkRecord(animal_id="A-1")],
             images=[AnimalImage(animal_id="A-1", image_url="http://x/y.jpg")],
         )
-        assert record.kennel_card is not None
+        assert record.behavior_profile is not None
+        assert record.behavior_profile.dogs_compatible is True
+        assert record.behavior_profile.things_likes == ["walks", "treats"]
         assert len(record.volunteer_notes) == 1
         assert len(record.staff_assessments) == 1
         assert len(record.walk_records) == 1

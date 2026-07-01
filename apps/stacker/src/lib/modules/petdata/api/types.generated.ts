@@ -33,7 +33,7 @@ export interface paths {
         };
         /**
          * Get Animal
-         * @description Get animal detail with notes, kennel card, and assessments.
+         * @description Get animal detail with notes, behavior profile, and assessments.
          */
         get: operations["get_animal_api_v1_animals__animal_id__get"];
         put?: never;
@@ -74,7 +74,7 @@ export interface components {
          */
         AnimalDetailResponse: {
             animal: components["schemas"]["AnimalResponse"];
-            kennel_card?: components["schemas"]["KennelCardResponse"] | null;
+            behavior_profile?: components["schemas"]["BehaviorProfileResponse"] | null;
             /** Staff Assessments */
             staff_assessments: components["schemas"]["StaffAssessmentResponse"][];
             /** Volunteer Notes */
@@ -107,8 +107,8 @@ export interface components {
             breed?: string | null;
             /** Color Category */
             color_category?: string | null;
-            /** Days In Shelter */
-            days_in_shelter?: number | null;
+            /** Days In Custody */
+            days_in_custody?: number | null;
             /** Id */
             id: string;
             /** Intake Date */
@@ -134,6 +134,36 @@ export interface components {
             /** Weight Lbs */
             weight_lbs?: number | null;
         };
+        /**
+         * BehaviorProfileResponse
+         * @description Behavior, social, and preferences profile information.
+         */
+        BehaviorProfileResponse: {
+            /** Animal Id */
+            animal_id: string;
+            /** Cats Compatibility Notes */
+            cats_compatibility_notes?: string | null;
+            /** Cats Compatible */
+            cats_compatible?: boolean | null;
+            /** Commands Known */
+            commands_known?: string | null;
+            /** Dogs Compatibility Notes */
+            dogs_compatibility_notes?: string | null;
+            /** Dogs Compatible */
+            dogs_compatible?: boolean | null;
+            /** Housebreaking Status */
+            housebreaking_status?: string | null;
+            /** Id */
+            id?: number | null;
+            /** Kids Compatibility Notes */
+            kids_compatibility_notes?: string | null;
+            /** Kids Compatible */
+            kids_compatible?: boolean | null;
+            /** Things Dislikes */
+            things_dislikes?: string[] | null;
+            /** Things Likes */
+            things_likes?: string[] | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -156,32 +186,6 @@ export interface components {
             status: "healthy" | "degraded";
             /** Version */
             version: string;
-        };
-        /**
-         * KennelCardResponse
-         * @description Kennel card information.
-         */
-        KennelCardResponse: {
-            /** About Text */
-            about_text?: string | null;
-            /** Animal Id */
-            animal_id: string;
-            /** Cats Compatibility */
-            cats_compatibility?: string | null;
-            /** Commands Known */
-            commands_known?: string | null;
-            /** Dogs Compatibility */
-            dogs_compatibility?: string | null;
-            /** Housebreaking Status */
-            housebreaking_status?: string | null;
-            /** Id */
-            id?: number | null;
-            /** Kids Compatibility */
-            kids_compatibility?: string | null;
-            /** Things Dislikes */
-            things_dislikes?: string | null;
-            /** Things Likes */
-            things_likes?: string | null;
         };
         /**
          * StaffAssessmentResponse
