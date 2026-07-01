@@ -59,8 +59,6 @@ def parse_animal_response(raw_data: dict[str, Any]) -> list[Animal]:
                 "intake_date": record.get("Intake Date"),
                 "location": record.get("Location"),
                 "color_category": record.get("Color Category"),
-                # NOTE: "Behavior Mod Tags" now belongs to BehaviorProfile, not Animal.
-                # Captured once behavior-profile ingestion is wired (no parser yet).
                 # PLACEHOLDER: derive custody from the two SMS boolean flags.
                 "custody_location": (
                     "kennel"

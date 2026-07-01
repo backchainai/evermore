@@ -109,8 +109,6 @@ def test_animal_child_foreign_keys_cascade() -> None:
 def test_behavior_profile_column_shapes() -> None:
     profile = Base.metadata.tables["petdata_behavior_profiles"]
     columns = profile.columns
-    # about_text is removed from the behavior profile.
-    assert "about_text" not in columns
     # Compatibility flags are booleans; their notes remain free text.
     for species in ("dogs", "cats", "kids"):
         assert isinstance(columns[f"{species}_compatible"].type, Boolean)

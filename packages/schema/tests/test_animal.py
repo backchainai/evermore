@@ -73,7 +73,7 @@ class TestAnimalComputedProperties:
 
 
 class TestBehaviorProfile:
-    """Tests for BehaviorProfile fields relocated/reshaped in this change."""
+    """Tests for BehaviorProfile field validation and JSON serialization."""
 
     def test_behavior_mod_tags_parsed_from_json(self):
         """behavior_mod_tags parses a JSON string into a list."""
