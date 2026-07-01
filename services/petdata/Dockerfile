@@ -18,10 +18,12 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
 WORKDIR /app
 
-# Copy the shared package this service depends on via a uv path source
-# (services/petdata/pyproject.toml -> ../../packages/schema). The build context
-# is the repo root (wrangler image_build_context), so the sibling is reachable.
+# Copy the shared packages this service depends on via uv path sources
+# (services/petdata/pyproject.toml -> ../../packages/schema and
+# ../../packages/auth). The build context is the repo root (wrangler
+# image_build_context), so the siblings are reachable.
 COPY packages/schema/ ./packages/schema/
+COPY packages/auth/ ./packages/auth/
 
 # petdata dependency manifests first for layer caching
 COPY services/petdata/pyproject.toml services/petdata/uv.lock services/petdata/README.md ./services/petdata/

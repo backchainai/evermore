@@ -13,3 +13,4 @@ class AuthUser:
     sub: str  # Supabase user UUID
     email: str
     is_admin: bool  # from app_metadata.is_admin
+    subscribed_tools: tuple[str, ...] = ()  # from the subscribed_tools claim
