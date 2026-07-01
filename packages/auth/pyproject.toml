@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Shared Supabase JWT validation and entitlement gating for Evermore"
 readme = "README.md"
 license = "Apache-2.0"
-requires-python = ">=3.14"
+requires-python = ">=3.13"
 dependencies = [
     "pyjwt[crypto]>=2.10",
     "fastapi>=0.115",
@@ -28,7 +28,7 @@ build-backend = "hatchling.build"
 packages = ["src/evermore_auth"]
 
 [tool.ruff]
-target-version = "py314"
+target-version = "py313"
 line-length = 88
 src = ["src", "tests"]
 
@@ -58,7 +58,7 @@ ignore = [
 known-first-party = ["evermore_auth"]
 
 [tool.mypy]
-python_version = "3.14"
+python_version = "3.13"
 strict = true
 warn_return_any = true
 warn_unused_configs = true
