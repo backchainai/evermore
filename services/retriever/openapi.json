@@ -208,6 +208,11 @@
             "title": "Is Indexed",
             "type": "boolean"
           },
+          "last_updated_at": {
+            "format": "date-time",
+            "title": "Last Updated At",
+            "type": "string"
+          },
           "title": {
             "title": "Title",
             "type": "string"
@@ -221,6 +226,7 @@
           "file_size_bytes",
           "is_indexed",
           "created_at",
+          "last_updated_at",
           "description"
         ],
         "title": "DocumentResponse",

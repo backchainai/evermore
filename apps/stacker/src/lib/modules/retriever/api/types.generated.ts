@@ -251,6 +251,11 @@ export interface components {
             id: string;
             /** Is Indexed */
             is_indexed: boolean;
+            /**
+             * Last Updated At
+             * Format: date-time
+             */
+            last_updated_at: string;
             /** Title */
             title: string;
         };

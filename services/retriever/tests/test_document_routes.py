@@ -159,6 +159,7 @@ def test_list_documents_success() -> None:
                 file_size_bytes=100,
                 is_indexed=True,
                 created_at=datetime.now(UTC),
+                last_updated_at=datetime.now(UTC),
                 description=None,
             ),
         ],
@@ -174,6 +175,7 @@ def test_list_documents_success() -> None:
     data = resp.json()
     assert data["count"] == 1
     assert len(data["documents"]) == 1
+    assert "last_updated_at" in data["documents"][0]
 
 
 def test_list_documents_requires_auth() -> None:
@@ -199,6 +201,7 @@ def test_get_document_success() -> None:
         file_size_bytes=100,
         is_indexed=True,
         created_at=datetime.now(UTC),
+        last_updated_at=datetime.now(UTC),
         description=None,
     )
 
@@ -209,6 +212,7 @@ def test_get_document_success() -> None:
 
     assert resp.status_code == 200
     assert resp.json()["filename"] == "test.md"
+    assert "last_updated_at" in resp.json()
 
 
 def test_get_document_not_found() -> None:
