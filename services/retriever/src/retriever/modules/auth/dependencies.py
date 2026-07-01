@@ -1,20 +1,20 @@
 # Copyright (C) 2025 Backchain LLC
 # SPDX-License-Identifier: Apache-2.0
 
-"""FastAPI auth dependencies for route protection."""
+"""FastAPI auth dependencies for route protection.
+
+The auth logic lives in the shared ``evermore_auth`` package. This module wires
+that package to the retriever's own settings: a cached validator provider reads
+the service's Supabase URL, and a single :class:`AuthDependencies` instance
+exposes the ``require_auth``, ``require_admin``, and ``require_subscription``
+route guards other modules import.
+"""
 
 from functools import lru_cache
-from typing import Annotated
 
-import jwt
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from evermore_auth import AuthDependencies, JwksValidator
 
 from retriever.config import get_settings
-from retriever.modules.auth.jwks import JwksValidator
-from retriever.modules.auth.schemas import AuthUser
-
-_bearer = HTTPBearer()
 
 
 @lru_cache(maxsize=1)
@@ -29,42 +29,10 @@ def _get_validator() -> JwksValidator:
     return JwksValidator(jwks_url)
 
 
-def require_auth(
-    credentials: Annotated[HTTPAuthorizationCredentials, Depends(_bearer)],
-) -> AuthUser:
-    """Validate Bearer JWT and return the authenticated user.
+# Resolve _get_validator by name at call time (not capture the function object)
+# so tests patching this module's `_get_validator` are honored.
+_deps = AuthDependencies(lambda: _get_validator())
 
-    Raises:
-        HTTPException 401: If the token is missing, expired, or invalid.
-    """
-    try:
-        payload = _get_validator().decode(credentials.credentials)
-        sub = payload["sub"]
-    except (jwt.PyJWTError, KeyError) as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-            headers={"WWW-Authenticate": "Bearer"},
-        ) from exc
-
-    return AuthUser(
-        sub=str(sub),
-        email=str(payload.get("email", "")),
-        is_admin=bool(payload.get("app_metadata", {}).get("is_admin", False)),
-    )
-
-
-def require_admin(
-    user: Annotated[AuthUser, Depends(require_auth)],
-) -> AuthUser:
-    """Require the authenticated user to have admin privileges.
-
-    Raises:
-        HTTPException 403: If the user is not an admin.
-    """
-    if not user.is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
-        )
-    return user
+require_auth = _deps.require_auth
+require_admin = _deps.require_admin
+require_subscription = _deps.require_subscription
