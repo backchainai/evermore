@@ -294,6 +294,11 @@ export interface components {
              */
             database: "connected" | "unavailable";
             /**
+             * Moderation
+             * @enum {string}
+             */
+            moderation: "gateway_guardrails" | "openai_api" | "disabled";
+            /**
              * Pgvector
              * @enum {string}
              */
