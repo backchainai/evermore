@@ -4,7 +4,7 @@ Specification for Evermore's subscription model. Source of truth for the table s
 
 ## Data model
 
-Single Supabase Postgres table, owned by the platform (not by any module).
+Single Supabase Postgres table, owned by the platform (not by any module). The schema below is applied by the migration at `apps/stacker/supabase/migrations/20260702000000_subscriptions.sql`.
 
 ```sql
 create table public.subscriptions (
