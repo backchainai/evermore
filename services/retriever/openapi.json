@@ -291,6 +291,15 @@
             "title": "Database",
             "type": "string"
           },
+          "moderation": {
+            "enum": [
+              "gateway_guardrails",
+              "openai_api",
+              "disabled"
+            ],
+            "title": "Moderation",
+            "type": "string"
+          },
           "pgvector": {
             "enum": [
               "available",
@@ -316,7 +325,8 @@
           "status",
           "version",
           "database",
-          "pgvector"
+          "pgvector",
+          "moderation"
         ],
         "title": "HealthResponse",
         "type": "object"

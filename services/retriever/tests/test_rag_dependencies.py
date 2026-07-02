@@ -25,6 +25,7 @@ def _make_mock_settings(
     cache_enabled: bool = True,
     hybrid_retrieval_enabled: bool = True,
     moderation_enabled: bool = True,
+    moderation_backend: str = "guardrails",
 ) -> MagicMock:
     """Create mock settings for dependency tests."""
     settings = MagicMock()
@@ -48,6 +49,7 @@ def _make_mock_settings(
     settings.hybrid_keyword_weight = 0.5
     settings.hybrid_rrf_k = 60
     settings.moderation_enabled = moderation_enabled
+    settings.moderation_backend = moderation_backend
     settings.rag_top_k = 5
     settings.docling_ocr_enabled = True
     settings.docling_table_extraction = True
@@ -255,8 +257,8 @@ def test_get_llm_provider_sends_gateway_token_header(
 def test_get_safety_service_routes_moderator_through_gateway(
     mock_get_settings: MagicMock,
 ) -> None:
-    """Moderator is constructed against the gateway base URL, no direct OpenAI bypass."""
-    settings = _make_mock_settings()
+    """openai_api backend builds a moderator against the gateway base URL."""
+    settings = _make_mock_settings(moderation_backend="openai_api")
     settings.llm_gateway_base_url = "https://gateway.ai.cloudflare.com/v1/a/b/compat"
     settings.llm_gateway_token.get_secret_value.return_value = "cf-token"
     mock_get_settings.return_value = settings
@@ -266,6 +268,38 @@ def test_get_safety_service_routes_moderator_through_gateway(
     assert service is not None
     moderator = service._moderator
     assert str(moderator._client.base_url).rstrip("/").endswith("/compat")
+
+
+@patch("retriever.modules.rag.dependencies.get_settings")
+def test_get_safety_service_uses_guardrails_by_default(
+    mock_get_settings: MagicMock,
+) -> None:
+    """Default (guardrails) backend selects GuardrailsModerator, no gateway client."""
+    from retriever.infrastructure.safety.moderation import GuardrailsModerator
+
+    mock_get_settings.return_value = _make_mock_settings()
+
+    service = get_safety_service()
+
+    assert service is not None
+    assert isinstance(service._moderator, GuardrailsModerator)
+
+
+@patch("retriever.modules.rag.dependencies.get_settings")
+def test_get_safety_service_uses_openai_api_backend(
+    mock_get_settings: MagicMock,
+) -> None:
+    """openai_api backend selects OpenAIModerator."""
+    from retriever.infrastructure.safety.moderation import OpenAIModerator
+
+    settings = _make_mock_settings(moderation_backend="openai_api")
+    settings.llm_gateway_base_url = "https://gateway.ai.cloudflare.com/v1/a/b/compat"
+    mock_get_settings.return_value = settings
+
+    service = get_safety_service()
+
+    assert service is not None
+    assert isinstance(service._moderator, OpenAIModerator)
 
 
 @patch("retriever.modules.rag.dependencies.get_settings")

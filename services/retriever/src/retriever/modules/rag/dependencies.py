@@ -21,7 +21,11 @@ from retriever.infrastructure.llm.gateway_client import build_gateway_client
 from retriever.infrastructure.llm.openai_compat import OpenAICompatProvider
 from retriever.infrastructure.safety.confidence import ConfidenceScorer
 from retriever.infrastructure.safety.detector import PromptInjectionDetector
-from retriever.infrastructure.safety.moderation import OpenAIModerator
+from retriever.infrastructure.safety.moderation import (
+    GuardrailsModerator,
+    ModerationProvider,
+    OpenAIModerator,
+)
 from retriever.infrastructure.safety.service import SafetyService
 from retriever.infrastructure.vectordb.pgvector_store import PgVectorStore
 from retriever.models.user import DEFAULT_TENANT_ID
@@ -121,7 +125,14 @@ def get_safety_service() -> SafetyService | None:
     settings = get_settings()
     if not settings.moderation_enabled:
         return None
-    moderator = OpenAIModerator(client=build_gateway_client(settings))
+    moderator: ModerationProvider
+    if settings.moderation_backend == "openai_api":
+        # Per-request /moderations calls; only for gateways that implement it.
+        moderator = OpenAIModerator(client=build_gateway_client(settings))
+    else:
+        # Default: moderation is enforced upstream at the AI Gateway via
+        # Guardrails, so no per-request /moderations client is needed.
+        moderator = GuardrailsModerator()
     detector = PromptInjectionDetector()
     return SafetyService(
         moderator=moderator,

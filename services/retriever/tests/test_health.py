@@ -100,11 +100,38 @@ async def test_health_response_has_expected_fields() -> None:
             response = await client.get("/health")
 
     data = response.json()
-    assert set(data.keys()) == {"status", "version", "database", "pgvector"}
+    assert set(data.keys()) == {
+        "status",
+        "version",
+        "database",
+        "pgvector",
+        "moderation",
+    }
     assert data["status"] == "healthy"
     assert data["version"] == "2.0.0"
     assert data["database"] == "connected"
     assert data["pgvector"] == "available"
+    # Default config: moderation enabled, gateway-Guardrails backend.
+    assert data["moderation"] == "gateway_guardrails"
+
+
+@pytest.mark.asyncio
+async def test_health_reports_configured_moderation_mode() -> None:
+    """The moderation field reflects the resolved moderation_status."""
+    mock_settings = MagicMock()
+    mock_settings.moderation_status = "openai_api"
+    factory = _make_session_factory(db_ok=True, pgvector_ok=True)
+    with (
+        patch("retriever.main._get_factory", return_value=factory),
+        patch("retriever.main.get_settings", return_value=mock_settings),
+    ):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            response = await client.get("/health")
+
+    assert response.status_code == 200
+    assert response.json()["moderation"] == "openai_api"
 
 
 @pytest.mark.asyncio

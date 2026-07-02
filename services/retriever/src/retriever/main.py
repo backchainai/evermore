@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import text
 
-from retriever.config import get_settings
+from retriever.config import ModerationStatus, get_settings
 from retriever.infrastructure.database.session import _get_factory
 from retriever.infrastructure.observability.langfuse import (
     configure_langfuse,
@@ -42,6 +42,7 @@ class HealthResponse(BaseModel):
     version: str
     database: Literal["connected", "unavailable"]
     pgvector: Literal["available", "unavailable"]
+    moderation: ModerationStatus
 
 
 @health_router.get("/health", response_model=HealthResponse)
@@ -77,11 +78,13 @@ async def health() -> HealthResponse:
         else "degraded"
     )
 
+    # Moderation availability is config-only: never raises, no DB dependency.
     return HealthResponse(
         status=overall,
         version="2.0.0",
         database=db_status,
         pgvector=pgvector_status,
+        moderation=get_settings().moderation_status,
     )
 
 
@@ -90,6 +93,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     """Application lifespan: startup and shutdown."""
     logger = structlog.get_logger(__name__)
     logger.info("retriever.startup")
+    logger.info("moderation_configured", mode=get_settings().moderation_status)
 
     # Wire up DocumentService with RAG pipeline providers
     from retriever.modules.documents.repos import DocumentRepository
