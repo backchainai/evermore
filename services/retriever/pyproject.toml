@@ -33,6 +33,10 @@ dependencies = [
     "python-multipart>=0.0.18",
     "docling>=2.0",
     "docling-core[chunking-openai]>=2.0",
+    # Direct floor to force the transitive transformers pin above the RCE in
+    # CVE-2026-4372 (Dependabot alert #95). transformers arrives via
+    # docling-core[chunking-openai] and docling-ibm-models. See issue #188.
+    "transformers>=5.3.0",
     "opentelemetry-exporter-gcp-trace>=1.8",
     "opentelemetry-resourcedetector-gcp>=1.8",
     "langfuse>=3.0",
