@@ -22,7 +22,10 @@ from retriever.infrastructure.observability.langfuse import (
     flush_langfuse,
 )
 from retriever.infrastructure.observability.logging import configure_logging
-from retriever.infrastructure.observability.middleware import RequestIdMiddleware
+from retriever.infrastructure.observability.middleware import (
+    ExceptionHandlingMiddleware,
+    RequestIdMiddleware,
+)
 from retriever.infrastructure.observability.tracing import configure_tracing
 from retriever.modules.documents.routes import router as documents_router
 from retriever.modules.messages.routes import router as messages_router
@@ -147,6 +150,13 @@ def create_app() -> FastAPI:
         public_key=settings.langfuse_public_key,
         host=settings.langfuse_host,
     )
+
+    # Exception handling must sit inside CORS so 500 responses are built
+    # below the CORS layer and still carry Access-Control-Allow-Origin.
+    # Starlette would otherwise route a base-Exception handler to the
+    # outermost ServerErrorMiddleware, above CORS, and the browser would
+    # block the error. Added first, so it is the innermost user middleware.
+    app.add_middleware(ExceptionHandlingMiddleware)
 
     # Request ID must be added before CORS (outer middleware runs first)
     app.add_middleware(RequestIdMiddleware)
