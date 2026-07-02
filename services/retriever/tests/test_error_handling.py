@@ -10,7 +10,11 @@ failure. The 500 must be built inside the CORS layer, not above it.
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+
+import pytest
 from fastapi.testclient import TestClient
+from starlette.responses import StreamingResponse
 
 from retriever.config import get_settings
 from retriever.main import create_app
@@ -22,6 +26,17 @@ ALLOWED_ORIGIN = get_settings().allowed_origins_list[0]
 async def _boom() -> None:
     """Route that always raises, exercising the unhandled-exception path."""
     raise RuntimeError("boom")
+
+
+async def _stream_then_boom() -> AsyncIterator[bytes]:
+    """Yield one chunk, then raise, exercising the mid-stream failure path."""
+    yield b"chunk-1"
+    raise RuntimeError("boom-mid-stream")
+
+
+async def _streaming_boom() -> StreamingResponse:
+    """Route whose body streams and then raises after the first chunk."""
+    return StreamingResponse(_stream_then_boom(), media_type="text/plain")
 
 
 def _client() -> TestClient:
@@ -57,6 +72,25 @@ def test_unhandled_exception_body_is_generic() -> None:
     assert body == {"detail": "Internal server error"}
     assert "boom" not in resp.text
     assert "RuntimeError" not in resp.text
+
+
+def test_streaming_exception_after_body_started_reraises() -> None:
+    """A mid-stream exception can't be rewritten into a clean 500.
+
+    Once the first chunk is sent, ``http.response.start`` has already gone
+    out, so the middleware can't rewrite the status code without emitting a
+    malformed response; it re-raises instead (the exception is already
+    logged). This is the deterministic assertion for the streaming path:
+    with the client's default ``raise_server_exceptions=True``, that
+    re-raise surfaces here rather than as a truncated/hung response, which
+    would be flaky to assert on directly.
+    """
+    app = create_app()
+    app.add_api_route("/api/v1/_stream_boom", _streaming_boom, methods=["GET"])
+    client = TestClient(app)  # raise_server_exceptions defaults to True
+
+    with pytest.raises(RuntimeError, match="boom-mid-stream"):
+        client.get("/api/v1/_stream_boom", headers={"Origin": ALLOWED_ORIGIN})
 
 
 def test_cors_preflight_still_carries_header() -> None:
