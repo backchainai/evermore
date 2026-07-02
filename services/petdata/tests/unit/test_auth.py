@@ -32,6 +32,7 @@ def _make_token(
     email: str = "test@example.com",
     is_admin: bool = False,
     exp_offset: int = 3600,
+    subscribed_tools: list[str] | None = None,
 ) -> str:
     payload: dict[str, Any] = {
         "sub": sub,
@@ -41,6 +42,8 @@ def _make_token(
         "iat": int(time.time()),
         "exp": int(time.time()) + exp_offset,
     }
+    if subscribed_tools is not None:
+        payload["subscribed_tools"] = subscribed_tools
     private_pem = _PRIVATE_KEY.private_bytes(
         serialization.Encoding.PEM,
         serialization.PrivateFormat.TraditionalOpenSSL,
@@ -186,6 +189,39 @@ def test_animals_route_requires_auth(app_client: TestClient) -> None:
     # No token: auth rejects before the DB-backed repository is ever touched.
     resp = app_client.get("/api/v1/animals")
     assert resp.status_code == 401
+
+
+def test_animals_route_requires_subscription(app_client: TestClient) -> None:
+    # Authenticated but not subscribed to petdata: the subscription guard
+    # rejects before the DB-backed repository is ever touched.
+    token = _make_token(subscribed_tools=["some-other-tool"])
+    resp = app_client.get(
+        "/api/v1/animals", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert resp.status_code == 403
+    assert resp.json()["detail"] == {
+        "error": "subscription_required",
+        "module": "petdata",
+    }
+
+
+def test_animals_route_subscribed_passes_guard() -> None:
+    # Subscribed to petdata: the request clears the auth + subscription
+    # guards. There's no database in unit tests, so the DB-backed repository
+    # raises once the guard passes; use a local client with
+    # raise_server_exceptions=False so that failure surfaces as a status
+    # code rather than an exception, and assert only that the guard itself
+    # did not reject (not 401/403).
+    token = _make_token(subscribed_tools=["petdata"])
+    with patch(
+        "petdata.modules.auth.dependencies._get_validator",
+        return_value=_make_validator(),
+    ):
+        local_client = TestClient(create_app(), raise_server_exceptions=False)
+        resp = local_client.get(
+            "/api/v1/animals", headers={"Authorization": f"Bearer {token}"}
+        )
+    assert resp.status_code not in (401, 403)
 
 
 def test_health_stays_open(app_client: TestClient) -> None:
