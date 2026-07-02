@@ -7,6 +7,7 @@ from retriever.infrastructure.safety.confidence import ConfidenceScorer
 from retriever.infrastructure.safety.detector import PromptInjectionDetector
 from retriever.infrastructure.safety.hallucination import HallucinationDetector
 from retriever.infrastructure.safety.moderation import (
+    GuardrailsModerator,
     ModerationProvider,
     NoOpModerator,
     OpenAIModerator,
@@ -27,6 +28,7 @@ __all__ = [
     "ConfidenceLevel",
     "ConfidenceScore",
     "ConfidenceScorer",
+    "GuardrailsModerator",
     "HallucinationCheckResult",
     "HallucinationDetector",
     "ModerationProvider",

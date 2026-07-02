@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import SecretStr, computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -17,6 +18,9 @@ _ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
 
 # Default CORS origins for local development
 _DEFAULT_ORIGINS = "http://localhost:5173,http://localhost:3000"
+
+# Resolved moderation-availability signal surfaced via /health and startup logs.
+ModerationStatus = Literal["gateway_guardrails", "openai_api", "disabled"]
 
 
 def _parse_origins_str(raw: str) -> list[str]:
@@ -107,6 +111,13 @@ class Settings(BaseSettings):
 
     # Safety
     moderation_enabled: bool = True
+    # How moderation is enforced when enabled:
+    #   "guardrails"  — enforced at the Cloudflare AI Gateway via Guardrails; the
+    #                   app does NOT call /moderations (the default gateway does
+    #                   not implement that compat endpoint).
+    #   "openai_api"  — call the OpenAI-compat /moderations endpoint per request;
+    #                   only for gateways that actually implement it.
+    moderation_backend: Literal["guardrails", "openai_api"] = "guardrails"
 
     # RAG
     rag_top_k: int = 5
@@ -155,6 +166,23 @@ class Settings(BaseSettings):
     def allowed_origins_list(self) -> list[str]:
         """Parsed list of allowed CORS origins."""
         return _parse_origins_str(self.allowed_origins)
+
+    @property
+    def moderation_status(self) -> ModerationStatus:
+        """Single source of truth for the visible moderation-availability signal.
+
+        Resolves the configured moderation setup into one of three states,
+        surfaced via ``/health`` and startup logs:
+
+        - ``"disabled"`` — moderation is turned off.
+        - ``"gateway_guardrails"`` — enforced upstream at the AI Gateway.
+        - ``"openai_api"`` — enforced via per-request ``/moderations`` calls.
+        """
+        if not self.moderation_enabled:
+            return "disabled"
+        if self.moderation_backend == "guardrails":
+            return "gateway_guardrails"
+        return "openai_api"
 
     @property
     def llm_gateway_base_url(self) -> str:

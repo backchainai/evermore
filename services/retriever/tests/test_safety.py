@@ -4,13 +4,15 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, BadRequestError
 
 from retriever.infrastructure.llm.gateway_client import build_gateway_client
 from retriever.infrastructure.safety import (
     ConfidenceLevel,
     ConfidenceScorer,
+    GuardrailsModerator,
     HallucinationDetector,
     ModerationResult,
     NoOpModerator,
@@ -225,6 +227,35 @@ class TestNoOpModerator:
         await moderator.close()
 
 
+class TestGuardrailsModerator:
+    """Tests for GuardrailsModerator (gateway-enforced moderation)."""
+
+    async def test_always_returns_safe(self) -> None:
+        """GuardrailsModerator returns safe at the app layer (gateway enforces)."""
+        moderator = GuardrailsModerator()
+        result = await moderator.check("any text here")
+        assert not result.flagged
+
+    def test_takes_no_client(self) -> None:
+        """GuardrailsModerator needs no client — it makes no /moderations call."""
+        # Constructs with no arguments; there is no client attribute to call.
+        moderator = GuardrailsModerator()
+        assert not hasattr(moderator, "_client")
+
+    async def test_check_makes_no_http_call(self) -> None:
+        """check() must not invoke any moderations client method."""
+        moderator = GuardrailsModerator()
+        # Guard: if a stray client were ever added, calling it would raise.
+        assert not hasattr(moderator, "_client")
+        result = await moderator.check("hateful or benign, gateway decides")
+        assert result == ModerationResult.safe()
+
+    async def test_close_is_noop(self) -> None:
+        """Close should not raise."""
+        moderator = GuardrailsModerator()
+        await moderator.close()
+
+
 class TestOpenAIModerator:
     """Tests for OpenAIModerator with mocked SDK."""
 
@@ -305,6 +336,47 @@ class TestOpenAIModerator:
 
         result = await moderator.check("any text")
         assert not result.flagged
+
+    @staticmethod
+    def _make_bad_request_error(message: str) -> BadRequestError:
+        """Build an ``openai.BadRequestError`` for the unsupported-endpoint path."""
+        request = httpx.Request("POST", "https://gateway.example/compat/moderations")
+        response = httpx.Response(400, request=request)
+        return BadRequestError(message, response=response, body=None)
+
+    async def test_bad_request_logs_endpoint_unsupported(self) -> None:
+        """A 400 (endpoint unsupported) logs a distinct event and fails open."""
+        moderator = self._make_moderator()
+        err = self._make_bad_request_error(
+            "Compatibility endpoint: moderations is not supported"
+        )
+        moderator._client.moderations.create = AsyncMock(  # type: ignore[method-assign]
+            side_effect=err
+        )
+
+        with patch("retriever.infrastructure.safety.moderation.logger") as mock_logger:
+            result = await moderator.check("any text")
+
+        assert not result.flagged
+        # Distinct signal — not the generic moderation_unexpected_error.
+        logged_events = [call.args[0] for call in mock_logger.error.call_args_list]
+        assert "moderation_endpoint_unsupported" in logged_events
+        assert "moderation_unexpected_error" not in logged_events
+
+    async def test_bad_request_distinct_from_generic_error(self) -> None:
+        """The unsupported-endpoint path is distinguishable from a generic error."""
+        moderator = self._make_moderator()
+        moderator._client.moderations.create = AsyncMock(  # type: ignore[method-assign]
+            side_effect=RuntimeError("some other failure")
+        )
+
+        with patch("retriever.infrastructure.safety.moderation.logger") as mock_logger:
+            result = await moderator.check("any text")
+
+        assert not result.flagged
+        logged_events = [call.args[0] for call in mock_logger.error.call_args_list]
+        assert "moderation_unexpected_error" in logged_events
+        assert "moderation_endpoint_unsupported" not in logged_events
 
     async def test_close_calls_client_close(self) -> None:
         """Close should close the underlying client."""
@@ -612,3 +684,51 @@ class TestConfigModerationEnabled:
 
             settings = Settings()
             assert settings.moderation_enabled is False
+
+
+class TestConfigModerationStatus:
+    """Tests for the moderation_status computed signal."""
+
+    def test_backend_defaults_to_guardrails(self) -> None:
+        """moderation_backend should default to gateway Guardrails."""
+        with patch.dict("os.environ", {}, clear=False):
+            from retriever.config import Settings
+
+            settings = Settings()
+            assert settings.moderation_backend == "guardrails"
+
+    def test_status_disabled_when_moderation_off(self) -> None:
+        """Disabled moderation resolves to 'disabled' regardless of backend."""
+        with patch.dict(
+            "os.environ",
+            {"MODERATION_ENABLED": "false", "MODERATION_BACKEND": "openai_api"},
+            clear=False,
+        ):
+            from retriever.config import Settings
+
+            settings = Settings()
+            assert settings.moderation_status == "disabled"
+
+    def test_status_gateway_guardrails(self) -> None:
+        """Enabled + guardrails backend resolves to 'gateway_guardrails'."""
+        with patch.dict(
+            "os.environ",
+            {"MODERATION_ENABLED": "true", "MODERATION_BACKEND": "guardrails"},
+            clear=False,
+        ):
+            from retriever.config import Settings
+
+            settings = Settings()
+            assert settings.moderation_status == "gateway_guardrails"
+
+    def test_status_openai_api(self) -> None:
+        """Enabled + openai_api backend resolves to 'openai_api'."""
+        with patch.dict(
+            "os.environ",
+            {"MODERATION_ENABLED": "true", "MODERATION_BACKEND": "openai_api"},
+            clear=False,
+        ):
+            from retriever.config import Settings
+
+            settings = Settings()
+            assert settings.moderation_status == "openai_api"

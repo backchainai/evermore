@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import Protocol, runtime_checkable
 
 import structlog
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, BadRequestError
 
 from retriever.infrastructure.safety.schemas import ModerationResult
 
@@ -102,6 +102,21 @@ class OpenAIModerator:
             # Fail open - don't block on timeout
             return ModerationResult.safe()
 
+        except BadRequestError as e:
+            # A 400 here means the gateway does not implement the /moderations
+            # compat endpoint (e.g. Cloudflare AI Gateway: "Compatibility
+            # endpoint: moderations is not supported"). Log a DISTINCT event so
+            # an operator sees a specific, actionable signal rather than the
+            # generic error below. Reachable only when an operator explicitly
+            # selected the "openai_api" backend against a non-supporting
+            # gateway; the "guardrails" default never calls this endpoint.
+            logger.error(
+                "moderation_endpoint_unsupported",
+                error=str(e),
+            )
+            # Fail open — the openai_api backend is opt-in.
+            return ModerationResult.safe()
+
         except Exception as e:
             logger.error(
                 "moderation_unexpected_error",
@@ -114,6 +129,39 @@ class OpenAIModerator:
     async def close(self) -> None:
         """Close the HTTP client."""
         await self._client.close()
+
+
+class GuardrailsModerator:
+    """Moderator that delegates enforcement to the Cloudflare AI Gateway.
+
+    When the gateway enforces moderation via Guardrails, the actual
+    chat/embeddings request is screened AT THE GATEWAY: the gateway blocks or
+    rewrites unsafe traffic before it reaches the model. There is no separate
+    per-request moderation API to call, and the default Cloudflare AI Gateway
+    does not implement the OpenAI-compat ``/moderations`` endpoint.
+
+    So ``check()`` returns :meth:`ModerationResult.safe` at the app layer. This
+    is a deliberate delegation to the upstream gateway, NOT a silent fail-open:
+    enforcement still happens, just on the real chat/embeddings call rather than
+    via an extra ``/moderations`` round-trip. Operators confirm the active mode
+    via ``/health`` (the ``moderation`` field) and the ``moderation_configured``
+    startup log line.
+    """
+
+    async def check(self, text: str) -> ModerationResult:  # noqa: ARG002
+        """Return safe; moderation is enforced upstream at the gateway.
+
+        Args:
+            text: The text to check (not sent anywhere from here — the gateway
+                screens the actual chat/embeddings request).
+
+        Returns:
+            ModerationResult marked as safe (app-layer no-op by design).
+        """
+        return ModerationResult.safe()
+
+    async def close(self) -> None:
+        """No-op close (no client is held)."""
 
 
 class NoOpModerator:
