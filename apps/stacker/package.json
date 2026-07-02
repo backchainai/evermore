@@ -12,7 +12,8 @@
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "gen:types": "openapi-typescript ../../services/retriever/openapi.json -o src/lib/modules/retriever/api/types.generated.ts && openapi-typescript ../../services/petdata/openapi.json -o src/lib/modules/petdata/api/types.generated.ts",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "test:unit": "vitest run"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
@@ -26,6 +27,7 @@
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.0",
     "vite": "^6.0.0",
+    "vitest": "^4.1.9",
     "wrangler": "^4.0.0"
   },
   "dependencies": {
@@ -37,6 +39,7 @@
     "@skeletonlabs/skeleton-svelte": "^1.0.0",
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.0.0",
-    "marked": "^17.0.4"
+    "marked": "^17.0.4",
+    "stripe": "^18.5.0"
   }
 }

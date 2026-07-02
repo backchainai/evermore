@@ -128,8 +128,17 @@ Each Stripe Price object has `metadata.module_id` set to the Evermore module id.
 
 ```typescript
 const sig = request.headers.get('stripe-signature');
-const event = stripe.webhooks.constructEvent(rawBody, sig, STRIPE_WEBHOOK_SECRET);
+const rawBody = await request.text(); // raw body required for signature verification
+const event = await stripe.webhooks.constructEventAsync(
+  rawBody,
+  sig,
+  STRIPE_WEBHOOK_SECRET,
+  undefined,
+  Stripe.createSubtleCryptoProvider()
+);
 ```
+
+The Cloudflare adapter runs on Web Crypto, so verification uses the async `constructEventAsync` with `Stripe.createSubtleCryptoProvider()`, and the raw request body is read with `await request.text()` (not `.json()`).
 
 Reject with 400 on signature failure. Never process unverified payloads.
 
