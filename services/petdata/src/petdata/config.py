@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     allowed_origins: list[str] = ["http://localhost:5173"]
     debug: bool = False
 
+    # Supabase project URL; the JWKS endpoint is derived from it. Empty by
+    # default so the package imports without auth configured (resolves from
+    # PETDATA_SUPABASE_URL).
+    supabase_url: str = ""
+
     # Source Shelter Management System (SMS) extraction API. Values are empty by
     # default and supplied per-deployment via PETDATA_SMS_* env vars (see
     # .env.example); never hard-code a shelter's production endpoints here.
