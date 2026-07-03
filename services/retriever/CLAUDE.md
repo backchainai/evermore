@@ -61,7 +61,7 @@ The default `addopts` (in `pyproject.toml`) apply `-m 'not integration'`, so a p
 uv run pytest -m integration --no-cov
 ```
 
-CI runs this suite in a dedicated `retriever-integration` job that stands up the stack (Supabase, the app DB, an offline LLM stub, and the retriever server) itself. That job is currently non-blocking (`continue-on-error: true`, not part of the required `ci-success` aggregation) and will be promoted to required once proven stable.
+This suite is a local pre-merge / release check, intentionally not run in CI: it needs the full local stack (Supabase Auth, the app DB, the LLM gateway, a running server), which CI does not stand up.
 
 ## Local Development
 
