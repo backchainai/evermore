@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 from typing import Literal
 
 import structlog
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import text
@@ -27,6 +27,7 @@ from retriever.infrastructure.observability.middleware import (
     RequestIdMiddleware,
 )
 from retriever.infrastructure.observability.tracing import configure_tracing
+from retriever.modules.auth import require_subscription
 from retriever.modules.documents.routes import router as documents_router
 from retriever.modules.messages.routes import router as messages_router
 from retriever.modules.rag.routes import router as rag_router
@@ -173,10 +174,15 @@ def create_app() -> FastAPI:
         allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
     )
 
+    # /api/v1 routes require an active "retriever" subscription (claim-based,
+    # no DB read — see docs/subscriptions.md). Health has no /api/v1 prefix
+    # and stays ungated so orchestrators can probe liveness without a token.
+    retriever_subscription = Depends(require_subscription("retriever"))
+
     app.include_router(health_router)
-    app.include_router(messages_router)
-    app.include_router(documents_router)
-    app.include_router(rag_router)
+    app.include_router(messages_router, dependencies=[retriever_subscription])
+    app.include_router(documents_router, dependencies=[retriever_subscription])
+    app.include_router(rag_router, dependencies=[retriever_subscription])
 
     return app
 

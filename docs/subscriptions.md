@@ -78,29 +78,40 @@ The result feeds `SubscriptionGate.svelte`, which renders locked-state UI for an
 
 Each module backend MUST also enforce subscription, even though the UI already gates it. Without backend enforcement, a user could hit `https://retriever.example.com/api/v1/ask` directly with a valid JWT and bypass the portal.
 
-Pattern (Python / FastAPI):
+The check is claim-based, not a DB query. Stacker's Stripe webhook keeps the `subscriptions` table current, and a Supabase auth hook projects the user's active module ids into a `subscribed_tools` claim on the JWT itself (per-request, at token-issue time, not per-request DB round-trip). The backend validates the JWT (JWKS) and reads `subscribed_tools` straight off the decoded payload: no DB read, no `service_role` key on the request path.
+
+The shared `evermore_auth` package (`packages/auth/`) implements this once. `AuthDependencies.require_subscription(module_id)` returns a FastAPI dependency that chains off the same instance's `require_auth` (so the JWT decodes once per request, and 401 for missing/invalid tokens is still raised before 403 for a missing subscription) and raises 403 when `module_id` is absent from `subscribed_tools`:
 
 ```python
-from fastapi import Depends, HTTPException
+def require_subscription(self, module_id: str) -> AuthDependency:
+    def dependency(
+        user: Annotated[AuthUser, Depends(self.require_auth)],
+    ) -> AuthUser:
+        if module_id not in user.subscribed_tools:
+            raise HTTPException(
+                status_code=403,
+                detail={"error": "subscription_required", "module": module_id},
+            )
+        return user
 
-async def require_subscription(
-    user: dict = Depends(require_auth),
-    module_id: str = "retriever",  # injected per module
-) -> dict:
-    row = await db.fetchrow(
-        "select status from subscriptions "
-        "where user_id = $1 and module_id = $2 and status in ('active', 'trialing')",
-        user["sub"], module_id,
-    )
-    if row is None:
-        raise HTTPException(
-            status_code=403,
-            detail={"error": "subscription_required", "module": module_id},
-        )
-    return user
+    return dependency
 ```
 
-Backends query Supabase via the `service_role` key (server-side only) OR via the user's JWT relying on the `users_read_own_subs` RLS policy. Prefer the latter to avoid spreading the service_role key.
+Each module wires it as a router-level dependency in `create_app()`, gating every route under the router in one place rather than annotating each endpoint individually. Retriever's wiring:
+
+```python
+from fastapi import Depends
+from retriever.modules.auth import require_subscription
+
+retriever_subscription = Depends(require_subscription("retriever"))
+
+app.include_router(health_router)  # ungated: no /api/v1 prefix, liveness probe
+app.include_router(messages_router, dependencies=[retriever_subscription])
+app.include_router(documents_router, dependencies=[retriever_subscription])
+app.include_router(rag_router, dependencies=[retriever_subscription])
+```
+
+Router-level `dependencies=[...]` do not add a documented response to the OpenAPI spec (there is no request body or response model attached to a dependency), so `openapi.json` is unaffected by this gate.
 
 ## Stripe integration
 
