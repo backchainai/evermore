@@ -16,11 +16,6 @@ class TestCookieValidation:
         with pytest.raises(APIAuthenticationError, match=r"PETDATA_COOKIES.*required"):
             CookieAuth(cookies="")
 
-    def test_empty_cookies_raises_error(self):
-        """CookieAuth raises error for empty cookie string."""
-        with pytest.raises(APIAuthenticationError, match=r"PETDATA_COOKIES.*required"):
-            CookieAuth(cookies="")
-
     def test_whitespace_only_cookies_raises_error(self):
         """CookieAuth raises error for whitespace-only cookies."""
         with pytest.raises(APIAuthenticationError, match="Invalid cookie format"):
