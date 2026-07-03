@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from petdata.modules.auth.dependencies import require_auth
+from petdata.modules.auth.dependencies import require_auth, require_subscription
 from petdata.modules.db.models import Animal  # noqa: TC001
 from petdata.modules.web.dependencies import get_repository
 from petdata.modules.web.schemas import (
@@ -27,7 +27,10 @@ from petdata.modules.web.schemas import (
 if TYPE_CHECKING:
     from petdata.modules.db import Database
 
-router = APIRouter(tags=["animals"], dependencies=[Depends(require_auth)])
+router = APIRouter(
+    tags=["animals"],
+    dependencies=[Depends(require_auth), Depends(require_subscription("petdata"))],
+)
 
 
 def _animal_to_response(animal: Animal) -> AnimalResponse:
