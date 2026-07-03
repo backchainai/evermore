@@ -41,7 +41,7 @@ uv run ruff format src/ tests/
 # Type checking (strict mode required — use python -m mypy, NOT uv run mypy)
 uv run python -m mypy src/ --strict
 
-# Run tests with coverage (80% minimum)
+# Run tests with coverage (unit tests only, 80% minimum)
 uv run python -m pytest tests/ --cov=src/retriever --cov-report=term-missing --cov-fail-under=80
 
 # Security audit
@@ -50,6 +50,18 @@ uv run pip-audit
 # All quality checks (run before PR)
 uv run ruff check src/ tests/ --fix && uv run ruff format src/ tests/ && uv run python -m mypy src/ --strict && uv run python -m pytest tests/ --cov=src/retriever --cov-fail-under=80
 ```
+
+The default `addopts` (in `pyproject.toml`) apply `-m 'not integration'`, so a plain `uv run pytest` (or the commands above) run the unit suite only; the 80% coverage gate applies to that unit suite.
+
+### Integration tests
+
+`tests/integration/` is a live-server E2E suite (marked `@pytest.mark.integration`): it needs the full stack running (Supabase Auth, a running retriever server, and an LLM gateway). Bring up the stack with `make dev-full` from the repo root, then run it locally:
+
+```bash
+uv run pytest -m integration --no-cov
+```
+
+CI runs this suite in a dedicated `retriever-integration` job that stands up the stack (Supabase, the app DB, an offline LLM stub, and the retriever server) itself. That job is currently non-blocking (`continue-on-error: true`, not part of the required `ci-success` aggregation) and will be promoted to required once proven stable.
 
 ## Local Development
 

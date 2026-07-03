@@ -76,7 +76,9 @@ jobs:
       - run: uv run mypy src/
       - run: uvx bandit -r src/ -q
       - run: uv run alembic upgrade head
-      - run: uv run pytest --cov=src --cov-report=term-missing
+      # Default addopts run unit-only (-m "not integration"); CI has the Postgres
+      # service, so run the full suite. fail_under=85 (pyproject) gates coverage.
+      - run: uv run pytest -m "integration or not integration" --cov=src --cov-report=term-missing
 
   retriever:
     needs: changes
@@ -96,6 +98,74 @@ jobs:
       - run: uv run ruff format --check src/ tests/
       - run: uv run python -m mypy src/ --strict
       - run: uv run python -m pytest tests/ --ignore=tests/integration
+
+  retriever-integration:
+    needs: changes
+    if: ${{ needs.changes.outputs.retriever == 'true' }}
+    runs-on: ubuntu-latest
+    # Non-blocking initially (issue #209 decision): the retriever integration
+    # suite is a live-server E2E suite (Supabase auth + running retriever + LLM
+    # stub). Marked continue-on-error and intentionally NOT in ci-success needs;
+    # a follow-up promotes it to required once proven stable.
+    continue-on-error: true
+    env:
+      RETRIEVER_BASE_URL: http://localhost:8001
+      SUPABASE_URL: http://127.0.0.1:54321
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5433/retriever
+      LLM_GATEWAY_URL: http://localhost:8099/v1
+      LLM_GATEWAY_TOKEN: ci-stub-token
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: services/retriever/uv.lock
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start LLM stub (offline, stdlib)
+        run: |
+          nohup python3 tools/llm-stub/llm_stub.py --port 8099 > /tmp/llm-stub.log 2>&1 &
+      - name: Start retriever app DB (pgvector :5433)
+        working-directory: apps/stacker
+        run: docker compose up -d
+      - name: Generate Supabase ES256 signing key
+        working-directory: apps/stacker
+        run: |
+          mkdir -p supabase
+          jwk=$(supabase gen signing-key --algorithm ES256 2>/dev/null | grep '"kty"' | head -1)
+          if [ -z "$jwk" ]; then echo "signing-key generation failed" >&2; exit 1; fi
+          printf '[%s]\n' "$jwk" > supabase/signing_keys.json
+      - name: Start Supabase (auth stack :54321)
+        working-directory: apps/stacker
+        run: supabase start
+      - name: Migrate retriever database
+        working-directory: services/retriever
+        run: |
+          uv sync
+          uv run alembic upgrade head
+      - name: Start retriever server (:8001)
+        working-directory: services/retriever
+        run: |
+          nohup uv run uvicorn retriever.main:app --port 8001 > /tmp/retriever.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8001/health && break
+            sleep 2
+          done
+      - name: Resolve Supabase keys
+        working-directory: apps/stacker
+        run: |
+          echo "SUPABASE_PUBLISHABLE_KEY=$(supabase status -o json | python3 -c 'import json,sys; print(json.load(sys.stdin).get("ANON_KEY",""))')" >> "$GITHUB_ENV"
+          echo "SUPABASE_SECRET_KEY=$(supabase status -o json | python3 -c 'import json,sys; print(json.load(sys.stdin).get("SERVICE_ROLE_KEY",""))')" >> "$GITHUB_ENV"
+      - name: Run retriever integration suite
+        working-directory: services/retriever
+        run: uv run pytest -m integration --no-cov
+        env:
+          RETRIEVER_BASE_URL: http://localhost:8001
+          SUPABASE_URL: http://127.0.0.1:54321
+      - name: Dump logs on failure
+        if: ${{ failure() }}
+        run: cat /tmp/retriever.log /tmp/llm-stub.log 2>/dev/null || true
 
   stacker:
     needs: changes

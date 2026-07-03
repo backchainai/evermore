@@ -97,13 +97,16 @@ docker compose -f docker-compose.test.yml down     # stop and discard
 ### Tests
 
 ```bash
-uv run pytest                                        # All tests
+uv run pytest                                        # Unit tests only (default; no DB needed)
 uv run pytest tests/unit/                            # Unit tests only (no DB)
-uv run pytest tests/integration/                     # Integration tests (need Postgres)
+uv run pytest -m integration                         # Integration tests (need Postgres)
+uv run pytest -m "integration or not integration"    # Full suite (unit + integration)
 uv run pytest --cov=src --cov-report=term-missing    # With coverage
 ```
 
-Integration tests are marked `@pytest.mark.integration` and skip automatically when no Postgres is reachable. Override the connection string with `TEST_DATABASE_URL` (default `postgresql+asyncpg://postgres:postgres@localhost:5434/petdata_test`).
+The default `addopts` (in `pyproject.toml`) apply `-m "not integration"`, so a plain `uv run pytest` runs unit tests only and needs no Postgres for the fast local loop. Integration tests are marked `@pytest.mark.integration`: bring up Postgres first (`docker compose -f docker-compose.test.yml up -d`), then run `uv run pytest -m integration`. Override the connection string with `TEST_DATABASE_URL` (default `postgresql+asyncpg://postgres:postgres@localhost:5434/petdata_test`).
+
+CI runs the FULL suite (unit + integration) in the required `petdata` job against a pgvector service, and enforces a branch-coverage floor of 85% (`fail_under` in `[tool.coverage.report]`, `pyproject.toml`). That floor only applies when coverage is collected (i.e. a `--cov` run), so it does not affect the default local unit-only loop.
 
 ### Quality gates (must all pass before commit)
 
@@ -112,7 +115,7 @@ uv run ruff format src/ tests/                       # Auto-format
 uv run ruff check src/ tests/                        # Lint
 uv run bandit -r src/                                # Security scan
 uv run python -m mypy src/                           # Type check (strict mode)
-uv run pytest tests/ --cov=src --cov-report=term-missing
+uv run pytest -m "integration or not integration" --cov=src --cov-report=term-missing   # Full suite with coverage (needs Postgres)
 ```
 
 Note: locally, prefer `uv run python -m mypy src/` so the project's pinned mypy runs rather than a globally-installed one. CI uses `uv run mypy src/` on a clean runner.
