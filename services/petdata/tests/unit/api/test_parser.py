@@ -131,6 +131,104 @@ class TestParseAnimalResponse:
         assert len(animals) == 3
         assert [a.name for a in animals] == ["Buddy", "Max", "Luna"]
 
+    def test_every_mapped_field_survives_a_fully_populated_record(self):
+        """parse_animal_response maps every SMS field to its Animal field."""
+        raw = {
+            "records": [
+                {
+                    "id": "sms123",
+                    "Animal ID": "A-001",
+                    "Name": "Buddy",
+                    "AKA": "Bud",
+                    "Breed": "Labrador",
+                    "Species": "dog",
+                    "Weight (lbs)": 70.5,
+                    "Birth Date": "2020-01-15",
+                    "Intake Date": "2025-01-01",
+                    "Location": "Kennel 12",
+                    "Color Category": "Green",
+                    "Photo URL": "https://example.com/buddy.jpg",
+                    "Public Profile URL": "https://example.com/animals/A-001",
+                    "created_at": "2025-01-01T00:00:00",
+                    "updated_at": "2025-01-02T00:00:00",
+                }
+            ]
+        }
+        animal = parse_animal_response(raw)[0]
+        assert animal.id == "A-001"
+        assert animal.source_record_id == "sms123"
+        assert animal.name == "Buddy"
+        assert animal.aka == "Bud"
+        assert animal.breed == "Labrador"
+        assert animal.species == "dog"
+        assert animal.weight_lbs == 70.5
+        assert animal.birth_date == "2020-01-15"
+        assert animal.intake_date == "2025-01-01"
+        assert animal.location == "Kennel 12"
+        assert animal.color_category == "Green"
+        assert animal.photo_url == "https://example.com/buddy.jpg"
+        assert animal.public_profile_url == "https://example.com/animals/A-001"
+        assert animal.created_at == "2025-01-01T00:00:00"
+        assert animal.updated_at == "2025-01-02T00:00:00"
+
+    def test_custody_location_is_kennel_when_in_kennel_flag_set(self):
+        """custody_location resolves to 'kennel' when 'In Kennel' is truthy."""
+        raw = {
+            "records": [
+                {
+                    "id": "sms1",
+                    "Animal ID": "A-001",
+                    "Name": "Buddy",
+                    "In Kennel": True,
+                }
+            ]
+        }
+        assert parse_animal_response(raw)[0].custody_location == "kennel"
+
+    def test_custody_location_is_foster_when_only_foster_flag_set(self):
+        """custody_location resolves to 'foster' when only 'Foster Care' is truthy."""
+        raw = {
+            "records": [
+                {
+                    "id": "sms1",
+                    "Animal ID": "A-001",
+                    "Name": "Buddy",
+                    "Foster Care": True,
+                }
+            ]
+        }
+        assert parse_animal_response(raw)[0].custody_location == "foster"
+
+    def test_custody_location_is_none_when_neither_flag_set(self):
+        """custody_location is None when neither SMS flag is truthy."""
+        raw = {
+            "records": [
+                {
+                    "id": "sms1",
+                    "Animal ID": "A-001",
+                    "Name": "Buddy",
+                    "In Kennel": False,
+                    "Foster Care": False,
+                }
+            ]
+        }
+        assert parse_animal_response(raw)[0].custody_location is None
+
+    def test_custody_location_prefers_kennel_when_both_flags_set(self):
+        """'In Kennel' takes precedence over 'Foster Care' when both are truthy."""
+        raw = {
+            "records": [
+                {
+                    "id": "sms1",
+                    "Animal ID": "A-001",
+                    "Name": "Buddy",
+                    "In Kennel": True,
+                    "Foster Care": True,
+                }
+            ]
+        }
+        assert parse_animal_response(raw)[0].custody_location == "kennel"
+
 
 class TestParseVolunteerNoteResponse:
     """Tests for parse_volunteer_note_response."""
@@ -231,6 +329,36 @@ class TestParseVolunteerNoteResponse:
         assert notes[0].volunteer_name == "Chris"
         assert notes[1].volunteer_name == "Sam"
 
+    def test_every_mapped_field_survives_a_fully_populated_record(self):
+        """parse_volunteer_note_response maps every SMS field to VolunteerNote."""
+        raw = {
+            "records": [
+                {
+                    "id": "note123",
+                    "Animal ID": "A-001",
+                    "Volunteer Name": "Chris Krough",
+                    "Note Date": "2025-01-12T10:00:00",
+                    "Note Text": "Good walk today",
+                    "Strong on Leash": 4,
+                    "Leash Reactivity": 2,
+                    "Shy/Fearful": 1,
+                    "Jumpy/Mouthy": 3,
+                    "created_at": "2025-01-12T10:05:00",
+                }
+            ]
+        }
+        note = parse_volunteer_note_response(raw)[0]
+        assert note.source_record_id == "note123"
+        assert note.animal_id == "A-001"
+        assert note.volunteer_name == "Chris Krough"
+        assert note.note_date == "2025-01-12T10:00:00"
+        assert note.note_text == "Good walk today"
+        assert note.rating_strong_on_leash == 4
+        assert note.rating_leash_reactivity == 2
+        assert note.rating_shy_fearful == 1
+        assert note.rating_jumpy_mouthy == 3
+        assert note.created_at == "2025-01-12T10:05:00"
+
 
 class TestParseWalkRecordResponse:
     """Tests for parse_walk_record_response."""
@@ -307,3 +435,25 @@ class TestParseWalkRecordResponse:
         walks = parse_walk_record_response(raw)
         assert len(walks) == 3
         assert [w.volunteer_name for w in walks] == ["Chris", "Sam", "Alex"]
+
+    def test_every_mapped_field_survives_a_fully_populated_record(self):
+        """parse_walk_record_response maps every SMS field to WalkRecord."""
+        raw = {
+            "records": [
+                {
+                    "id": "walk123",
+                    "Animal ID": "A-001",
+                    "Volunteer Name": "Chris",
+                    "Out Time": "2025-01-12T10:00:00",
+                    "In Time": "2025-01-12T10:30:00",
+                    "created_at": "2025-01-12T10:00:05",
+                }
+            ]
+        }
+        walk = parse_walk_record_response(raw)[0]
+        assert walk.source_record_id == "walk123"
+        assert walk.animal_id == "A-001"
+        assert walk.volunteer_name == "Chris"
+        assert walk.out_time == "2025-01-12T10:00:00"
+        assert walk.in_time == "2025-01-12T10:30:00"
+        assert walk.created_at == "2025-01-12T10:00:05"
