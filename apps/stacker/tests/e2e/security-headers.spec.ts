@@ -8,6 +8,7 @@ test.describe('Security headers', () => {
 		expect(headers['x-content-type-options']).toBe('nosniff');
 		expect(headers['referrer-policy']).toBe('strict-origin-when-cross-origin');
 		expect(headers['x-frame-options']).toBe('DENY');
+		expect(headers['permissions-policy']).toBe('camera=(), microphone=(), geolocation=()');
 		expect(headers['content-security-policy-report-only']).toBeTruthy();
 		expect(headers['content-security-policy-report-only']).toContain("default-src 'self'");
 	});

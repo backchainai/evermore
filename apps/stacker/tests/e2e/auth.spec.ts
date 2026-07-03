@@ -24,14 +24,16 @@ test.describe('Authentication', () => {
 		await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible();
 	});
 
-	test('login form shows error for empty submission', async ({ page }) => {
+	test('login form blocks empty submission via native required validation', async ({ page }) => {
 		await page.goto('/login');
-		// Click submit without filling fields — browser validation will prevent submission
-		// Instead we test that the form elements are present and enabled
-		const emailInput = page.getByRole('textbox', { name: /email/i });
 		const submitButton = page.getByRole('button', { name: 'Sign In' });
-		await expect(emailInput).toBeEnabled();
-		await expect(submitButton).toBeEnabled();
+		await submitButton.click();
+		// Native HTML5 required validation blocks the POST, so the page stays on /login.
+		await expect(page).toHaveURL(/\/login/);
+		const emailInvalid = await page
+			.getByRole('textbox', { name: /email/i })
+			.evaluate((el) => (el as HTMLInputElement).validity.valueMissing);
+		expect(emailInvalid).toBe(true);
 	});
 
 	test('login page offers an invite-acceptance affordance', async ({ page }) => {
