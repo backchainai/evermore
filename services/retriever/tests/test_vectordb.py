@@ -57,6 +57,51 @@ async def test_search_returns_empty_below_threshold(
 
 
 @pytest.mark.integration
+async def test_search_min_score_excludes_low_similarity(
+    session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    """The min_score WHERE-clause filter excludes chunks below the threshold.
+
+    Unlike `_embedding`'s collinear constant vectors, these two chunks are
+    genuinely non-collinear: `aligned` is cosine ~1.0 against the query and
+    `orthogonal` is cosine ~0.0, so the min_score filter is truly exercised.
+    """
+    tenant_id = uuid.uuid4()
+    doc_id = uuid.uuid4()
+    store = PgVectorStore(session_factory)
+
+    aligned = [0.0] * _DIM
+    aligned[0] = 1.0
+    orthogonal = [0.0] * _DIM
+    orthogonal[1] = 1.0
+
+    chunks = [
+        {
+            "document_id": doc_id,
+            "content": "above the min_score threshold",
+            "embedding": aligned,
+            "source": "policy.pdf",
+            "title": "Hours",
+        },
+        {
+            "document_id": doc_id,
+            "content": "below the min_score threshold",
+            "embedding": orthogonal,
+            "source": "policy.pdf",
+            "title": "Hours",
+        },
+    ]
+    await store.upsert(chunks, tenant_id)  # type: ignore[arg-type]
+
+    results = await store.search(aligned, tenant_id, min_score=0.5)
+    contents = [r["content"] for r in results]
+
+    assert "above the min_score threshold" in contents
+    assert "below the min_score threshold" not in contents
+    assert all(r["score"] >= 0.5 for r in results)
+
+
+@pytest.mark.integration
 async def test_delete_by_document(
     session_factory: async_sessionmaker[AsyncSession],
 ) -> None:

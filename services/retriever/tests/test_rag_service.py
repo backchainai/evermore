@@ -334,6 +334,49 @@ class TestAskWithCache:
         mock_llm.complete.assert_awaited_once()
         mock_cache.set.assert_awaited_once()
 
+    @pytest.mark.asyncio
+    async def test_ask_low_confidence_not_cached(
+        self,
+        mock_session_factory: MagicMock,
+        mock_llm: AsyncMock,
+        mock_embeddings: AsyncMock,
+        mock_vector_store: AsyncMock,
+        mock_processor: MagicMock,
+        mock_cache: AsyncMock,
+        mock_safety: MagicMock,
+    ) -> None:
+        """Cache miss still calls LLM, but a needs_review answer is not cached."""
+        low_confidence_scorer = MagicMock()
+        low_confidence_scorer.score = MagicMock(
+            return_value=ConfidenceScore(
+                level=ConfidenceLevel.LOW,
+                score=0.3,
+                factors={
+                    "retrieval_quality": 0.3,
+                    "chunk_coverage": 0.5,
+                    "grounding": 0.3,
+                },
+                needs_review=True,
+            )
+        )
+
+        service = _build_service(
+            mock_session_factory,
+            mock_llm,
+            mock_embeddings,
+            mock_vector_store,
+            mock_processor,
+            cache=mock_cache,
+            safety=mock_safety,
+            confidence_scorer=low_confidence_scorer,
+        )
+
+        response = await service.ask("What time does the shelter open?")
+
+        assert response.confidence_level == "low"
+        mock_llm.complete.assert_awaited_once()
+        mock_cache.set.assert_not_awaited()
+
 
 # ---------------------------------------------------------------------------
 # Tests: ask() safety
