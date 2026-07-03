@@ -1,0 +1,99 @@
+name: Mutation score
+
+# Manual-only. Mutation runs are too slow for every push, so this workflow is
+# report-only and is triggered by hand via the Actions tab (issue #210). It does
+# not gate merges; the score is published to the run summary and as an artifact.
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: Which service to mutate
+        type: choice
+        default: both
+        options:
+          - both
+          - petdata
+          - retriever
+
+concurrency:
+  group: mutation-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  petdata:
+    if: ${{ github.event.inputs.service == 'petdata' || github.event.inputs.service == 'both' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/petdata
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: services/petdata/uv.lock
+      - run: uv sync --extra dev
+      # Scoped to the #206 critical modules: mappers, API parser, API auth.
+      # Report-only: a surviving mutant must not fail the job.
+      - name: Run scoped mutation
+        run: |
+          uv run --with mutmut mutmut run \
+            "petdata.models.mappers.*" \
+            "petdata.modules.api.parser.*" \
+            "petdata.modules.api.auth.*" || true
+      - name: Publish score
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## petdata mutation score"
+            echo '```'
+            uv run --with mutmut mutmut results | tail -n 40 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: petdata-mutmut-stats
+          path: services/petdata/mutants/mutmut-stats.json
+          if-no-files-found: warn
+
+  retriever:
+    if: ${{ github.event.inputs.service == 'retriever' || github.event.inputs.service == 'both' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/retriever
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: services/retriever/uv.lock
+      - run: uv sync
+      # Scoped to the #207 critical modules: safety service, RAG service,
+      # document service. auth/dependencies.py is thin FastAPI wiring and yields
+      # no mutants, so it is omitted here. Report-only.
+      - name: Run scoped mutation
+        run: |
+          uv run --with mutmut mutmut run \
+            "retriever.infrastructure.safety.service.*" \
+            "retriever.modules.rag.service.*" \
+            "retriever.modules.documents.services.*" || true
+      - name: Publish score
+        if: ${{ always() }}
+        run: |
+          {
+            echo "## retriever mutation score"
+            echo '```'
+            uv run --with mutmut mutmut results | tail -n 40 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: retriever-mutmut-stats
+          path: services/retriever/mutants/mutmut-stats.json
+          if-no-files-found: warn

@@ -128,6 +128,29 @@ markers = [
 ]
 addopts = "--cov=src/retriever --cov-report=term-missing --cov-fail-under=80 -m 'not integration'"
 
+[tool.mutmut]
+# Mutation-score tracking (issue #210), scoped to the critical modules from the
+# #207 audit: auth dependencies (thin wiring, no mutants), safety service, RAG
+# service, document service. mutmut is NOT a project dependency; always invoked
+# via `uv run --with mutmut`. See docs/testing/mutation-tracking.md for the
+# documented run command.
+#
+# The project's default pytest addopts carry `--cov-fail-under=80`, which fails
+# mutmut's clean baseline run (coverage over the trampolined mutants/ tree reads
+# ~0%). We clear the ini addopts with `--override-ini=addopts=` and re-add only
+# `--cov=src/retriever`, which mutmut needs to decide which files to mutate; no
+# coverage threshold is enforced. Per-mutant runs drop coverage entirely.
+source_paths = ["src/retriever/"]
+pytest_add_cli_args = ["--override-ini=addopts="]
+pytest_add_cli_args_test_selection = [
+    "--override-ini=addopts=",
+    "--cov=src/retriever",
+    "tests/test_auth.py",
+    "tests/test_safety.py",
+    "tests/test_rag_service.py",
+    "tests/test_document_service.py",
+]
+
 [tool.coverage.run]
 source = ["src/retriever"]
 omit = ["*/tests/*"]
