@@ -75,8 +75,14 @@ def _raising_factory() -> async_sessionmaker[AsyncSession]:
 
 
 @pytest.mark.asyncio
-async def test_health_returns_response() -> None:
-    """Health endpoint always returns 200, even when DB is unavailable."""
+async def test_health_returns_degraded_when_factory_raises() -> None:
+    """A synchronous failure building the session factory still yields 200.
+
+    Distinct fault-injection point from ``test_health_with_db_unavailable_
+    returns_degraded``: here ``_get_factory()`` itself raises, before any
+    session context manager exists, exercising the outer ``try`` around the
+    factory call rather than the ``async with`` body.
+    """
     with patch(
         "retriever.main._get_factory",
         side_effect=ConnectionRefusedError("no db"),
@@ -87,6 +93,10 @@ async def test_health_returns_response() -> None:
             response = await client.get("/health")
 
     assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "degraded"
+    assert data["database"] == "unavailable"
+    assert data["pgvector"] == "unavailable"
 
 
 @pytest.mark.asyncio

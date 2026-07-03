@@ -236,17 +236,9 @@ class TestGuardrailsModerator:
         result = await moderator.check("any text here")
         assert not result.flagged
 
-    def test_takes_no_client(self) -> None:
-        """GuardrailsModerator needs no client — it makes no /moderations call."""
-        # Constructs with no arguments; there is no client attribute to call.
-        moderator = GuardrailsModerator()
-        assert not hasattr(moderator, "_client")
-
     async def test_check_makes_no_http_call(self) -> None:
         """check() must not invoke any moderations client method."""
         moderator = GuardrailsModerator()
-        # Guard: if a stray client were ever added, calling it would raise.
-        assert not hasattr(moderator, "_client")
         result = await moderator.check("hateful or benign, gateway decides")
         assert result == ModerationResult.safe()
 
@@ -495,23 +487,30 @@ class TestHallucinationDetector:
 
     def test_custom_threshold(self) -> None:
         """Custom support threshold should be respected."""
+        # One of two claims is supported (ratio 0.5): grounded at the custom
+        # 0.5 threshold, but would fail the module's default 0.8 threshold —
+        # a mutation that ignored the constructor argument would not be
+        # caught by a looser scenario.
         detector = HallucinationDetector(support_threshold=0.5)
-        answer = "One true claim here. Another true claim too."
-        chunks = ["One true claim here."]
+        answer = (
+            "Cats require hourly feeding. Volunteers must be at least 18 years old."
+        )
+        chunks = ["Volunteers must be at least 18 years old to walk dogs."]
 
         result = detector.check(answer, chunks)
-        # 50% support should pass with 0.5 threshold
-        assert result.is_grounded or result.support_ratio >= 0.5
+        assert result.support_ratio == 0.5
+        assert result.is_grounded
 
     def test_sources_tracked(self, detector: HallucinationDetector) -> None:
         """Supporting sources should be tracked in claim verifications."""
-        answer = "The shelter opens at 9am."
-        chunks = ["Opening hours: 9am to 5pm daily."]
+        answer = "The shelter opens at 9am and closes at 5pm."
+        chunks = ["The shelter opens at 9am and closes at 5pm on weekdays."]
         sources = ["schedule.md"]
 
         result = detector.check(answer, chunks, sources)
-        if result.claims and result.claims[0].supported:
-            assert result.claims[0].supporting_source == "schedule.md"
+        assert result.total_claims == 1
+        assert result.claims[0].supported
+        assert result.claims[0].supporting_source == "schedule.md"
 
 
 class TestSafetyService:
@@ -562,9 +561,10 @@ class TestSafetyService:
             answer="Dogs are walked twice daily. Cats stay inside.",
             chunks=["Dogs are walked twice per day by volunteers."],
         )
-        assert details.total_claims >= 1
-        assert hasattr(details, "support_ratio")
-        assert hasattr(details, "claims")
+        assert details.total_claims == 2
+        assert len(details.claims) == details.total_claims
+        assert 0.0 <= details.support_ratio <= 1.0
+        assert details.claims[0].claim == "Dogs are walked twice daily"
 
     async def test_close(self, service: SafetyService) -> None:
         """Close should not raise."""
@@ -654,8 +654,10 @@ class TestConfidenceScorer:
             chunk_scores=[0.95],
             grounding_ratio=0.95,
         )
-        # Even with high scores, single chunk limits confidence
-        assert result.level != ConfidenceLevel.HIGH or len([0.95]) >= 2
+        # min_chunks_for_high=2 gates HIGH even though the computed score
+        # (0.86) alone clears the 0.8 threshold.
+        assert result.score >= 0.8
+        assert result.level == ConfidenceLevel.MEDIUM
 
 
 class TestConfigModerationEnabled:

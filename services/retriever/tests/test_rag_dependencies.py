@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
+from retriever.infrastructure.cache.pg_cache import PgSemanticCache
+from retriever.infrastructure.safety.confidence import ConfidenceScorer
+from retriever.infrastructure.vectordb.pgvector_store import PgVectorStore
+from retriever.modules.messages.repos import MessageRepository
 from retriever.modules.rag.dependencies import (
     _reset_dependencies,
     get_confidence_scorer,
@@ -15,9 +19,9 @@ from retriever.modules.rag.dependencies import (
     get_rag_service,
     get_safety_service,
     get_semantic_cache,
-    get_session_factory,
     get_vector_store,
 )
+from retriever.modules.rag.retriever import HybridRetriever
 
 
 def _make_mock_settings(
@@ -58,18 +62,6 @@ def _make_mock_settings(
     settings.docling_chunk_max_tokens = 512
     settings.docling_merge_peers = True
     return settings
-
-
-# ── get_session_factory ────────────────────────────────────────────────────
-
-
-@patch("retriever.modules.rag.dependencies._get_factory")
-def test_get_session_factory_delegates_to_shared_factory(
-    mock_factory: MagicMock,
-) -> None:
-    factory = get_session_factory()
-    mock_factory.assert_called_once()
-    assert factory is mock_factory.return_value
 
 
 # ── get_rag_service singleton ──────────────────────────────────────────────
@@ -134,7 +126,7 @@ def test_get_semantic_cache_returns_cache_when_enabled(
 
     result = get_semantic_cache()
 
-    assert result is not None
+    assert isinstance(result, PgSemanticCache)
 
 
 # ── get_hybrid_retriever ───────────────────────────────────────────────────
@@ -167,7 +159,7 @@ def test_get_hybrid_retriever_returns_retriever_when_enabled(
 
     result = get_hybrid_retriever()
 
-    assert result is not None
+    assert isinstance(result, HybridRetriever)
 
 
 # ── get_embedding_provider ─────────────────────────────────────────────────
@@ -319,7 +311,7 @@ def test_get_safety_service_returns_none_when_disabled(
 def test_get_vector_store_creates_store(mock_factory: MagicMock) -> None:
     store = get_vector_store()
 
-    assert store is not None
+    assert isinstance(store, PgVectorStore)
 
 
 # ── get_confidence_scorer ──────────────────────────────────────────────────
@@ -328,7 +320,7 @@ def test_get_vector_store_creates_store(mock_factory: MagicMock) -> None:
 def test_get_confidence_scorer_creates_scorer() -> None:
     scorer = get_confidence_scorer()
 
-    assert scorer is not None
+    assert isinstance(scorer, ConfidenceScorer)
 
 
 # ── get_message_repository ─────────────────────────────────────────────────
@@ -338,7 +330,7 @@ def test_get_confidence_scorer_creates_scorer() -> None:
 def test_get_message_repository_creates_repo(mock_factory: MagicMock) -> None:
     repo = get_message_repository()
 
-    assert repo is not None
+    assert isinstance(repo, MessageRepository)
 
 
 # ── get_document_processor ────────────────────────────────────────────────

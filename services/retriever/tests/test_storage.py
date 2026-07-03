@@ -33,9 +33,11 @@ async def test_in_memory_get_missing_raises() -> None:
 
 
 async def test_in_memory_delete_missing_is_noop() -> None:
-    """delete of a missing key is a silent no-op (idempotent)."""
+    """delete of a missing key is a silent no-op that leaves other state intact."""
     storage = InMemoryStorage()
+    await storage.put("keep", b"v")
     await storage.delete("nope")
+    assert await storage.get("keep") == b"v"
 
 
 async def test_in_memory_delete_then_get_raises() -> None:

@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
+import json
+from collections.abc import Generator
 from unittest.mock import MagicMock, patch
 
+import opentelemetry.trace as otel_trace
+import pytest
 import structlog
 from fastapi import FastAPI
+from opentelemetry.util._once import Once
 from starlette.testclient import TestClient
 
 from retriever.infrastructure.observability.langfuse import (
@@ -16,21 +21,63 @@ from retriever.infrastructure.observability.logging import configure_logging
 from retriever.infrastructure.observability.middleware import RequestIdMiddleware
 from retriever.infrastructure.observability.tracing import configure_tracing
 
+
+@pytest.fixture(autouse=True)
+def _reset_otel_tracer_provider() -> Generator[None]:
+    """Reset OTel's global TracerProvider before and after every test.
+
+    OpenTelemetry's global ``TracerProvider`` is set-once per process: once
+    installed, a later ``set_tracer_provider()`` call is silently ignored
+    (with a logged warning) instead of overriding it. Several tests below
+    call ``configure_tracing()`` and then assert on the *actual* installed
+    global provider, so without a reset each test after the first one in
+    the process would inherit whatever provider an earlier test installed
+    and fail (or pass for the wrong reason). Resetting the private
+    ``_TRACER_PROVIDER`` / ``_TRACER_PROVIDER_SET_ONCE`` globals around each
+    test makes ``configure_tracing()`` install fresh state every time,
+    independent of test order.
+    """
+    original_provider = otel_trace._TRACER_PROVIDER
+    original_once = otel_trace._TRACER_PROVIDER_SET_ONCE
+    otel_trace._TRACER_PROVIDER = None
+    otel_trace._TRACER_PROVIDER_SET_ONCE = Once()
+    try:
+        yield
+    finally:
+        otel_trace._TRACER_PROVIDER = original_provider
+        otel_trace._TRACER_PROVIDER_SET_ONCE = original_once
+
+
 # ── Logging ──────────────────────────────────────────────────────────────
 
 
-def test_configure_logging_production_mode() -> None:
-    """configure_logging sets up structlog without errors in production mode."""
+def test_configure_logging_production_mode_emits_json(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Production mode renders each log line as a single parseable JSON object."""
     configure_logging(debug=False)
-    logger = structlog.get_logger("test")
-    assert logger is not None
+    logger = structlog.get_logger("test_prod_json")
+    logger.info("observability_prod_test_event", foo="bar")
+
+    line = capsys.readouterr().out.strip().splitlines()[-1]
+    payload = json.loads(line)
+    assert payload["event"] == "observability_prod_test_event"
+    assert payload["foo"] == "bar"
+    assert payload["level"] == "info"
 
 
-def test_configure_logging_debug_mode() -> None:
-    """configure_logging sets up structlog without errors in debug mode."""
+def test_configure_logging_debug_mode_emits_console_output(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Debug mode renders human-readable console output, not JSON."""
     configure_logging(debug=True)
-    logger = structlog.get_logger("test_debug")
-    assert logger is not None
+    logger = structlog.get_logger("test_debug_console")
+    logger.info("observability_debug_test_event", foo="bar")
+
+    out = capsys.readouterr().out
+    assert "observability_debug_test_event" in out
+    with pytest.raises(json.JSONDecodeError):
+        json.loads(out.strip().splitlines()[-1])
 
 
 def test_trace_context_in_logs_when_span_active() -> None:
@@ -62,28 +109,47 @@ def test_trace_context_absent_without_span() -> None:
 
     captured: dict[str, object] = {}
     result = _add_trace_context(None, "info", captured)
-    # No active span with valid trace_id → no trace context added
-    # (there may be a no-op span with trace_id=0)
-    if "trace_id" in result:
-        assert result["trace_id"] == "0" * 32
+    # No active span → the default no-op span (trace_id=0) adds no context.
+    assert "trace_id" not in result
+    assert "span_id" not in result
 
 
 # ── Tracing ──────────────────────────────────────────────────────────────
 
 
-def test_configure_tracing_disabled() -> None:
-    """configure_tracing is a no-op when enabled=False."""
-    configure_tracing(service_name="test", enabled=False)
+def test_configure_tracing_disabled_leaves_provider_unset() -> None:
+    """configure_tracing is a no-op when enabled=False: global provider is untouched."""
+    from opentelemetry import trace
+
+    before = trace.get_tracer_provider()
+    configure_tracing(service_name="test-disabled", enabled=False)
+    assert trace.get_tracer_provider() is before
 
 
-def test_configure_tracing_no_exporter() -> None:
-    """configure_tracing completes without errors with no exporter configured."""
+def test_configure_tracing_no_exporter_installs_provider_without_processor() -> None:
+    """With no exporter configured, an SDK provider is installed with zero processors."""
+    from opentelemetry import trace
+    from opentelemetry.sdk.trace import TracerProvider as SdkTracerProvider
+
     configure_tracing(service_name="test-service", debug=False)
 
+    provider = trace.get_tracer_provider()
+    assert isinstance(provider, SdkTracerProvider)
+    assert provider._active_span_processor._span_processors == ()  # type: ignore[attr-defined]
 
-def test_configure_tracing_debug_console_exporter() -> None:
-    """configure_tracing attaches console exporter in debug mode."""
+
+def test_configure_tracing_debug_console_exporter_adds_batch_processor() -> None:
+    """Debug mode wires a BatchSpanProcessor around a ConsoleSpanExporter."""
+    from opentelemetry import trace
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+
     configure_tracing(service_name="test-service", debug=True)
+
+    provider = trace.get_tracer_provider()
+    processors = provider._active_span_processor._span_processors  # type: ignore[attr-defined]
+    assert len(processors) == 1
+    assert isinstance(processors[0], BatchSpanProcessor)
+    assert isinstance(processors[0].span_exporter, ConsoleSpanExporter)
 
 
 def test_build_exporter_returns_none_without_config() -> None:
@@ -104,9 +170,17 @@ def test_build_exporter_returns_console_in_debug() -> None:
     assert isinstance(exporter, ConsoleSpanExporter)
 
 
-def test_configure_tracing_with_sample_rate() -> None:
-    """configure_tracing accepts a sample rate."""
-    configure_tracing(service_name="test", sample_rate=0.5)
+def test_configure_tracing_with_sample_rate_threads_rate_to_sampler() -> None:
+    """sample_rate is threaded through to the installed TraceIdRatioBased sampler."""
+    from opentelemetry import trace
+    from opentelemetry.sdk.trace.sampling import TraceIdRatioBased
+
+    configure_tracing(service_name="test-sample-rate", sample_rate=0.5)
+
+    provider = trace.get_tracer_provider()
+    sampler = provider.sampler  # type: ignore[attr-defined]
+    assert isinstance(sampler, TraceIdRatioBased)
+    assert sampler._rate == 0.5  # type: ignore[attr-defined]
 
 
 def test_configure_tracing_instruments_fastapi() -> None:
@@ -156,17 +230,22 @@ def test_request_id_preserved_when_present() -> None:
 # ── Langfuse ─────────────────────────────────────────────────────────────
 
 
-def test_configure_langfuse_disabled_without_credentials() -> None:
-    """configure_langfuse is a no-op when credentials are missing."""
-    # Should not raise
-    configure_langfuse(secret_key="", public_key="", host="")
+def test_configure_langfuse_disabled_without_credentials_skips_client() -> None:
+    """configure_langfuse does not construct a client when credentials are missing."""
+    mock_cls = MagicMock()
+    with patch.dict("sys.modules", {"langfuse": MagicMock(Langfuse=mock_cls)}):
+        configure_langfuse(secret_key="", public_key="", host="")
+    mock_cls.assert_not_called()
 
 
-def test_configure_langfuse_disabled_partial_credentials() -> None:
-    """configure_langfuse is a no-op with only partial credentials."""
-    configure_langfuse(
-        secret_key="sk-lf-xxx", public_key="", host="https://langfuse.com"
-    )
+def test_configure_langfuse_disabled_partial_credentials_skips_client() -> None:
+    """configure_langfuse does not construct a client with only partial credentials."""
+    mock_cls = MagicMock()
+    with patch.dict("sys.modules", {"langfuse": MagicMock(Langfuse=mock_cls)}):
+        configure_langfuse(
+            secret_key="sk-lf-xxx", public_key="", host="https://langfuse.com"
+        )
+    mock_cls.assert_not_called()
 
 
 def test_configure_langfuse_initialises_with_credentials() -> None:
@@ -182,11 +261,26 @@ def test_configure_langfuse_initialises_with_credentials() -> None:
             public_key="pk-lf-test",
             host="https://langfuse.example.com",
         )
+        mock_cls.assert_called_once_with(
+            secret_key="sk-lf-test",
+            public_key="pk-lf-test",
+            host="https://langfuse.example.com",
+        )
 
 
 def test_flush_langfuse_safe_when_not_configured() -> None:
     """flush_langfuse does not raise when Langfuse is not configured."""
     flush_langfuse()
+
+
+def test_flush_langfuse_swallows_client_errors() -> None:
+    """flush_langfuse swallows exceptions raised by a misbehaving Langfuse client."""
+    mock_instance = MagicMock()
+    mock_instance.flush.side_effect = RuntimeError("boom")
+    mock_cls = MagicMock(return_value=mock_instance)
+    with patch.dict("sys.modules", {"langfuse": MagicMock(Langfuse=mock_cls)}):
+        flush_langfuse()  # must not raise
+    mock_instance.flush.assert_called_once()
 
 
 async def test_observe_decorator_does_not_break_async_functions() -> None:

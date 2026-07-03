@@ -42,10 +42,18 @@ async def test_upsert_and_search(
 async def test_search_returns_empty_below_threshold(
     session_factory: async_sessionmaker[AsyncSession],
 ) -> None:
+    """A tenant with no indexed chunks yields an empty result list.
+
+    Note: `_embedding` produces collinear constant vectors (cosine
+    similarity 1.0 against any other positive constant vector), so this
+    fixture cannot construct a genuinely low-similarity chunk to exercise
+    the min_score WHERE-clause filter itself — it only covers the
+    no-rows-for-tenant path via the tables being freshly created per test.
+    """
     tenant_id = uuid.uuid4()
     store = PgVectorStore(session_factory)
     results = await store.search(_embedding(0.9), tenant_id, min_score=0.99)
-    assert isinstance(results, list)
+    assert results == []
 
 
 @pytest.mark.integration

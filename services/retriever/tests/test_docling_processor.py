@@ -116,22 +116,6 @@ class TestInferType:
 class TestFormatAwareProcessorRouting:
     """Tests for format-based routing in FormatAwareProcessor."""
 
-    def test_text_routes_to_text_path(self) -> None:
-        """Text files route to _process_text, binary to DoclingProcessor."""
-        mock_docling = MagicMock(spec=DoclingProcessor)
-        mock_docling.config = DoclingConfig()
-        processor = FormatAwareProcessor(docling=mock_docling)
-
-        # Binary files delegate to DoclingProcessor
-        mock_docling.process.return_value = ProcessingResult(
-            document=ParsedDocument(
-                content="", source="r.pdf", title="r", document_type="pdf"
-            ),
-            chunks=[],
-        )
-        processor.process(b"pdf", "report.pdf")
-        mock_docling.process.assert_called_once()
-
     def test_satisfies_document_processor_protocol(self) -> None:
         """FormatAwareProcessor satisfies the DocumentProcessor protocol."""
         docling = DoclingProcessor(config=DoclingConfig())

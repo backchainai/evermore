@@ -115,7 +115,7 @@ def test_clear_history_deletes_messages() -> None:
     assert resp.status_code == 200
     data = resp.json()
     assert data["deleted_count"] == 3
-    assert "3" in data["message"]
+    assert data["message"] == "Cleared 3 message(s)."
 
 
 def test_clear_history_no_messages() -> None:
