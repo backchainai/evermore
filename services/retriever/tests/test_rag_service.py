@@ -773,7 +773,7 @@ class TestClearCache:
         mock_vector_store: AsyncMock,
         mock_processor: MagicMock,
     ) -> None:
-        """Clear cache with no cache configured is a no-op."""
+        """Clear cache with no cache configured is a no-op that returns cleanly."""
         service = _build_service(
             mock_session_factory,
             mock_llm,
@@ -782,4 +782,6 @@ class TestClearCache:
             mock_processor,
         )
 
-        await service.clear_cache()
+        result = await service.clear_cache()
+
+        assert result is None

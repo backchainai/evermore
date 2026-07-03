@@ -3,6 +3,7 @@
 import uuid
 
 import pytest
+from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 
 from retriever.models.base import (
     Base,
@@ -60,15 +61,18 @@ def test_async_url_preserves_asyncpg_scheme() -> None:
 
 
 def test_create_engine_returns_engine() -> None:
-    engine = create_engine("postgresql://postgres:postgres@localhost:5432/test")
-    assert engine is not None
     # Engines are lazy — creation succeeds without a live DB.
+    engine = create_engine("postgresql://postgres:postgres@localhost:5432/test")
+    assert isinstance(engine, AsyncEngine)
+    assert engine.url.drivername == "postgresql+asyncpg"
 
 
 def test_create_session_factory_returns_factory() -> None:
     engine = create_engine("postgresql://postgres:postgres@localhost:5432/test")
     factory = create_session_factory(engine)
-    assert factory is not None
+    assert isinstance(factory, async_sessionmaker)
+    # expire_on_commit=False is required for async sessions per the docstring.
+    assert factory.kw["expire_on_commit"] is False
 
 
 def test_create_engine_accepts_pool_params() -> None:
@@ -80,7 +84,7 @@ def test_create_engine_accepts_pool_params() -> None:
         pool_recycle=900,
         pool_pre_ping=False,
     )
-    assert engine is not None
+    assert engine.pool.size() == 3
 
 
 # ── Settings pool defaults ──────────────────────────────────────────────────────

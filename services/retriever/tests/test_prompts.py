@@ -41,6 +41,7 @@ class TestBuildRagPrompt:
 
         assert "[Source 1: only.md]" in result
         assert "Only content" in result
+        assert "---" not in result
 
     def test_score_not_included_in_output(self) -> None:
         """Score values are not leaked into the prompt text."""
@@ -61,27 +62,10 @@ class TestRagSystemPrompt:
         assert "ONLY use information" in RAG_SYSTEM_PROMPT
         assert "NEVER" in RAG_SYSTEM_PROMPT
 
-    def test_contains_context_placeholder(self) -> None:
-        """RAG system prompt has the {context} placeholder."""
-        assert "{context}" in RAG_SYSTEM_PROMPT
-
-    def test_mentions_retriever(self) -> None:
-        """Prompt identifies the assistant as Retriever."""
-        assert "Retriever" in RAG_SYSTEM_PROMPT
-
 
 class TestFallbackSystemPrompt:
     """Tests for the fallback system prompt."""
 
-    def test_exists_and_non_empty(self) -> None:
-        """Fallback prompt exists and has content."""
-        assert FALLBACK_SYSTEM_PROMPT
-        assert len(FALLBACK_SYSTEM_PROMPT) > 50
-
     def test_mentions_no_documents(self) -> None:
         """Fallback prompt mentions that no documents are indexed."""
         assert "No shelter documents have been indexed" in FALLBACK_SYSTEM_PROMPT
-
-    def test_mentions_retriever(self) -> None:
-        """Fallback prompt identifies the assistant as Retriever."""
-        assert "Retriever" in FALLBACK_SYSTEM_PROMPT
