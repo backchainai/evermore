@@ -123,7 +123,10 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-addopts = "--cov=src/retriever --cov-report=term-missing --cov-fail-under=80 --ignore=tests/integration"
+markers = [
+    "integration: live-server E2E tests requiring the full stack (Supabase auth + running retriever + LLM gateway); excluded from the default run, run in CI.",
+]
+addopts = "--cov=src/retriever --cov-report=term-missing --cov-fail-under=80 -m 'not integration'"
 
 [tool.coverage.run]
 source = ["src/retriever"]

@@ -76,7 +76,9 @@ jobs:
       - run: uv run mypy src/
       - run: uvx bandit -r src/ -q
       - run: uv run alembic upgrade head
-      - run: uv run pytest --cov=src --cov-report=term-missing
+      # Default addopts run unit-only (-m "not integration"); CI has the Postgres
+      # service, so run the full suite. fail_under=85 (pyproject) gates coverage.
+      - run: uv run pytest -m "integration or not integration" --cov=src --cov-report=term-missing
 
   retriever:
     needs: changes
