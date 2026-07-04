@@ -125,6 +125,16 @@ addopts = [
     "not integration",
 ]
 
+[tool.mutmut]
+# Mutation-score tracking (issue #210), scoped to the critical modules from the
+# #206 audit: mappers, API parser, API auth. The repository layer is
+# integration/Postgres-gated and out of scope here (deferred to #209).
+# NOT installed as a project dependency; always invoked via
+# `uv run --with mutmut`. See docs/testing/mutation-tracking.md for the one
+# documented run command.
+source_paths = ["src/petdata/"]
+pytest_add_cli_args_test_selection = ["tests/unit/"]
+
 [tool.coverage.run]
 source = ["src"]
 branch = true
