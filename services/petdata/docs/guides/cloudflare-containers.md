@@ -1,7 +1,7 @@
 # Cloudflare Containers Deployment
 
 How the petdata FastAPI backend runs on Cloudflare Containers behind a Worker
-router (ADR 0008).
+router (ADR 0029 (all-cloudflare-hosting)).
 
 ## Architecture
 

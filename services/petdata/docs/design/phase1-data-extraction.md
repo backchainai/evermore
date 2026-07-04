@@ -135,4 +135,4 @@ Verification for an extraction run: confirm API connectivity with a single anima
 
 - [Architecture](architecture.md) - system design and patterns
 - [Development Standards](development-standards.md) - git, testing, quality
-- [ADR-002: Mutable Models](../adr/002-mutable-pydantic-models.md)
+- [ADR 0018: Mutable Models](../../../../docs/adr/0018-mutable-pydantic-models.md)

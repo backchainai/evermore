@@ -88,4 +88,4 @@ Response body shape:
 
 ## Open security questions
 
-- Auth cookie HttpOnly status: resolved. The cookie stays non-HttpOnly (createBrowserClient reads the session client-side); compensating controls are documented in `docs/adr/0011-supabase-auth-cookie-non-httponly.md`.
+- Auth cookie HttpOnly status: resolved. The cookie stays non-HttpOnly (createBrowserClient reads the session client-side); compensating controls are documented in `docs/adr/0032-supabase-auth-cookie-non-httponly.md`.

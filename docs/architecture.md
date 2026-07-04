@@ -82,7 +82,7 @@ Plus:
 | Authentication | Supabase Auth, validated per-backend via JWKS | `auth-flow.md` |
 | Authorization | Subscription table + per-module gate (UI + backend) | `subscriptions.md` |
 | Observability | structlog JSON + OpenTelemetry API | tech-stack standard |
-| LLM gateway | One OpenAI-compatible LLM gateway, Cloudflare AI Gateway by default (retriever uses it; future modules should too) | tech-stack standard, ADR 0007 |
+| LLM gateway | One OpenAI-compatible LLM gateway, Cloudflare AI Gateway by default (retriever uses it; future modules should too) | tech-stack standard, ADR 0028 (llm-gateway-consolidation) |
 | Type contracts | OpenAPI 3.1 → TS via `openapi-typescript`, regenerated in stacker CI | `module-template.md` |
 
 ## What lives where
@@ -94,8 +94,7 @@ Plus:
 | Module backend implementation | `{module}/` |
 | Cross-cutting contracts | `platform/docs/` |
 | Per-module conventions | `{module}/CLAUDE.md` |
-| Cross-cutting decisions (ADRs) | `platform/docs/adr/` |
-| Per-module decisions | `{module}/docs/decisions/` (e.g. retriever) |
+| Architecture decisions (ADRs) | `docs/adr/` (single consolidated, chronologically numbered sequence) |
 
 ## Adding a new module
 

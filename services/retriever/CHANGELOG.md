@@ -11,7 +11,7 @@
   - LLM secret surface drops to a single BYOK token, `LLM_GATEWAY_TOKEN`, on a configurable auth header (`llm_gateway_auth_header`, default `cf-aig-authorization`); provider keys live in the gateway. The `OPENROUTER_API_KEY` and `OPENAI_API_KEY` settings are retired
   - `llm_gateway_base_url` replaces `ai_gateway_base_url`; Cloudflare AI Gateway is the default, portable to any OpenAI-compatible endpoint via `LLM_GATEWAY_URL`
   - The gateway is required and there is no no-gateway fallback: with no gateway configured, `llm_gateway_base_url` raises `ValueError` and the app fails fast
-  - See ADR `docs/adr/0007-llm-gateway-consolidation.md`
+  - See ADR `docs/adr/0028-llm-gateway-consolidation.md`
 
 ### Added
 - `LLM_GATEWAY_URL` and `LLM_GATEWAY_AUTH_HEADER` settings for pointing at any OpenAI-compatible gateway and customizing the BYOK auth header

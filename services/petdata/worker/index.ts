@@ -1,7 +1,7 @@
 // Cloudflare Worker router that fronts the petdata FastAPI container.
 //
 // This file is the ONLY place the petdata service touches a Cloudflare
-// primitive (ADR 0008: application code stays portable; Cloudflare concerns
+// primitive (ADR 0029 (all-cloudflare-hosting): application code stays portable; Cloudflare concerns
 // live at the deployment boundary). Nothing under `src/` imports from here.
 //
 // The Worker does no application or business logic: it forwards every inbound

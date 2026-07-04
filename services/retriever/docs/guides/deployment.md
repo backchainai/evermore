@@ -180,7 +180,7 @@ issue #111).
 
 Use the Supabase **session** pooler URL (port 5432) for `DATABASE_URL`. The
 transaction pooler (port 6543) does not support prepared statements and breaks
-asyncpg migrations; see ADR 0009 (`docs/adr/0009-per-service-supabase-projects.md`).
+asyncpg migrations; see ADR 0030 (`docs/adr/0030-per-service-supabase-projects.md`).
 
 ```
 postgresql+asyncpg://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:5432/postgres

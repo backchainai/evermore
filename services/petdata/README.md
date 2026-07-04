@@ -180,7 +180,7 @@ tests/
 - [Architecture Overview](docs/design/architecture.md) - System design and patterns
 - [Phase 1 Design](docs/design/phase1-data-extraction.md) - Data extraction implementation details
 - [Development Standards](docs/design/development-standards.md) - Git workflow, testing, quality gates
-- [Architecture Decision Records](docs/adr/) - Key architectural decisions
+- [Architecture Decision Records](../../docs/adr/) - Key architectural decisions
 - [TODO](TODO.md) - Future work and roadmap
 
 ## Contributing
