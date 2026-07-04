@@ -20,7 +20,7 @@ Per-module build and test commands:
 - **Python services** (`services/retriever`, `services/petdata`): from the service directory, `uv sync --dev` to install, `uv run pytest` to run tests, `uv run ruff check src/ tests/` and `uv run python -m mypy src/` to lint and type-check.
 - **Stacker portal** (`apps/stacker`): from the app directory, `npm install`, then `npm run dev`, `npm run check`, and `npm run build`.
 
-The platform tech-stack standard governs all modules. See [`docs/evermore-vision-and-architecture.md`](docs/evermore-vision-and-architecture.md) for product and architecture, and [`docs/plans/repo-restructure-and-rename.md`](docs/plans/repo-restructure-and-rename.md) for current state and sequencing.
+The platform tech-stack standard governs all modules. See [`docs/evermore-vision-and-architecture.md`](docs/evermore-vision-and-architecture.md) for product and architecture.
 
 ## License of Contributions
 

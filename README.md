@@ -8,7 +8,6 @@ An AI platform for nonprofit animal shelters. Evermore ingests animal data from 
 - **Contributing:** [`CONTRIBUTING.md`](CONTRIBUTING.md)
 - **Vision and architecture:** [`docs/evermore-vision-and-architecture.md`](docs/evermore-vision-and-architecture.md)
 - **Decisions:** [`docs/adr/`](docs/adr/)
-- **Restructure plan:** [`docs/plans/repo-restructure-and-rename.md`](docs/plans/repo-restructure-and-rename.md)
 - **Research corpus:** [`docs/research/README.md`](docs/research/README.md)
 
 ## Quick start

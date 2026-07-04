@@ -104,4 +104,4 @@ Add OpenTelemetry when:
 - Multiple developers debugging concurrently
 - Complex multi-step pipelines need visualization
 
-See [Future: Production Hardening](../implementation-plan.md#future-production-hardening-post-validation) for advanced observability items.
+Advanced observability items (metrics dashboards, user-journey tracking, anomaly detection) are deferred until product validation.

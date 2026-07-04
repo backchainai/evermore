@@ -219,6 +219,5 @@ Use `pydantic-settings` for all configuration. Environment variables override de
 
 ## Related Documents
 
-- [Implementation Roadmap](implementation-plan.md)
 - [Development Standards](development-standards.md)
 - [Architecture Decision Records](decisions/)

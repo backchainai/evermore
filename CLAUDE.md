@@ -9,7 +9,6 @@ An AI platform for nonprofit animal shelters: it ingests animal data from any sh
 **Read the canonical docs before doing real work:**
 - Product and architecture: `docs/evermore-vision-and-architecture.md`
 - Decisions: `docs/adr/0001-monorepo-structure.md`, `0002-github-native-project-management.md`, `0003-standardized-tech-stack.md`
-- The execution plan: `docs/plans/repo-restructure-and-rename.md`
 - Research corpus: `docs/research/README.md`
 
 ## Current state: consolidated monorepo (post Phase 3)
