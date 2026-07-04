@@ -1,6 +1,6 @@
 name: Deploy
 
-# Continuous deployment to Cloudflare (ADR 0008, issue #111).
+# Continuous deployment to Cloudflare (ADR 0029 (all-cloudflare-hosting), issue #111).
 #
 # On merge to main: build and deploy the stacker frontend to Cloudflare Pages
 # and the retriever + petdata backends to Cloudflare Containers (Worker-fronted).
@@ -222,7 +222,7 @@ jobs:
         working-directory: services/retriever/worker
         run: npm ci
       # Gated migration (production only): must succeed before the new container
-      # revision takes traffic (ADR 0008). A failure here fails the job, so the
+      # revision takes traffic (ADR 0029 (all-cloudflare-hosting)). A failure here fails the job, so the
       # wrangler deploy step below never runs and production keeps the old revision.
       # Push and manual dispatch are production; pull requests are not.
       - name: Migrate database (gated, production only)

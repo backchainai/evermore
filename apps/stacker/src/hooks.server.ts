@@ -55,7 +55,7 @@ const authGuard: Handle = async ({ event, resolve }) => {
 // integration), and Supabase JS connects to a per-environment external URL
 // (an enforcing `connect-src 'self'` would break auth). Report-Only collects
 // violation reports while the enforcing migration (SvelteKit `kit.csp`) lands.
-// See docs/adr/0011-supabase-auth-cookie-non-httponly.md.
+// See docs/adr/0032-supabase-auth-cookie-non-httponly.md.
 const CONTENT_SECURITY_POLICY_REPORT_ONLY = [
 	"default-src 'self'",
 	"base-uri 'self'",
@@ -69,7 +69,7 @@ const CONTENT_SECURITY_POLICY_REPORT_ONLY = [
 	"connect-src 'self' https:"
 ].join('; ');
 
-// Compensating controls for the non-HttpOnly Supabase auth cookie (ADR 0011):
+// Compensating controls for the non-HttpOnly Supabase auth cookie (ADR 0032 (supabase-auth-cookie-non-httponly)):
 // hardening headers plus a Report-Only CSP set on every response.
 const securityHeaders: Handle = async ({ event, resolve }) => {
 	const response = await resolve(event);

@@ -3,7 +3,7 @@
 How to stand up a new Cloudflare AI Gateway for Evermore development. Every
 outbound model call in Retriever (chat, embeddings, moderation) routes through
 one OpenAI-compatible gateway, so all LLM usage is visible, cost-tracked, and
-shareable across services (ADR `docs/adr/0007-llm-gateway-consolidation.md`).
+shareable across services (ADR `docs/adr/0028-llm-gateway-consolidation.md`).
 Provider keys live in the gateway (BYOK); the app sends only a single gateway
 token.
 

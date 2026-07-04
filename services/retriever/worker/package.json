@@ -2,7 +2,7 @@
   "name": "retriever-worker",
   "version": "0.0.0",
   "private": true,
-  "description": "Cloudflare Worker router fronting the retriever FastAPI container (ADR 0008). Deployment-boundary only; not part of the Python package.",
+  "description": "Cloudflare Worker router fronting the retriever FastAPI container (ADR 0029 (all-cloudflare-hosting)). Deployment-boundary only; not part of the Python package.",
   "type": "module",
   "scripts": {
     "cf-typegen": "wrangler types --config ../wrangler.jsonc",

@@ -9,7 +9,7 @@ when_to_use:
 - Understanding how components fit together
 dependencies:
 - development-standards.md
-- ../adr/
+- ../../../../docs/adr/
 ---
 # petdata Architecture
 
@@ -88,7 +88,7 @@ Automated adoption profile generator for nonprofit animal shelters.
 | Type checking | mypy --strict | Catch type errors at dev time |
 | Security | bandit | Static security analysis |
 
-Per the Evermore tech-stack standard (ADR 0003), every table shares one Supabase Postgres instance and is namespaced with the `petdata_` prefix.
+Per the Evermore tech-stack standard (ADR 0024, standardized-tech-stack), every table shares one Supabase Postgres instance and is namespaced with the `petdata_` prefix.
 
 ## Project Structure
 
@@ -125,8 +125,7 @@ petdata/
 │       └── web/                   # /llms.txt and API routes
 │
 ├── docs/
-│   ├── adr/                       # Architecture Decision Records
-│   └── design/                    # This file, concept, phase1, development-standards
+│   └── design/                    # This file, concept, phase1, development-standards (ADRs now in root docs/adr/)
 │
 ├── pyproject.toml
 ├── uv.lock
@@ -165,7 +164,7 @@ async def example(session: AsyncSession) -> None:
 
 In the FastAPI app, inject the session via the `get_session` dependency, which commits on success and rolls back on error.
 
-### Mutable Pydantic models (ADR-002)
+### Mutable Pydantic models (ADR-0018)
 
 Domain models use `validate_assignment=True` (not `frozen=True`) so validators run on field assignment and `exclude_unset=True` can track partial updates for the fetch/modify/persist cycle. The trade-off is that models are not hashable, which is acceptable for internal-only use.
 
@@ -275,5 +274,5 @@ modules/
 
 - [Phase 1 Design](phase1-data-extraction.md) - detailed Phase 1 design
 - [Development Standards](development-standards.md) - git, testing, quality
-- [ADR-002: Mutable Models](../adr/002-mutable-pydantic-models.md)
+- [ADR-0018: Mutable Models](../../../../docs/adr/0018-mutable-pydantic-models.md)
 - [TODO](../../TODO.md) - future work roadmap

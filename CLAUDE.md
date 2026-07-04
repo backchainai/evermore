@@ -8,7 +8,7 @@ An AI platform for nonprofit animal shelters: it ingests animal data from any sh
 
 **Read the canonical docs before doing real work:**
 - Product and architecture: `docs/evermore-vision-and-architecture.md`
-- Decisions: `docs/adr/0001-monorepo-structure.md`, `0002-github-native-project-management.md`, `0003-standardized-tech-stack.md`
+- Decisions: `docs/adr/0022-monorepo-structure.md`, `0023-github-native-project-management.md`, `0024-standardized-tech-stack.md`
 - Research corpus: `docs/research/README.md`
 
 ## Current state: consolidated monorepo (post Phase 3)
@@ -38,10 +38,10 @@ Pending follow-ups from the plan: tech-stack conformance, which includes scaffol
 
 ## Settled decisions
 
-- **Monorepo** (ADR 0001), owner `github.com/backchainai`, repo `evermore`.
-- **GitHub-native tracking** (ADR 0002): Issues + Projects + PRs + the Claude Code action. Beads is retired for Evermore; do **not** `bd init` here. Existing issues migrate from the consulting Beads db to GitHub.
-- **Aggressive tech-stack standardization** (ADR 0003): every module conforms to `~/.claude/standards/tech-stack-standard.md`; nothing is grandfathered. petdata's SQLite -> Supabase Postgres migration is done (ADR 0004): it now runs on Supabase Postgres + pgvector via SQLAlchemy async (asyncpg) with Alembic migrations.
-- **Shared design system** (ADR 0010): the cool blue/slate Evermore design system is vendored at `packages/design-system/` as the single source of truth (tokens, fonts, `styles.css` entry, per-primitive `.prompt.md`/`.d.ts` contracts). Every module consumes the same tokens so the suite reads as one product; stacker maps them into its Skeleton theme. The system is designed in a Claude Design project and synced down via `/design-sync`; the repo copy is a mirror, not an independent fork. A new top-level `packages/` directory holds cross-module shared assets, not service code.
+- **Monorepo** (ADR `0022-monorepo-structure.md`), owner `github.com/backchainai`, repo `evermore`.
+- **GitHub-native tracking** (ADR `0023-github-native-project-management.md`): Issues + Projects + PRs + the Claude Code action. Beads is retired for Evermore; do **not** `bd init` here. Existing issues migrate from the consulting Beads db to GitHub.
+- **Aggressive tech-stack standardization** (ADR `0024-standardized-tech-stack.md`): every module conforms to `~/.claude/standards/tech-stack-standard.md`; nothing is grandfathered. petdata's SQLite -> Supabase Postgres migration is done (ADR `0025-petdata-postgres-pgvector.md`): it now runs on Supabase Postgres + pgvector via SQLAlchemy async (asyncpg) with Alembic migrations.
+- **Shared design system** (ADR `0031-shared-design-system-package.md`): the cool blue/slate Evermore design system is vendored at `packages/design-system/` as the single source of truth (tokens, fonts, `styles.css` entry, per-primitive `.prompt.md`/`.d.ts` contracts). Every module consumes the same tokens so the suite reads as one product; stacker maps them into its Skeleton theme. The system is designed in a Claude Design project and synced down via `/design-sync`; the repo copy is a mirror, not an independent fork. A new top-level `packages/` directory holds cross-module shared assets, not service code.
 - **The wedge:** the research-backed kennel card.
 
 ## Working conventions

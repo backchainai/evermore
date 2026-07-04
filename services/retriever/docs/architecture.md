@@ -23,7 +23,7 @@ AI-powered Q&A system for shelter volunteers, using RAG to answer questions from
 
 ## Architecture Style: Cloud-Native Microservices
 
-Separate backend and frontend deployables with managed infrastructure. See [ADR-003](decisions/003-system-architecture.md).
+Separate backend and frontend deployables with managed infrastructure. See [ADR-003](../../../docs/adr/0003-system-architecture.md).
 
 **Why this approach:**
 - Independent deployment of backend (Cloud Run) and frontend (Cloudflare Pages)
@@ -186,7 +186,7 @@ provider = OpenAICompatProvider(
 )
 ```
 
-See [ADR-002](decisions/002-llm-provider-strategy.md).
+See [ADR-002](../../../docs/adr/0002-llm-provider-strategy.md).
 
 ### Module Structure
 
@@ -220,4 +220,4 @@ Use `pydantic-settings` for all configuration. Environment variables override de
 ## Related Documents
 
 - [Development Standards](development-standards.md)
-- [Architecture Decision Records](decisions/)
+- [Architecture Decision Records](../../../docs/adr/)

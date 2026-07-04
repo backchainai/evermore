@@ -299,4 +299,4 @@ def process_data(input_data: str, options: list[str]) -> str:
 
 ### Architecture Decision Records
 
-Create an ADR for technology choices, schema design decisions, architectural patterns, and API design decisions. The Postgres migration is recorded in the monorepo ADRs (`docs/adr/`, ADR 0003 tech stack and ADR 0004 petdata Postgres migration).
+Create an ADR for technology choices, schema design decisions, architectural patterns, and API design decisions. The Postgres migration is recorded in the monorepo ADRs (`docs/adr/`, ADR 0024 (standardized-tech-stack) and ADR 0025 (petdata-postgres-pgvector)).

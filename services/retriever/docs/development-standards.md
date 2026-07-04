@@ -264,5 +264,5 @@ How was this tested?
 ## Related Documents
 
 - [Architecture](architecture.md)
-- [ADRs](decisions/)
+- [ADRs](../../../docs/adr/)
 - [CLAUDE.md](../CLAUDE.md) - Quick reference

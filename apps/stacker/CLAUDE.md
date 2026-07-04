@@ -9,7 +9,7 @@ Unified portal frontend for shelter management tools. Built with SvelteKit, host
 ### Stack
 
 - **Frontend:** SvelteKit + Svelte 5 runes + Skeleton UI v4
-- **Styling:** Tailwind CSS v4 + Skeleton UI themes (`light`, `dark`, `neutral`) built on the shared **Evermore design system** (`packages/design-system/`, ADR 0010): cool blue/slate palette (blue `#1A7AC2` interactive, slate `#1F3B54` structure, gray `#50636F` body, amber/green/red status). Theme token scales live in `src/lib/portal/theme/{light,dark,neutral}.css`; the Tailwind `@theme` type scale and fonts in `theme/tokens.css` + `theme/fonts.css`. Keep theme values in sync with the design-system tokens; do not hand-pick palette values outside the system.
+- **Styling:** Tailwind CSS v4 + Skeleton UI themes (`light`, `dark`, `neutral`) built on the shared **Evermore design system** (`packages/design-system/`, ADR 0031 (shared-design-system-package)): cool blue/slate palette (blue `#1A7AC2` interactive, slate `#1F3B54` structure, gray `#50636F` body, amber/green/red status). Theme token scales live in `src/lib/portal/theme/{light,dark,neutral}.css`; the Tailwind `@theme` type scale and fonts in `theme/tokens.css` + `theme/fonts.css`. Keep theme values in sync with the design-system tokens; do not hand-pick palette values outside the system.
 - **Icons:** Lucide Svelte
 - **Auth:** Supabase Auth (SSR pattern via `@supabase/ssr`)
 - **Deploy:** Cloudflare Pages
