@@ -67,7 +67,7 @@ async def test_ask_with_indexed_document(
     admin_client: httpx.AsyncClient,
     _uploaded_doc_id: list[str],
 ) -> None:
-    """POST /ask about uploaded content → answer references it."""
+    """POST /ask about uploaded content → grounded answer references it."""
     assert _uploaded_doc_id, "Upload test must run first"
 
     resp = await admin_client.post(
@@ -76,11 +76,76 @@ async def test_ask_with_indexed_document(
     )
     assert resp.status_code == 200
     data = resp.json()
-    # The answer should reference feeding times from the test document
     assert isinstance(data["answer"], str)
     assert len(data["answer"]) > 0
+
+    # Grounding check: either retrieval surfaced a chunk from our uploaded
+    # document, or (fallback, tolerant of retrieval variance) the answer
+    # text itself contains the feeding-time facts from the fixture.
+    chunks_used = data["chunks_used"]
+    retrieved_our_doc = isinstance(chunks_used, list) and any(
+        chunk["source"] == "test-doc.md" for chunk in chunks_used
+    )
+    answer_mentions_feeding_facts = any(
+        needle in data["answer"].lower() for needle in ("8am", "5pm", "feeding")
+    )
+    assert retrieved_our_doc or answer_mentions_feeding_facts, (
+        "Expected chunks_used to include test-doc.md or the answer to "
+        "mention feeding-time facts from it"
+    )
+    assert len(chunks_used) > 0 or answer_mentions_feeding_facts
+
     # Clean up messages
     await admin_client.delete("/api/v1/history")
+
+
+async def test_upload_rejects_unsupported_extension(
+    admin_client: httpx.AsyncClient,
+) -> None:
+    """POST /upload with an unsupported extension → 400."""
+    resp = await admin_client.post(
+        "/api/v1/documents/upload",
+        files={
+            "file": ("evil.exe", b"not a real executable", "application/octet-stream")
+        },
+    )
+    assert resp.status_code == 400
+
+
+async def test_upload_rejects_oversized_text_file(
+    admin_client: httpx.AsyncClient,
+) -> None:
+    """POST /upload with a >1 MB text file → 400 mentioning size."""
+    oversized_content = b"x" * (1_048_576 + 1)
+    resp = await admin_client.post(
+        "/api/v1/documents/upload",
+        files={"file": ("oversized.txt", oversized_content, "text/plain")},
+    )
+    assert resp.status_code == 400
+    detail = resp.json()["detail"].lower()
+    assert "too large" in detail or "size" in detail
+
+
+async def test_upload_rejects_empty_file(
+    admin_client: httpx.AsyncClient,
+) -> None:
+    """POST /upload with an empty file → 400."""
+    resp = await admin_client.post(
+        "/api/v1/documents/upload",
+        files={"file": ("empty.md", b"", "text/markdown")},
+    )
+    assert resp.status_code == 400
+
+
+async def test_upload_rejects_hidden_file(
+    admin_client: httpx.AsyncClient,
+) -> None:
+    """POST /upload with a hidden (dot-prefixed) filename → 400."""
+    resp = await admin_client.post(
+        "/api/v1/documents/upload",
+        files={"file": (".secret.md", b"data", "text/markdown")},
+    )
+    assert resp.status_code == 400
 
 
 async def test_delete_document(
