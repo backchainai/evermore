@@ -9,7 +9,7 @@ Supabase Auth is the single identity provider. All modules trust a single Supaba
 - **Token format:** RS256 JWT
 - **JWKS endpoint:** `https://<project-ref>.supabase.co/auth/v1/.well-known/jwks.json`
 - **Audience claim:** `authenticated`
-- **Role claim:** `role` (values: `authenticated`, plus custom roles like `admin` set via Supabase user metadata)
+- **Role claim:** `role` is the Postgres role claim (always `authenticated`). Admin authorization reads the `is_admin` boolean from `app_metadata` (`raw_app_meta_data`), never `user_metadata` (user-editable, unsafe for authorization).
 
 ## Sequence
 
@@ -58,7 +58,7 @@ Components every backend implements:
    - Validates RS256 signature, expiration, audience (`authenticated`).
 2. **Auth dependencies** (`auth/dependencies.py`)
    - `require_auth` — extracts `Authorization: Bearer`, validates, returns user claims.
-   - `require_admin` — composes `require_auth` and checks `role == 'admin'`.
+   - `require_admin` — composes `require_auth` and checks the `is_admin` flag sourced from `app_metadata.is_admin`.
 3. **Subscription dependency** (`auth/subscription.py` — see `subscriptions.md`)
    - Checks the user has an active subscription for this module.
 4. **Wiring** (`main.py` or per-route)
