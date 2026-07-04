@@ -345,9 +345,7 @@ Use this index to find relevant documentation without loading all files. Read on
 
 | Path | Purpose | Read When |
 |------|---------|-----------|
-| `docs/implementation-plan.md` | Overview and quick links to all docs | Starting work, need navigation |
 | `docs/architecture.md` | System design, tech stack, module patterns | Understanding codebase structure |
-| `docs/increments.md` | 13-increment implementation roadmap | Planning work, checking dependencies |
 | `docs/development-standards.md` | Code quality, Git workflow, PR process | Writing code, creating PRs |
 
 ### Guides
@@ -408,7 +406,6 @@ Read ADRs when you need to understand *why* a technical choice was made or when 
 | Security | `docs/development-standards.md` | 007, 009, 012, 015 |
 | Deployment | `docs/guides/deployment.md` | 010, 018 |
 | Code patterns | `docs/development-standards.md` | 001, 003 |
-| Adding features | `docs/increments.md` | (varies by feature) |
 
 ### Other Resources
 

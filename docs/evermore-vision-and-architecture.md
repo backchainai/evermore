@@ -69,5 +69,4 @@ Lives in `docs/research/` (see `docs/research/README.md`).
 ## Related documents
 
 - Decisions: `adr/0001-monorepo-structure.md`, `adr/0002-github-native-project-management.md`, `adr/0003-standardized-tech-stack.md`
-- Execution: `plans/repo-restructure-and-rename.md`
 - Research corpus map: `research/README.md`

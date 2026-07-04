@@ -92,4 +92,4 @@ def create_chroma_client():
 Back up `data/chroma/` directory:
 - After every document reindex
 - Daily incremental backup to cloud storage
-- See [Future: Production Hardening](../implementation-plan.md#future-production-hardening-post-validation)
+- Advanced backup/disaster-recovery hardening (retention verification, point-in-time recovery, runbooks) is deferred until product validation

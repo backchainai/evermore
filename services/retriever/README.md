@@ -154,7 +154,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for full setup and quality check commands
 
 - [Architecture Overview](docs/architecture.md)
 - [Development Standards](docs/development-standards.md)
-- [Implementation Roadmap](docs/increments.md)
 - [Deployment Guide](docs/guides/deployment.md)
 - [Adding Documents](docs/guides/adding-documents.md)
 
