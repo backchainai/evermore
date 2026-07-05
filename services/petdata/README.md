@@ -86,24 +86,13 @@ uv run uvicorn petdata.main:app --reload
 ## Configuration
 
 Configuration is handled via environment variables (prefix: `PETDATA_`). See
-`.env.example` for the full set; the database options are:
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PETDATA_DATABASE_URL` | Async Postgres connection URL (`postgres://`/`postgresql://` accepted) | `` (empty) |
-| `PETDATA_DATABASE_REQUIRE_SSL` | Enforce SSL on the connection (set `true` in production) | `false` |
-| `PETDATA_REQUEST_DELAY_MS` | Extraction API request throttling delay (ms) | `500` |
+`.env.example` for the full set and current defaults.
 
 ## HTTP API
 
 petdata exposes a FastAPI service (run with `uv run uvicorn petdata.main:app`).
-
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| `GET` | `/health` | none | Service and database health check. |
-| `GET` | `/api/v1/animals` | none | List animals (paginated via `limit`, `offset`). |
-| `GET` | `/api/v1/animals/{animal_id}` | none | Animal detail with related records. |
-| `GET` | `/llms.txt` | none | LLM-friendly API manifest generated from the OpenAPI schema. |
+See the live OpenAPI docs at `/docs`, or the `/llms.txt` manifest below for an
+LLM-friendly summary of the API surface.
 
 ### `/llms.txt`
 
@@ -181,19 +170,14 @@ tests/
 - [Phase 1 Design](docs/design/phase1-data-extraction.md) - Data extraction implementation details
 - [Development Standards](docs/design/development-standards.md) - Git workflow, testing, quality gates
 - [Architecture Decision Records](../../docs/adr/) - Key architectural decisions
-- [TODO](TODO.md) - Future work and roadmap
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for:
-- Development setup and workflow
-- Code quality requirements
-- Testing guidelines
-- PR process
+See the root [CONTRIBUTING.md](../../CONTRIBUTING.md) for development setup, workflow, and PR process.
 
 ## License
 
-Apache License 2.0 (Apache-2.0). See [LICENSE](LICENSE) for the full text and [NOTICE](NOTICE) for attribution.
+Apache License 2.0 (Apache-2.0). See the root [LICENSE](../../LICENSE) for the full text.
 
 Copyright (C) 2026 Backchain LLC
 

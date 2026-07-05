@@ -179,32 +179,7 @@ All database access goes through the async `Database` class, constructed with an
 - `delete_X(id)` - remove a record
 - `list_Xs()` / `get_Xs_for_animal(animal_id)` - query multiple records
 
-**Usage:**
-```python
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from petdata.modules.db import Animal, Database
-
-
-async def example(session: AsyncSession) -> None:
-    db = Database(session)
-
-    # Create
-    await db.insert_animal(Animal(id="A-12345", name="Buddy"))
-
-    # Read
-    animal = await db.get_animal("A-12345")
-
-    # Update (mutable Pydantic pattern)
-    if animal is not None:
-        animal.weight_lbs = 70.0
-        await db.update_animal(animal)
-
-    # Delete (cascades to child rows)
-    await db.delete_animal("A-12345")
-```
-
-In the FastAPI app, inject the session via the `get_session` dependency (`infrastructure/database/session.py`), which commits on success and rolls back on error. The async engine is built lazily on first request from `PETDATA_DATABASE_URL`, so importing the app needs no live database.
+In the FastAPI app, inject the session via the `get_session` dependency (`infrastructure/database/session.py`), which commits on success and rolls back on error. The async engine is built lazily on first request from `PETDATA_DATABASE_URL`, so importing the app needs no live database. See `modules/db/repository.py` for the `Database` class's CRUD methods.
 
 ### Migrations (Alembic)
 

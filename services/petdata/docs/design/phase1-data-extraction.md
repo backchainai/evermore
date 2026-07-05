@@ -1,5 +1,7 @@
 # Phase 1: Data Extraction and Storage Design
 
+> Historical design document, predates the monorepo consolidation.
+
 ## Summary
 
 Extract animal data from a shelter's Shelter Management System (SMS) and store it in Postgres with full behavioral-rating history, so Phase 2 can run time-decay analysis over the observations.

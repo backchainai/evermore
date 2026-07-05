@@ -1,26 +1,8 @@
-<p align="center">
-  <img src="assets/logo.png" alt="Retriever Logo" width="200" height="200">
-</p>
+# Retriever
 
-<p align="center">
-  <strong>AI-powered Q&A for your organization's documents</strong>
-</p>
+Retriever is a retrieval-augmented generation (RAG) system for document question-answering. It indexes an organization's PDFs, Word documents, spreadsheets, and web pages, then answers natural-language questions with cited sources. It can be adapted for any organization with documentation that users need to search.
 
-<p align="center">
-  <a href="#features">Features</a> •
-  <a href="#quick-start">Quick Start</a> •
-  <a href="#configuration">Configuration</a> •
-  <a href="#deployment">Deployment</a> •
-  <a href="#documentation">Documentation</a>
-</p>
-
-# Retriever: AI-Powered Document Q&A with RAG
-
-Retriever is an open-source retrieval-augmented generation (RAG) system for document question-answering. It indexes an organization's PDFs, Word documents, spreadsheets, and web pages, then answers natural-language questions with cited sources. Built by [Chris Krough](https://dev.krough.org) under [Backchain](https://backchain.ai).
-
-Retriever is an AI-powered question-answering system that helps users find information in your organization's policy and procedure documents. Upload your documents, and Retriever uses RAG (Retrieval-Augmented Generation) to provide accurate, sourced answers.
-
-Retriever can be adapted for any organization with documentation that users need to search.
+Retriever is the RAG module in the Evermore monorepo. See `CLAUDE.md` for architecture and development guidance.
 
 ## Features
 
@@ -45,23 +27,24 @@ Retriever can be adapted for any organization with documentation that users need
 
 ### Get Running
 
+Retriever is the `services/retriever/` module of the `backchainai/evermore` monorepo; there is no standalone Retriever repo to clone. From a checkout of the monorepo:
+
 ```bash
-git clone https://github.com/ckrough/retriever.git
-cd retriever
+cd services/retriever
 cp .env.example .env
 # Edit .env with your API keys
 
 supabase start                    # Auth + Supabase services
 docker compose up -d              # pgvector postgres + jaeger
 
-cd services/retriever && uv sync --dev
+uv sync --dev
 uv run alembic upgrade head
 uv run uvicorn retriever.main:app --reload --port 8001
 ```
 
 Backend API: [http://localhost:8001/docs](http://localhost:8001/docs) (port 8001 is what the portal expects via `PUBLIC_RETRIEVER_API_URL`). The frontend portal lives in [`apps/stacker`](../../apps/stacker/) in this monorepo.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for full development setup, quality checks, and workflow.
+See the root [CONTRIBUTING.md](../../CONTRIBUTING.md) for full development setup, quality checks, and workflow.
 
 ## Usage
 
@@ -97,7 +80,7 @@ See `.env.example` for all configuration options. LLM access:
 
 The gateway is required: all outbound model calls route through it, and the app fails fast at startup if no gateway is configured. Provider keys (OpenAI, Anthropic) live in the gateway (BYOK), not in app config.
 
-Auth is handled by Supabase (local via `supabase start`, production via Supabase project). See [CONTRIBUTING.md](CONTRIBUTING.md) for full environment setup.
+Auth is handled by Supabase (local via `supabase start`, production via Supabase project). See the root [CONTRIBUTING.md](../../CONTRIBUTING.md) for full environment setup.
 
 ### Document Preparation
 
@@ -148,7 +131,7 @@ For best results:
 
 ## Development
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for full setup and quality check commands.
+See the root [CONTRIBUTING.md](../../CONTRIBUTING.md) for full setup and quality check commands.
 
 ## Documentation
 
@@ -159,14 +142,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for full setup and quality check commands
 
 ## License
 
-Apache License 2.0 (Apache-2.0). See [LICENSE](LICENSE) for the full text and [NOTICE](NOTICE) for attribution.
+Apache License 2.0 (Apache-2.0). See the root [LICENSE](../../LICENSE) for the full text.
 
 Copyright (C) 2025 Backchain LLC
-
-## About / Built by
-
-I'm [Chris Krough](https://dev.krough.org), and I build production AI systems like this one. Retriever is the kind of work I do: retrieval pipelines, LLM safety, and observability shipped as real, deployable software. Find me on [my site](https://dev.krough.org) and [LinkedIn](https://linkedin.com/in/ckrough).
-
-Retriever is developed and maintained under [Backchain](https://backchain.ai), my AI transformation consulting practice. Backchain helps organizations discover where AI works: [Discover Where AI Works](https://backchain.ai).
-
-If Retriever is useful to you, star the repo and reach out. I'm open to collaboration, consulting, and conversations about applied AI.
