@@ -15,12 +15,7 @@ Thanks for your interest in Evermore, an AI platform for nonprofit animal shelte
 
 Start with [`docs/local-development.md`](docs/local-development.md): it brings up the portal (stacker) with the Retriever module on your machine and covers prerequisites, the service topology, and troubleshooting. Run the full setup in the order given there; `make env` then `make dev` alone is not sufficient (an LLM gateway token and the Supabase anon key are required in between).
 
-Per-module build and test commands:
-
-- **Python services** (`services/retriever`, `services/petdata`): from the service directory, `uv sync --dev` to install, `uv run pytest` to run tests, `uv run ruff check src/ tests/` and `uv run python -m mypy src/` to lint and type-check.
-- **Stacker portal** (`apps/stacker`): from the app directory, `npm install`, then `npm run dev`, `npm run check`, and `npm run build`.
-
-The platform tech-stack standard governs all modules. See [`docs/evermore-vision-and-architecture.md`](docs/evermore-vision-and-architecture.md) for product and architecture.
+Per-module build, test, and lint commands live in each module's own `CLAUDE.md`: [`apps/stacker/CLAUDE.md`](apps/stacker/CLAUDE.md), [`services/petdata/CLAUDE.md`](services/petdata/CLAUDE.md), [`services/retriever/CLAUDE.md`](services/retriever/CLAUDE.md). The tech-stack standard governs all modules. See [`docs/architecture.md`](docs/architecture.md) for system topology and [`docs/evermore-vision-and-architecture.md`](docs/evermore-vision-and-architecture.md) for product vision.
 
 ## License of Contributions
 

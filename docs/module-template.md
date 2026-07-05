@@ -1,19 +1,19 @@
 # Module Template
 
-Step-by-step checklist for adding a new FastAPI backend module to Evermore. Use `retriever/` as the canonical reference implementation throughout.
+Step-by-step checklist for adding a new FastAPI backend module to Evermore. Use `services/retriever/` as the canonical reference implementation throughout.
 
 ## Prerequisites
 
 - A short, lowercase, ≤ 8-char module id (e.g. `howl`, `forge`)
-- An entry decided on for `stacker/src/lib/portal/config.ts` MODULE_REGISTRY
+- An entry decided on for `apps/stacker/src/lib/portal/config.ts` MODULE_REGISTRY
 - A Stripe Price with `metadata.module_id` set (for billing)
 
-## 1. Backend repo scaffold
+## 1. Backend service scaffold
 
-Create a new sibling repo under `evermore/`:
+Evermore is a monorepo (ADR `0022-monorepo-structure.md`): create a new service directory under `services/{module}/`, not a separate repo:
 
 ```
-evermore/{module}/
+services/{module}/
 ├── pyproject.toml
 ├── Dockerfile
 ├── docker-compose.yml
@@ -118,7 +118,7 @@ FastAPIInstrumentor.instrument_app(app)
 
 ## 7. Stacker registration
 
-In `stacker/`:
+In `apps/stacker/`:
 
 1. Create `src/lib/modules/{id}/index.ts` exporting a `ModuleDefinition`:
 
@@ -151,7 +151,7 @@ In `stacker/`:
 
 ## 8. Subscriptions
 
-Add a row to the Stripe Price catalog with `metadata.module_id = '{id}'`. The Stripe webhook (`stacker/src/routes/api/webhooks/stripe/+server.ts`) handles the rest automatically.
+Add a row to the Stripe Price catalog with `metadata.module_id = '{id}'`. The Stripe webhook (`apps/stacker/src/routes/api/webhooks/stripe/+server.ts`) handles the rest automatically.
 
 ## 9. Local dev
 
@@ -171,15 +171,7 @@ Stacker's `.env` should point each `PUBLIC_{ID}_API_URL` at the corresponding ho
 
 ## 10. Deploy
 
-```bash
-gcloud run deploy {module} \
-  --source . \
-  --region us-central1 \
-  --allow-unauthenticated \
-  --set-env-vars-from-file .env.production.yaml
-```
-
-Workload Identity Federation in CI per the tech stack standard — no service account keys.
+Deploy targets are governed by ADR `0029-all-cloudflare-hosting.md`, not by this template: Cloudflare Pages for `apps/stacker`, Cloudflare Containers behind a Worker router for backend services like this one. CI/CD is GitHub Actions authenticated to Cloudflare with a scoped API token; there are no long-lived service-account keys. See the ADR (and its follow-ups) for current wrangler/container tooling status.
 
 ## 11. Verification checklist
 

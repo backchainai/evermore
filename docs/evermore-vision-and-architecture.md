@@ -33,14 +33,16 @@ Flow: `Sources -> Animal Record -> Package -> Composition -> Export`. Provenance
 
 ## Modules
 
-| Module | Repo (post-rename) | Role |
-|---|---|---|
-| **Stacker** | `apps/stacker` | The portal substrate: single sign-on, subscription/entitlement gating, module registry. Shelters see only what they subscribe to. |
-| **PetData** | `services/petdata` (was `petbio`) | The data plane: extensible per-source connectors, the canonical Animal Record, behavior and trend analysis, and the Package builder. |
-| **BioWriter** | `services/biowriter` (new) | The generation plane: kennel cards, social posts, and ads from Package + Template + research; the live lint/score editor; Composition versioning and Export. |
-| **Retriever** | `services/retriever` | Dual role: an end-user module (RAG chat over shelter ops and policy docs) **and** an internal platform service (indexes the research corpus so BioWriter can cite the paper a recommendation came from). |
-| **Behavior & Trend Analysis** | within `services/petdata` | Time-decay weighting of longitudinal volunteer observations into per-animal trends. Lets staff get ahead of behavior changes and makes every Composition more accurate. |
-| **Social Distribution & Analytics** | future | Integrations (for example Hootsuite) to schedule cross-platform campaigns, plus per-animal engagement monitoring and content QA (errors, omissions, stale listings). |
+| Module | Role |
+|---|---|
+| **Stacker** | The portal substrate: single sign-on, subscription/entitlement gating, module registry. Shelters see only what they subscribe to. |
+| **PetData** | The data plane: extensible per-source connectors, the canonical Animal Record, behavior and trend analysis, and the Package builder. |
+| **BioWriter** | The generation plane: kennel cards, social posts, and ads from Package + Template + research; the live lint/score editor; Composition versioning and Export. |
+| **Retriever** | Dual role: an end-user module (RAG chat over shelter ops and policy docs) **and** an internal platform service (indexes the research corpus so BioWriter can cite the paper a recommendation came from). |
+| **Behavior & Trend Analysis** | within `services/petdata`. Time-decay weighting of longitudinal volunteer observations into per-animal trends. Lets staff get ahead of behavior changes and makes every Composition more accurate. |
+| **Social Distribution & Analytics** | future. Integrations (for example Hootsuite) to schedule cross-platform campaigns, plus per-animal engagement monitoring and content QA (errors, omissions, stale listings). |
+
+Directory paths and current build status: README.md's Structure section. System topology, module contracts, and deploy targets: `docs/architecture.md`.
 
 ## The research-backed kennel card
 
@@ -68,5 +70,6 @@ Lives in `docs/research/` (see `docs/research/README.md`).
 
 ## Related documents
 
+- System architecture: `architecture.md`
 - Decisions: `adr/0022-monorepo-structure.md`, `adr/0023-github-native-project-management.md`, `adr/0024-standardized-tech-stack.md`
 - Research corpus map: `research/README.md`
