@@ -177,3 +177,162 @@ This slice covers every tracked file under `services/petdata` (81 files as of th
 | `services/petdata/wrangler.jsonc` | security-critical | line-by-line | clean — `vars` carries only non-secret config (`PORT`, the production CORS allow-list); comments correctly state secrets are injected via `wrangler secret put` and never committed here |
 
 Findings summary: `[F1] (#243)` tenant isolation inert (RLS `ENABLE` not `FORCE`, app connects as table owner, no session tenant GUC, repository has no tenant filter; ref #29), `[F2] (#244)` credential handling (untyped `cookies` field, not `SecretStr`), `[F3] (#245)` outbound egress/SSRF (httpx redirect + static `Cookie` header), `[F4] (#246)` API surface (`/animals` unbounded `limit`/`offset`, negative offset reaches SQL), `[F5] (#247)` mutation surface (repository writes carry no actor/attribution column, no soft-delete/versioning; feeds #230), `[F6] (#248)` ingestion boundary (SMS client/parser have no response/record size cap). Dropped candidate: Worker secret-forwarding design (`worker/index.ts`) — working as intended, not filed. Disposition, severity, and redacted actor/path/asset detail for each are recorded in the audit notes on issue #225.
+
+## Slice: stacker + packages (issue #227)
+
+This slice covers every tracked file under `apps/stacker/` and `packages/` for issue #227's leg of epic #222. The row set below equals `git ls-files apps/stacker packages` exactly (150 files). The issue estimated 152 files (110 stacker + 42 packages); the actual tracked count is 150 (108 stacker + 42 packages), a -2 delta (the estimate ran two high on stacker). Class and depth follow the epic #222 mapping; where a file could fall in two classes the higher-scrutiny class was chosen. Trust-boundary analysis and full finding detail are in `docs/security/stacker-packages-audit.md`; `FINDING-Sxx` verdicts key to that document. Critical/High findings are filed as redacted follow-on issues per public-repo discipline.
+
+Class counts: security-critical 20, boundary-adjacent 72, config-IaC 20, inert 38.
+
+| File | Class | Depth | Verdict |
+|---|---|---|---|
+| `apps/stacker/.env.example` | config-IaC | full-read | clean |
+| `apps/stacker/CLAUDE.md` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `apps/stacker/README.md` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `apps/stacker/docker-compose.yml` | config-IaC | full-read | clean |
+| `apps/stacker/package-lock.json` | config-IaC | full-read | clean |
+| `apps/stacker/package.json` | config-IaC | full-read | clean |
+| `apps/stacker/playwright.config.ts` | config-IaC | full-read | clean |
+| `apps/stacker/src/app.css` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `apps/stacker/src/app.d.ts` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `apps/stacker/src/app.html` | config-IaC | full-read | clean |
+| `apps/stacker/src/hooks.server.ts` | security-critical | line-by-line | FINDING-S2 (Medium): CSP is Report-Only, not enforcing |
+| `apps/stacker/src/lib/api/base-client.ts` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/api/client.ts` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/api/types.ts` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/components/ChatInput.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/components/ChatMessage.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/components/ClearHistoryButton.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/components/ConfidenceBadge.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/components/DocumentList.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/components/DocumentUpload.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/components/ErrorAlert.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/components/SourceCitation.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/modules/petdata/api/client.ts` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/modules/petdata/api/types.generated.ts` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/modules/petdata/api/types.ts` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/modules/petdata/index.ts` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/modules/retriever/api/client.ts` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/modules/retriever/api/types.generated.ts` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/modules/retriever/api/types.ts` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/modules/retriever/components/ChatInput.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/modules/retriever/components/ChatMessage.svelte` | boundary-adjacent | trust-review | FINDING-S1 (High): unsanitized `marked` -> `{@html}` model-output XSS |
+| `apps/stacker/src/lib/modules/retriever/components/ClearHistoryButton.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/modules/retriever/components/ConfidenceBadge.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/modules/retriever/components/DocumentList.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/modules/retriever/components/DocumentUpload.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/modules/retriever/components/SourceCitation.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/modules/retriever/index.ts` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/portal/components/AnimalSubjectSelector.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/portal/components/MobileNav.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/portal/components/ModuleCard.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/portal/components/ModuleIcon.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/portal/components/PortalAppBar.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/portal/components/PortalShell.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/portal/components/PortalSidebar.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/portal/components/SubscriptionGate.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/portal/components/ThemePicker.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/portal/components/UserMenu.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/portal/config.ts` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/portal/shared/ErrorAlert.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/portal/state/animal-subject.svelte.ts` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/portal/theme/dark.css` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `apps/stacker/src/lib/portal/theme/fonts.css` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `apps/stacker/src/lib/portal/theme/light.css` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `apps/stacker/src/lib/portal/theme/neutral.css` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `apps/stacker/src/lib/portal/theme/theme-store.svelte.ts` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/portal/theme/tokens.css` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `apps/stacker/src/lib/portal/types.ts` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/portal/user-display.ts` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/server/stripe-webhook.test.ts` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/lib/server/stripe-webhook.ts` | security-critical | line-by-line | FINDING-S5 (Medium): service_role blast radius; FINDING-S6 (Low): no app-level idempotency |
+| `apps/stacker/src/lib/server/supabase.ts` | security-critical | line-by-line | clean |
+| `apps/stacker/src/routes/+error.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/routes/+layout.server.ts` | security-critical | line-by-line | clean |
+| `apps/stacker/src/routes/+layout.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/routes/+layout.ts` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/routes/+page.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/routes/admin/+page.server.ts` | security-critical | line-by-line | clean |
+| `apps/stacker/src/routes/admin/+page.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/routes/api/webhooks/stripe/+server.ts` | security-critical | line-by-line | FINDING-S5 (Medium): service_role key handling |
+| `apps/stacker/src/routes/app/+layout.server.ts` | security-critical | line-by-line | clean |
+| `apps/stacker/src/routes/app/+layout.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/routes/app/+page.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/routes/app/petdata/+layout.server.ts` | security-critical | line-by-line | clean |
+| `apps/stacker/src/routes/app/petdata/+layout.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/routes/app/petdata/animals/+page.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/routes/app/petdata/animals/[id]/+page.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/routes/app/petdata/notes/+page.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/routes/app/retriever/+layout.server.ts` | security-critical | line-by-line | clean |
+| `apps/stacker/src/routes/app/retriever/+layout.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/routes/app/retriever/admin/+page.server.ts` | security-critical | line-by-line | clean |
+| `apps/stacker/src/routes/app/retriever/admin/+page.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/routes/app/retriever/chat/+page.server.ts` | security-critical | line-by-line | clean |
+| `apps/stacker/src/routes/app/retriever/chat/+page.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/routes/auth/confirm/+server.ts` | security-critical | line-by-line | clean |
+| `apps/stacker/src/routes/auth/error/+page.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/routes/chat/+page.server.ts` | security-critical | line-by-line | clean |
+| `apps/stacker/src/routes/chat/+page.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/routes/invite/accept/+page.server.ts` | security-critical | line-by-line | clean |
+| `apps/stacker/src/routes/invite/accept/+page.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/routes/login/+page.server.ts` | security-critical | line-by-line | clean |
+| `apps/stacker/src/routes/login/+page.svelte` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/src/routes/logout/+server.ts` | security-critical | line-by-line | clean |
+| `apps/stacker/static/favicon.png` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `apps/stacker/supabase/config.toml` | config-IaC | full-read | FINDING-S4 (Low): minimum_password_length=6 |
+| `apps/stacker/supabase/migrations/.gitkeep` | config-IaC | full-read | clean |
+| `apps/stacker/supabase/migrations/20260702000000_subscriptions.sql` | config-IaC | full-read | clean |
+| `apps/stacker/supabase/seed.sql` | config-IaC | full-read | clean |
+| `apps/stacker/supabase/templates/invite.html` | config-IaC | full-read | clean |
+| `apps/stacker/supabase/templates/magic_link.html` | config-IaC | full-read | clean |
+| `apps/stacker/svelte.config.js` | config-IaC | full-read | clean |
+| `apps/stacker/tests/e2e/auth.spec.ts` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/tests/e2e/favicon.spec.ts` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/tests/e2e/home.spec.ts` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/tests/e2e/security-headers.spec.ts` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/tsconfig.json` | config-IaC | full-read | clean |
+| `apps/stacker/vite.config.ts` | config-IaC | full-read | clean |
+| `apps/stacker/vitest.config.ts` | boundary-adjacent | trust-review | clean |
+| `apps/stacker/wrangler.toml` | config-IaC | full-read | clean |
+| `packages/auth/README.md` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/auth/pyproject.toml` | config-IaC | full-read | clean |
+| `packages/auth/src/evermore_auth/__init__.py` | security-critical | line-by-line | clean |
+| `packages/auth/src/evermore_auth/dependencies.py` | security-critical | line-by-line | clean |
+| `packages/auth/src/evermore_auth/jwks.py` | security-critical | line-by-line | FINDING-S3 (Low): issuer (`iss`) not pinned |
+| `packages/auth/src/evermore_auth/py.typed` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/auth/src/evermore_auth/schemas.py` | security-critical | line-by-line | clean |
+| `packages/auth/tests/test_auth.py` | boundary-adjacent | trust-review | clean |
+| `packages/auth/uv.lock` | config-IaC | full-read | clean |
+| `packages/design-system/SKILL.md` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/design-system/assets/fonts/Inter-OFL.txt` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/design-system/assets/fonts/Inter-Variable.ttf` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/design-system/assets/fonts/JetBrainsMono-OFL.txt` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/design-system/assets/fonts/JetBrainsMono-Variable.ttf` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/design-system/assets/fonts/Outfit-OFL.txt` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/design-system/assets/fonts/Outfit-Variable.ttf` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/design-system/components/core/Badge.d.ts` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/design-system/components/core/Badge.prompt.md` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/design-system/components/core/Button.d.ts` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/design-system/components/core/Button.prompt.md` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/design-system/components/core/Card.d.ts` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/design-system/components/core/Card.prompt.md` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/design-system/components/core/SectionLabel.d.ts` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/design-system/components/core/SectionLabel.prompt.md` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/design-system/components/forms/TextField.d.ts` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/design-system/components/forms/TextField.prompt.md` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/design-system/readme.md` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/design-system/styles.css` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/design-system/tokens/base.css` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/design-system/tokens/colors.css` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/design-system/tokens/fonts.css` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/design-system/tokens/spacing.css` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/design-system/tokens/typography.css` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/schema/README.md` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/schema/pyproject.toml` | config-IaC | full-read | clean |
+| `packages/schema/src/evermore_schema/__init__.py` | boundary-adjacent | trust-review | clean |
+| `packages/schema/src/evermore_schema/animal.py` | boundary-adjacent | trust-review | clean |
+| `packages/schema/src/evermore_schema/py.typed` | inert | secret-scan + claim-check | inert, secret-scanned only |
+| `packages/schema/src/evermore_schema/spine.py` | boundary-adjacent | trust-review | clean |
+| `packages/schema/tests/test_animal.py` | boundary-adjacent | trust-review | clean |
+| `packages/schema/tests/test_spine.py` | boundary-adjacent | trust-review | clean |
+| `packages/schema/uv.lock` | config-IaC | full-read | clean |
