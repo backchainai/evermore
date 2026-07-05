@@ -13,6 +13,8 @@ dependencies:
 ---
 # petdata Architecture
 
+> Historical design document, predates the monorepo consolidation.
+
 Automated adoption profile generator for nonprofit animal shelters.
 
 ## System Overview
@@ -275,4 +277,3 @@ modules/
 - [Phase 1 Design](phase1-data-extraction.md) - detailed Phase 1 design
 - [Development Standards](development-standards.md) - git, testing, quality
 - [ADR-0018: Mutable Models](../../../../docs/adr/0018-mutable-pydantic-models.md)
-- [TODO](../../TODO.md) - future work roadmap

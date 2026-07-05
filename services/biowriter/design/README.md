@@ -1,5 +1,7 @@
 # BioWriter design import
 
+> Pre-scaffold design document: BioWriter has not yet been built (greenfield scaffold is plan Phase 5).
+
 Generated UI design for the BioWriter service, imported from Claude Design (Anthropic's design product) via the `claude_design` MCP connector.
 
 ## Provenance

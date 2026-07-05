@@ -91,29 +91,11 @@ Outbound model calls (chat, embeddings, moderation) route through one OpenAI-com
 
 The gateway is required: there is no no-gateway path. When none is configured, `settings.llm_gateway_base_url` raises `ValueError` and the app fails fast with a clear error, so every environment that makes model calls (local dev, CI, production) configures a gateway. See ADR `docs/adr/0028-llm-gateway-consolidation.md`.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for full setup instructions including prerequisites and environment configuration.
+See [CONTRIBUTING.md](../../CONTRIBUTING.md) for full setup instructions including prerequisites and environment configuration.
 
 ## CI/CD
 
-### Workflows
-
-| Workflow | File | Trigger |
-|----------|------|---------|
-| CI | `.github/workflows/ci.yml` | Push/PR to main |
-| Claude Code | `.github/workflows/claude.yml` | `@claude` in PR/issue comments |
-| Release | `.github/workflows/release.yml` | Semantic release |
-
-### CI Path Filtering
-
-CI uses `dorny/paths-filter` — only changed stacks run:
-
-| Stack | Path Filter | Jobs |
-|-------|-------------|------|
-| Retriever | `services/retriever/**` | lint, typecheck, test |
-
-The `all-checks` gate job requires all triggered jobs to pass (skipped jobs are OK).
-
-> **Note:** Frontend CI jobs (`check`, `build`, `e2e`) should be removed — frontend now lives in stacker.
+Repo-wide workflows live in `.github/workflows/`: `ci.yml` (lint/typecheck/test, path-filtered per stack, gated by the `ci-success` job), `claude.yml` and `claude-code-review.yml` (`@claude` automation), `deploy.yml` (Cloud Run / Cloudflare Pages deploys), and `mutation.yml` (mutation testing). See `ci.yml` for the current job graph.
 
 ## Project Structure
 
@@ -190,152 +172,9 @@ follow_imports = "skip"
 
 **Langfuse @observe() is a no-op without credentials:** The decorator is always imported but only sends traces when `langfuse_secret_key`, `langfuse_public_key`, and `langfuse_host` are all set. Safe to ignore in local dev.
 
-## Git Workflow: GitHub Flow
+See `docs/development-standards.md` for git workflow, code standards, PR requirements, and security.
 
-**Branch from main, PR back to main.**
-
-```
-main (protected) ← feature branches via PR
-```
-
-### Branch Naming
-```
-feature/add-user-auth
-fix/chat-input-validation
-docs/update-readme
-refactor/simplify-rag-pipeline
-test/add-rag-coverage
-chore/update-dependencies
-```
-
-### Commit Messages (Conventional Commits)
-```
-feat: add volunteer login functionality
-fix: resolve chat timeout on slow connections
-docs: add API endpoint documentation
-test: add coverage for RAG retrieval
-refactor: extract LLM provider interface
-chore: update dependencies
-```
-
-**Format:** `<type>: <description>` (lowercase, imperative mood, no period)
-
-## Code Standards
-
-### Type Hints (Required)
-All function signatures must have type hints, including return types.
-
-```python
-# Good
-async def ask_question(question: str, user_id: UUID) -> Answer:
-    ...
-
-# Bad - missing types
-async def ask_question(question, user_id):
-    ...
-```
-
-### Docstrings (Google Style)
-Required for public APIs and non-trivial functions.
-
-```python
-def generate_answer(question: str, context: list[str]) -> str:
-    """Generate an answer using retrieved context.
-
-    Args:
-        question: The user's question.
-        context: Retrieved document chunks relevant to the question.
-
-    Returns:
-        The generated answer text.
-
-    Raises:
-        LLMProviderError: If the LLM API call fails.
-    """
-```
-
-### Testing
-- **Coverage:** 80% minimum for new code
-- **Naming:** `test_<function>_<scenario>_<expected>`
-- **Categories:** `tests/unit/`, `tests/integration/`, `tests/e2e/`
-
-```python
-def test_ask_question_with_valid_input_returns_answer():
-    ...
-
-def test_ask_question_with_empty_context_returns_fallback():
-    ...
-```
-
-### Error Handling
-- Never bare `except:` - always specify exception types
-- Chain exceptions with `from` for context
-- Use custom exception hierarchy for domain errors
-
-## PR Requirements
-
-Before opening a PR:
-- [ ] All tests pass (`pytest`)
-- [ ] Types check (`mypy --strict`)
-- [ ] Linting passes (`ruff check && ruff format`)
-- [ ] New code has tests (80% coverage)
-- [ ] Documentation updated if needed
-- [ ] ADR created for significant architectural decisions
-
-**Review process:**
-- 1 approval required
-- CI must pass
-- Squash merge to main
-
-## Security
-
-**Never commit:**
-- API keys, secrets, passwords
-- `.env` files (use `.env.example` as template)
-- Credentials of any kind
-
-**Required:**
-- Secrets in environment variables only
-- Input validation on all endpoints
-- Content moderation on user input (OpenAI Moderation API)
-
-## Key Patterns
-
-### LLM Provider Abstraction
-Use Protocol-based interface for swappable LLM providers. Providers receive `base_url` at construction time from `settings.llm_gateway_base_url`:
-
-```python
-class LLMProvider(Protocol):
-    async def complete(
-        self,
-        system_prompt: str,
-        user_message: str,
-        model: str | None = None
-    ) -> str: ...
-```
-
-Construction pattern (inject a gateway-configured client built by `build_gateway_client`):
-```python
-provider = OpenAICompatProvider(
-    default_model=settings.default_llm_model,
-    timeout_seconds=settings.llm_timeout_seconds,
-    client=build_gateway_client(settings, timeout_seconds=settings.llm_timeout_seconds),
-)
-```
-
-### Module Structure (backend)
-Each module in `src/retriever/modules/` is self-contained:
-```
-module_name/
-├── __init__.py
-├── routes.py       # FastAPI routes
-├── services.py     # Business logic
-├── schemas.py      # Pydantic models (request/response)
-└── repos.py        # Data access via SQLAlchemy async session
-```
-
-### Configuration
-Use `pydantic-settings` for all configuration. Environment variables override defaults. Computed fields derive values from primitives (e.g., `llm_gateway_base_url` from account/gateway IDs or `LLM_GATEWAY_URL`).
+See `docs/architecture.md` for key design patterns (LLM provider abstraction, module structure, configuration).
 
 ## Documentation Index
 

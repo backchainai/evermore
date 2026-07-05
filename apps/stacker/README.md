@@ -6,7 +6,7 @@ Unified portal frontend for shelter management tools. Built with SvelteKit, it h
 - **Auth:** Supabase Auth (SSR via `@supabase/ssr`)
 - **Deploy:** Cloudflare Pages
 
-Stacker is one of the four [Evermore](../platform) repos. See `CLAUDE.md` for architecture and development guidance.
+Stacker is the portal module in the Evermore monorepo. See `CLAUDE.md` for architecture and development guidance.
 
 ## Development
 
@@ -20,10 +20,10 @@ npm run test:e2e # Playwright E2E tests (requires build first)
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+See the root [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
 ## License
 
-Apache License 2.0 (Apache-2.0). See [LICENSE](LICENSE) for the full text and [NOTICE](NOTICE) for attribution.
+Apache License 2.0 (Apache-2.0). See the root [LICENSE](../../LICENSE) for the full text.
 
 Copyright (C) 2026 Backchain LLC

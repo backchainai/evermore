@@ -13,6 +13,8 @@ dependencies:
 ---
 # Development Standards
 
+> Historical design document, predates the monorepo consolidation.
+
 Standards for petdata development.
 
 ## Git Workflow: GitHub Flow

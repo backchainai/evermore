@@ -43,65 +43,11 @@ chore: update dependencies
 
 ## Code Quality
 
-### Required Checks (CI enforced)
-
-All commands run from the service root `services/retriever` using `uv run`:
-
-```bash
-# Linting
-uv run ruff check src/ tests/ --fix
-uv run ruff format src/ tests/
-
-# Type checking (strict mode — use python -m mypy, NOT uv run mypy)
-uv run python -m mypy src/ --strict
-
-# Tests with coverage
-uv run python -m pytest tests/ --cov=src/retriever --cov-report=term-missing --cov-fail-under=80
-
-# Security audit
-uv run pip-audit
-```
-
-### All Checks (run before PR)
-
-Run from the service root `services/retriever`:
-
-```bash
-uv run ruff check src/ tests/ --fix && \
-uv run ruff format src/ tests/ && \
-uv run python -m mypy src/ --strict && \
-uv run python -m pytest tests/ --cov=src/retriever --cov-fail-under=80
-```
+See `../CLAUDE.md` Commands section for the required and all-checks commands (lint, typecheck, test, security audit).
 
 ## Local Development
 
-The dev workflow runs infrastructure in Docker + Supabase CLI, with backend and frontend running natively for fast live reload.
-
-```bash
-# 1. Start Supabase (auth, realtime, storage)
-supabase start
-
-# 2. Start infrastructure (pgvector postgres + jaeger)
-docker compose up -d
-
-# 3. Backend (separate terminal)
-cd services/retriever && uv sync --dev
-uv run alembic upgrade head          # first time / after migrations
-uv run uvicorn retriever.main:app --reload --port 8000
-
-# 4. Frontend (separate terminal)
-cd frontend && npm install
-npm run dev                          # live reload on :5173
-
-# 5. Stop everything
-docker compose down && supabase stop
-```
-
-**Why this approach:**
-- Backend and frontend run natively for fast hot-reload
-- Docker Compose provides pgvector Postgres and Jaeger for local tracing
-- Supabase CLI provides local Auth, Realtime, and Storage
-- No container rebuilds during development
+See `../CLAUDE.md` Local Development section for the current setup (Supabase + Docker + backend on port 8001; frontend lives in `apps/stacker`).
 
 ## Type Hints
 

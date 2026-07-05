@@ -90,76 +90,7 @@ Separate backend and frontend deployables with managed infrastructure. See [ADR-
 
 ## Project Structure
 
-### Monorepo Layout
-
-```
-retriever/
-├── .github/workflows/      # CI/CD: ci.yml, claude.yml, release.yml
-├── backend/                 # Python backend
-│   ├── src/retriever/       # Application source
-│   ├── tests/               # Backend tests
-│   └── pyproject.toml       # uv-managed dependencies
-├── frontend/                # SvelteKit frontend
-│   ├── src/                 # SvelteKit source
-│   └── package.json
-└── docs/                    # Architecture docs and ADRs
-```
-
-### Backend Structure (`backend/src/retriever/`)
-
-```
-retriever/
-├── config.py               # pydantic-settings; llm_gateway_base_url computed field
-├── main.py                 # FastAPI app, /health (DB+pgvector checks), CORS
-├── models/                 # SQLAlchemy 2.0 async: User, Message, Document
-├── infrastructure/
-│   ├── cache/              # PgSemanticCache (pgvector cosine similarity)
-│   ├── database/           # async session factory (asyncpg)
-│   ├── embeddings/         # OpenAIEmbeddingProvider (via AI Gateway)
-│   ├── llm/                # OpenAICompatProvider + FallbackLLMProvider (via LLM gateway)
-│   ├── observability/      # structlog JSON + OTel (GCP/OTLP/console) + Langfuse + RequestIdMiddleware
-│   └── vectordb/           # PgVectorStore (HNSW cosine + GIN full-text)
-└── modules/
-    ├── auth/               # JwksValidator, require_auth, require_admin
-    ├── documents/          # upload/list/delete with /api/v1/documents endpoints
-    ├── messages/           # conversation history with /api/v1/history endpoints
-    └── rag/                # chunker, loader, prompts, hybrid retriever, RAG service, /api/v1/ask
-```
-
-### Frontend Structure (`frontend/src/`)
-
-```
-src/
-├── hooks.server.ts                 # Supabase SSR auth + route guards
-├── app.d.ts                        # App.Locals, App.PageData type augmentation
-├── app.css                         # Tailwind v4 + Skeleton cerberus theme
-├── lib/
-│   ├── supabase.ts                 # createBrowserClient factory
-│   ├── server/supabase.ts          # createSupabaseServerClient factory
-│   ├── api/
-│   │   ├── types.ts                # TypeScript interfaces (mirrors backend Pydantic)
-│   │   └── client.ts               # RetrieverApi class (typed HTTP client)
-│   └── components/
-│       ├── ChatMessage.svelte      # Message bubble (user/assistant)
-│       ├── ChatInput.svelte        # Textarea + send (Enter/Shift+Enter)
-│       ├── ConfidenceBadge.svelte  # RAG confidence pill (high/medium/low)
-│       ├── SourceCitation.svelte   # Expandable source chunks
-│       ├── ClearHistoryButton.svelte # Clear with confirmation
-│       ├── DocumentList.svelte     # Table (desktop) / cards (mobile)
-│       ├── DocumentUpload.svelte   # File input + validation
-│       └── ErrorAlert.svelte       # Reusable error display
-├── routes/
-│   ├── +layout.svelte              # AppBar, nav, auth state listener
-│   ├── +layout.server.ts           # Pass session/user/cookies to client
-│   ├── +layout.ts                  # Browser/server Supabase client
-│   ├── +page.svelte                # Landing (redirect to /chat if authed)
-│   ├── +error.svelte               # Global error page
-│   ├── login/                      # Email+password form action
-│   ├── logout/                     # POST → signOut + redirect
-│   ├── chat/                       # RAG Q&A + history + citations
-│   └── admin/                      # Document upload/list/delete (admin only)
-└── tests/e2e/                      # Playwright tests
-```
+See `../CLAUDE.md` Project Structure section for the current repository and backend layout. The frontend is owned by `apps/stacker` (see that app's own docs); it is no longer part of this service.
 
 ## Key Design Patterns
 
