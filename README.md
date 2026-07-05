@@ -28,19 +28,22 @@ make dev          # pgvector + retriever, then stacker in the foreground
 Then open http://localhost:5173/login. Prerequisites, full topology, and
 troubleshooting live in [`docs/local-development.md`](docs/local-development.md).
 
-## Structure (target monorepo)
+## Structure
+
+This is the module inventory; per-module build and test commands live in each module's own `CLAUDE.md`, not here.
 
 ```
 apps/stacker         SvelteKit portal: SSO, subscription gating, module registry
 services/petdata     Animal data: connectors, canonical Animal Record, Package builder
-services/biowriter   Generation: kennel cards, social posts, the lint/score editor (planned)
+services/biowriter   Generation: kennel cards, social posts, the lint/score editor (not yet scaffolded)
 services/retriever   RAG: shelter-ops chat, and the research-corpus index for citations
-packages/            Shared contracts (schema), auth, and UI (planned)
-docs/                Vision, ADRs, plans, and the research corpus
-infra/               One-command local stack (planned)
+packages/            Shared packages: auth, schema, design-system (built; see each package's own README)
+docs/                Architecture, ADRs, and the research corpus
+tools/               Local dev tooling (the offline LLM stub)
+scripts/             Repo-level scripts (e.g. the doc link checker)
 ```
 
-> This is the target layout, not the current one. Built today: `apps/stacker`, `services/petdata`, `services/retriever`, and `docs/`. Not yet built: `services/biowriter` holds design and docs only (no service code), and `packages/` and `infra/` do not exist yet. The repository is consolidating from four separate repositories into a single monorepo; see the restructure plan for current state and sequencing.
+`services/biowriter` holds design and docs only, no service code yet. `infra/` does not exist as a directory; the local stack is Makefile- and Docker-Compose-driven today (see `docs/local-development.md`).
 
 ## License
 

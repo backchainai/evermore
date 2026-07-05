@@ -60,7 +60,7 @@ create policy "users_read_own_subs"
 
 ## Entitlement check — stacker (UI gate)
 
-`stacker/src/routes/app/+layout.server.ts` queries the table on every authenticated portal request:
+`apps/stacker/src/routes/app/+layout.server.ts` queries the table on every authenticated portal request:
 
 ```typescript
 const { data, error } = await locals.supabase
@@ -119,7 +119,7 @@ Stripe is the billing source of truth. A webhook in stacker upserts the subscrip
 
 ### Endpoint
 
-`stacker/src/routes/api/webhooks/stripe/+server.ts` — public, authenticated by Stripe signature header.
+`apps/stacker/src/routes/api/webhooks/stripe/+server.ts`: public, authenticated by Stripe signature header.
 
 ### Handled events
 

@@ -18,8 +18,7 @@ Canonical reference for how the Evermore subscription portal is structured. Read
                    │ Authorization: Bearer     │ Authorization: Bearer
         ┌──────────▼──────────┐     ┌──────────▼──────────┐
         │  retriever          │     │  petdata            │
-        │  (FastAPI @ Cloud   │     │  (FastAPI @ Cloud   │
-        │   Run)              │     │   Run)              │
+        │  (FastAPI)          │     │  (FastAPI)          │
         │  ─ JWKS validation  │     │  ─ JWKS validation  │
         │  ─ Subscription gate│     │  ─ Subscription gate│
         │  ─ /openapi /health │     │  ─ /openapi /health │
@@ -36,6 +35,8 @@ Canonical reference for how the Evermore subscription portal is structured. Read
                        │    · pgvector       │
                        └─────────────────────┘
 ```
+
+Deploy targets are governed by ADR `0029-all-cloudflare-hosting.md`, not restated here: Cloudflare Pages for `stacker`, Cloudflare Containers behind a Worker router for backend services.
 
 ## Module backend contract
 
@@ -58,10 +59,10 @@ Conventions:
 
 ## Module shim contract (in stacker)
 
-Each module contributes a frontend shim under `stacker/src/lib/modules/{id}/`:
+Each module contributes a frontend shim under `apps/stacker/src/lib/modules/{id}/`:
 
 ```
-stacker/src/lib/modules/{id}/
+apps/stacker/src/lib/modules/{id}/
 ├── index.ts         # exports ModuleDefinition (id, name, basePath, navItems, icon)
 ├── api/
 │   ├── client.ts    # extends BaseApiClient (src/lib/api/base-client.ts)
@@ -71,8 +72,8 @@ stacker/src/lib/modules/{id}/
 
 Plus:
 
-- A SvelteKit route at `stacker/src/routes/app/{id}/` with subroutes per nav item
-- Registration in `stacker/src/lib/portal/config.ts` `MODULE_REGISTRY`
+- A SvelteKit route at `apps/stacker/src/routes/app/{id}/` with subroutes per nav item
+- Registration in `apps/stacker/src/lib/portal/config.ts` `MODULE_REGISTRY`
 - Env var `PUBLIC_{ID_UPPER}_API_URL` pointing at the backend
 
 ## Cross-cutting concerns
@@ -89,11 +90,11 @@ Plus:
 
 | Type of code/doc | Repo |
 |---|---|
-| Portal UI shell, routing, theme | `stacker/src/lib/portal/` |
-| Module UI shim (per module) | `stacker/src/lib/modules/{id}/` |
-| Module backend implementation | `{module}/` |
-| Cross-cutting contracts | `platform/docs/` |
-| Per-module conventions | `{module}/CLAUDE.md` |
+| Portal UI shell, routing, theme | `apps/stacker/src/lib/portal/` |
+| Module UI shim (per module) | `apps/stacker/src/lib/modules/{id}/` |
+| Module backend implementation | `services/{module}/` (the portal itself is `apps/stacker/`) |
+| Cross-cutting contracts | `docs/` (the retired `platform` repo's docs folded in here) |
+| Per-module conventions | each module's own `CLAUDE.md` |
 | Architecture decisions (ADRs) | `docs/adr/` (single consolidated, chronologically numbered sequence) |
 
 ## Adding a new module

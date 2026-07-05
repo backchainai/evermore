@@ -13,6 +13,7 @@
 - [ ] `services/petdata`
 - [ ] `services/retriever`
 - [ ] `apps/stacker`
+- [ ] `packages/` (design-system, auth, schema)
 - [ ] `docs/` or repo-level (CI, templates, ADRs)
 
 ## Checklist

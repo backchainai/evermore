@@ -24,6 +24,8 @@ The four formerly-separate module repos are now tracked directly in this one git
 
 `platform` is retired; its docs (`architecture.md`, `auth-flow.md`, `subscriptions.md`, `module-template.md`) folded into `docs/`.
 
+For the current top-level directory inventory (including `packages/`, `docs/`, `tools/`, `scripts/`), see README.md's Structure section; this table is the Phase 3 rename history, not a general inventory.
+
 Pending follow-ups from the plan: tech-stack conformance, which includes scaffolding `services/biowriter` greenfield to the standard (Phase 5), then building the wedge on it (Phase 6).
 
 ## The data spine (settled vocabulary, do not overload)
