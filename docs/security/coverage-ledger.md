@@ -336,3 +336,152 @@ Class counts: security-critical 20, boundary-adjacent 72, config-IaC 20, inert 3
 | `packages/schema/tests/test_animal.py` | boundary-adjacent | trust-review | clean |
 | `packages/schema/tests/test_spine.py` | boundary-adjacent | trust-review | clean |
 | `packages/schema/uv.lock` | config-IaC | full-read | clean |
+
+## retriever (issue #226 slice)
+
+Ticket estimated 160 tracked files under `services/retriever`; the live count at execution time (base `e9a2768`, 2026-07-05) is **138**, a delta of -22. The gap is pre-existing drift between the ticket's estimate and the repo (module consolidation, generated-file churn since the estimate was written), not a sign of missing files: the slice below is the full, current `git ls-files services/retriever` output, one row per file, no omissions.
+
+**Secret-scan disposition:** a pattern sweep for API-key shapes (`sk-...`, `AKIA...`, `AIza...`), PEM private-key headers, and inline `password=`/`secret=` literals across every file in this slice (source, config, docs, tests) found zero matches. `.env.example` contains placeholder values only; every live secret field in `config.py` is `SecretStr`; `.env` itself is gitignored and not part of this slice.
+
+| File | Class | Depth | Verdict |
+|---|---|---|---|
+| `services/retriever/.dockerignore` | config-IaC | full-read | clean -- full-read: excludes .env, __pycache__, .venv from build context |
+| `services/retriever/.env.example` | config-IaC | full-read | clean -- full-read: placeholders only, no live secrets |
+| `services/retriever/alembic.ini` | config-IaC | full-read | clean -- full-read: migration runner config, DB URL sourced from env at runtime not inlined |
+| `services/retriever/alembic/env.py` | config-IaC | full-read | clean -- full-read: migration environment bootstrap, reads DATABASE_URL from settings, no inlined credentials |
+| `services/retriever/alembic/README` | inert | secret-scan + claim-check | clean -- secret-scan clean; prose, no code claims to verify |
+| `services/retriever/alembic/script.py.mako` | config-IaC | full-read | clean -- full-read: migration template, no logic |
+| `services/retriever/alembic/versions/001_initial_schema.py` | security-critical | line-by-line | See #230 (data-integrity handoff, #230) -- ENABLE ROW LEVEL SECURITY present but no CREATE POLICY/FORCE ROW LEVEL SECURITY in-repo; tenant scoping is app-layer only |
+| `services/retriever/alembic/versions/002_vector_storage.py` | security-critical | line-by-line | See #230 (data-integrity handoff, #230) -- RLS enabled on document_chunks, no in-repo policy |
+| `services/retriever/alembic/versions/003_semantic_cache.py` | security-critical | line-by-line | See #230 (data-integrity handoff, #230) -- RLS enabled on semantic_cache, no in-repo policy |
+| `services/retriever/alembic/versions/004_updated_at_trigger.py` | config-IaC | full-read | clean -- full-read: schema-only trigger migration, no RLS/policy content |
+| `services/retriever/alembic/versions/005_document_columns.py` | config-IaC | full-read | clean -- full-read: schema-only column-add migration, no RLS/policy content |
+| `services/retriever/assets/logo.png` | inert | secret-scan + claim-check | clean -- binary asset, secret-scan clean |
+| `services/retriever/CHANGELOG.md` | inert | secret-scan + claim-check | clean -- secret-scan clean; claims checked against current code/config, no drift found |
+| `services/retriever/CLAUDE.md` | inert | secret-scan + claim-check | clean -- secret-scan clean; claims checked against current code/config, no drift found |
+| `services/retriever/docker-compose.test.yml` | config-IaC | full-read | clean -- full-read: test-only overrides, no secrets |
+| `services/retriever/docker-compose.yml` | config-IaC | full-read | clean -- full-read: local pgvector+jaeger only, no prod credentials |
+| `services/retriever/Dockerfile` | config-IaC | full-read | clean -- full-read: multi-stage, non-root user, path-scoped COPY, no baked-in secrets |
+| `services/retriever/docs/architecture.md` | inert | secret-scan + claim-check | clean -- secret-scan clean; claims checked against current code/config, no drift found |
+| `services/retriever/docs/development-standards.md` | inert | secret-scan + claim-check | clean -- secret-scan clean; claims checked against current code/config, no drift found |
+| `services/retriever/docs/guides/adding-documents.md` | inert | secret-scan + claim-check | clean -- secret-scan clean; claims checked against current code/config, no drift found |
+| `services/retriever/docs/guides/cloudflare-containers.md` | inert | secret-scan + claim-check | clean -- secret-scan clean; claims checked against current code/config, no drift found |
+| `services/retriever/docs/guides/deployment.md` | inert | secret-scan + claim-check | clean -- secret-scan clean; claims checked against current code/config, no drift found |
+| `services/retriever/entrypoint.sh` | config-IaC | full-read | clean -- full-read: no hardcoded credentials, execs uvicorn directly |
+| `services/retriever/openapi.json` | config-IaC | full-read | clean -- full-read: generated OpenAPI spec, no secrets, matches live routes |
+| `services/retriever/pyproject.toml` | config-IaC | full-read | clean -- full-read: dependency + tool config, no secrets |
+| `services/retriever/README.md` | inert | secret-scan + claim-check | clean -- secret-scan clean; claims checked against current code/config, no drift found |
+| `services/retriever/scripts/export_openapi.py` | config-IaC | full-read | clean -- full-read: generates openapi.json from the app instance, no side effects beyond file write |
+| `services/retriever/src/retriever/__init__.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; empty or re-export-only package init |
+| `services/retriever/src/retriever/config.py` | security-critical | line-by-line | #254 -- database_require_ssl defaults False with no deploy-surface override in-repo; also the source of the single llm_gateway_token, see #228 (LLM-abuse handoff, #228) |
+| `services/retriever/src/retriever/infrastructure/__init__.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; empty or re-export-only package init |
+| `services/retriever/src/retriever/infrastructure/cache/__init__.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; empty or re-export-only package init |
+| `services/retriever/src/retriever/infrastructure/cache/pg_cache.py` | security-critical | line-by-line | clean -- semantic cache keyed by embedding + tenant_id; parameterized SQLAlchemy; cache-hit re-serving without re-screening is tracked as part of #250's path map, not a separate finding on this file |
+| `services/retriever/src/retriever/infrastructure/cache/protocol.py` | security-critical | line-by-line | clean -- Protocol interface definition only, no logic |
+| `services/retriever/src/retriever/infrastructure/database/__init__.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; empty or re-export-only package init |
+| `services/retriever/src/retriever/infrastructure/database/session.py` | security-critical | line-by-line | #254 -- require_ssl is threaded from settings.database_require_ssl, which defaults False |
+| `services/retriever/src/retriever/infrastructure/embeddings/__init__.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; empty or re-export-only package init |
+| `services/retriever/src/retriever/infrastructure/embeddings/exceptions.py` | security-critical | line-by-line | clean -- typed exception classes only, no logic |
+| `services/retriever/src/retriever/infrastructure/embeddings/openai.py` | security-critical | line-by-line | clean -- embedding client via injected gateway client, no hardcoded credentials |
+| `services/retriever/src/retriever/infrastructure/embeddings/protocol.py` | security-critical | line-by-line | clean -- Protocol interface definition only, no logic |
+| `services/retriever/src/retriever/infrastructure/llm/__init__.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; empty or re-export-only package init |
+| `services/retriever/src/retriever/infrastructure/llm/exceptions.py` | security-critical | line-by-line | clean -- typed exception classes only, no logic |
+| `services/retriever/src/retriever/infrastructure/llm/fallback.py` | security-critical | line-by-line | clean -- circuit-breaker/retry wrapper around the primary provider, no auth or data-handling logic |
+| `services/retriever/src/retriever/infrastructure/llm/gateway_client.py` | security-critical | line-by-line | See #228 (LLM-abuse handoff, #228) -- single static gateway bearer token, no per-scope rotation |
+| `services/retriever/src/retriever/infrastructure/llm/openai_compat.py` | security-critical | line-by-line | clean -- OpenAI-compat chat client using the injected gateway client; no hardcoded credentials |
+| `services/retriever/src/retriever/infrastructure/llm/protocol.py` | security-critical | line-by-line | clean -- Protocol interface definition only, no logic |
+| `services/retriever/src/retriever/infrastructure/observability/__init__.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; empty or re-export-only package init |
+| `services/retriever/src/retriever/infrastructure/observability/langfuse.py` | security-critical | line-by-line | clean -- @observe() no-ops without credentials configured; question/answer tracing is opt-in and matches ADR 0026 |
+| `services/retriever/src/retriever/infrastructure/observability/logging.py` | security-critical | line-by-line | clean -- structlog JSON configuration, no sensitive-field logging found |
+| `services/retriever/src/retriever/infrastructure/observability/middleware.py` | security-critical | line-by-line | clean -- ExceptionHandlingMiddleware returns a generic 500 body ("Internal server error") with no internal detail leaked; RequestIdMiddleware only echoes/generates a UUID |
+| `services/retriever/src/retriever/infrastructure/observability/tracing.py` | security-critical | line-by-line | clean -- OTel exporter selection (GCP/OTLP/console/no-op); no secrets in span attributes found |
+| `services/retriever/src/retriever/infrastructure/safety/__init__.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; empty or re-export-only package init |
+| `services/retriever/src/retriever/infrastructure/safety/confidence.py` | security-critical | line-by-line | clean -- advisory scorer only, gates caching not delivery, no security-relevant logic |
+| `services/retriever/src/retriever/infrastructure/safety/detector.py` | security-critical | line-by-line | clean as far as it goes -- regex-based injection patterns are real but scoped to the question only; the coverage gap is tracked as #250 on service.py/prompts.py, not a defect in this file's own logic |
+| `services/retriever/src/retriever/infrastructure/safety/hallucination.py` | security-critical | line-by-line | clean -- keyword-overlap heuristic is a known-weak but intentional MVP grounding check; no unguarded exception path found that would crash the request |
+| `services/retriever/src/retriever/infrastructure/safety/moderation.py` | security-critical | line-by-line | clean -- OpenAIModerator fails open on timeout/400/exception by explicit design (documented tradeoff, avoids blocking legitimate requests); GuardrailsModerator delegation to gateway-side enforcement is a deliberate no-op, not a silent bug |
+| `services/retriever/src/retriever/infrastructure/safety/schemas.py` | security-critical | line-by-line | #255 -- SafetyViolationType values (prompt_injection/moderation_flagged/hallucination) surface in blocked_reason, a 3-way oracle for evasion tuning |
+| `services/retriever/src/retriever/infrastructure/safety/service.py` | security-critical | line-by-line | #251 -- check_output() (post-generation moderation) is fully implemented but has no caller in the live ask() pipeline |
+| `services/retriever/src/retriever/infrastructure/storage/__init__.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; empty or re-export-only package init |
+| `services/retriever/src/retriever/infrastructure/storage/exceptions.py` | security-critical | line-by-line | clean -- typed exception classes only, no logic |
+| `services/retriever/src/retriever/infrastructure/storage/memory.py` | security-critical | line-by-line | clean -- in-memory test double for the storage protocol, not used in production wiring |
+| `services/retriever/src/retriever/infrastructure/storage/protocol.py` | security-critical | line-by-line | clean -- Protocol interface definition only, no logic |
+| `services/retriever/src/retriever/infrastructure/storage/r2.py` | security-critical | line-by-line | clean -- dead code, not wired into any live handler (config fields exist but no request-driven call path reaches this module); no live egress |
+| `services/retriever/src/retriever/infrastructure/vectordb/__init__.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; empty or re-export-only package init |
+| `services/retriever/src/retriever/infrastructure/vectordb/pgvector_store.py` | security-critical | line-by-line | See #230 (data-integrity handoff, #230) -- tenant scoping via app-layer WHERE tenant_id= filter only; parameterized SQLAlchemy, no SQLi surface |
+| `services/retriever/src/retriever/infrastructure/vectordb/protocol.py` | security-critical | line-by-line | clean -- Protocol interface definition only, no logic |
+| `services/retriever/src/retriever/main.py` | security-critical | line-by-line | See #228 (LLM-abuse handoff, #228) -- no slowapi/rate-limit middleware wired; any authenticated+subscribed user drives unbounded gateway calls |
+| `services/retriever/src/retriever/models/__init__.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; empty or re-export-only package init |
+| `services/retriever/src/retriever/models/base.py` | security-critical | line-by-line | clean -- declarative base only, no logic |
+| `services/retriever/src/retriever/models/document.py` | security-critical | line-by-line | clean -- SQLAlchemy model, tenant_id defaults to DEFAULT_TENANT_ID (tracked under #230 on models/user.py) |
+| `services/retriever/src/retriever/models/message.py` | security-critical | line-by-line | clean -- SQLAlchemy model, tenant_id defaults to DEFAULT_TENANT_ID (tracked under #230 on models/user.py) |
+| `services/retriever/src/retriever/models/user.py` | security-critical | line-by-line | See #230 (data-integrity handoff, #230) -- DEFAULT_TENANT_ID hardcoded single-tenant UUID; no DB-level tenant backstop |
+| `services/retriever/src/retriever/modules/__init__.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; empty or re-export-only package init |
+| `services/retriever/src/retriever/modules/auth/__init__.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; empty or re-export-only package init |
+| `services/retriever/src/retriever/modules/auth/dependencies.py` | security-critical | line-by-line | clean -- wires shared evermore_auth JwksValidator (RS256/ES256 allowlist, no alg confusion); require_auth/require_admin/require_subscription correctly gate every route |
+| `services/retriever/src/retriever/modules/documents/__init__.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; empty or re-export-only package init |
+| `services/retriever/src/retriever/modules/documents/exceptions.py` | security-critical | line-by-line | clean -- typed exception classes only, no logic |
+| `services/retriever/src/retriever/modules/documents/repos.py` | security-critical | line-by-line | clean -- parameterized SQLAlchemy queries, tenant-scoped |
+| `services/retriever/src/retriever/modules/documents/routes.py` | security-critical | line-by-line | #252 -- upload_document includes raw exception text in HTTPException detail (file-read failures and DocumentIndexingError both interpolate str(exc)) |
+| `services/retriever/src/retriever/modules/documents/schemas.py` | security-critical | line-by-line | clean -- Pydantic schemas only, no logic |
+| `services/retriever/src/retriever/modules/documents/services.py` | security-critical | line-by-line | clean -- orchestrates upload/index/delete; propagates rag_service errors, tracked under #252 at the route layer |
+| `services/retriever/src/retriever/modules/messages/__init__.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; empty or re-export-only package init |
+| `services/retriever/src/retriever/modules/messages/repos.py` | security-critical | line-by-line | #256 -- persisted conversation turns replay into every later model call with no re-screening |
+| `services/retriever/src/retriever/modules/messages/routes.py` | security-critical | line-by-line | clean -- require_auth on both routes; DEFAULT_TENANT_ID usage tracked under #230 |
+| `services/retriever/src/retriever/modules/messages/schemas.py` | security-critical | line-by-line | clean -- Pydantic schemas only, no logic |
+| `services/retriever/src/retriever/modules/rag/__init__.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; empty or re-export-only package init |
+| `services/retriever/src/retriever/modules/rag/dependencies.py` | security-critical | line-by-line | clean -- FastAPI dependency wiring only; DEFAULT_TENANT_ID usage tracked under #230 (models/user.py) |
+| `services/retriever/src/retriever/modules/rag/docling_processor.py` | security-critical | line-by-line | #253 -- DoclingConfig.max_pages is defined and threaded through config but never read/enforced in process(); only the 20MB upload size cap bounds a document |
+| `services/retriever/src/retriever/modules/rag/exceptions.py` | security-critical | line-by-line | clean -- typed exception classes only, no logic |
+| `services/retriever/src/retriever/modules/rag/loader.py` | security-critical | line-by-line | clean -- file validation and format-aware size limits; no injection or path-traversal surface found |
+| `services/retriever/src/retriever/modules/rag/prompts.py` | security-critical | line-by-line | #250 -- build_rag_prompt embeds retrieved chunk content verbatim into the system-role prompt with no injection/moderation screening |
+| `services/retriever/src/retriever/modules/rag/retriever.py` | security-critical | line-by-line | clean -- HybridRetriever composes semantic+keyword search scoped by tenant_id param; no unparameterized SQL |
+| `services/retriever/src/retriever/modules/rag/routes.py` | security-critical | line-by-line | clean -- require_auth on /ask and /history; blocked_reason exposure tracked as #255 on service.py, not a separate issue here |
+| `services/retriever/src/retriever/modules/rag/schemas.py` | security-critical | line-by-line | clean -- Pydantic schemas only, no logic |
+| `services/retriever/src/retriever/modules/rag/service.py` | security-critical | line-by-line | #250, #255, #256 -- unscreened chunks reach system prompt; blocked_reason leaks violation category; unscreened history replay |
+| `services/retriever/tests/__init__.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/conftest.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/integration/__init__.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/integration/conftest.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/integration/fixtures/test-doc.md` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/integration/test_auth_flow.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/integration/test_document_lifecycle.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/integration/test_health.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/integration/test_input_validation.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/integration/test_rag_and_history.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/integration/test_rate_limit_and_concurrency.py` | inert | secret-scan + claim-check | See #228 (LLM-abuse handoff, #228) -- docstring documents intended rate-limit behavior; no app-level limiter exists to test against (test-only artifact, no risk itself) |
+| `services/retriever/tests/test_auth.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_cache.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_config.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_docling_processor.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_document_routes.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_document_service.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_embeddings.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_error_handling.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_gateway_client.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_health.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_hybrid_retriever.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_llm_fallback.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_llm_provider.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_loader.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_message_repos.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_message_routes.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_models.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_observability.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_openapi_spec.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_prompts.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_rag_dependencies.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_rag_routes.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_rag_service.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_safety.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_storage.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_subscription_guard.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/tests/test_vectordb.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; test-only artifact, no production risk |
+| `services/retriever/uv.lock` | config-IaC | full-read | clean -- full-read: lockfile, no secrets |
+| `services/retriever/worker/index.ts` | config-IaC | full-read | clean -- full-read: pure reverse-proxy Worker, no secret material or logic beyond forwarding |
+| `services/retriever/worker/package-lock.json` | config-IaC | full-read | clean -- full-read: lockfile, no scripts of concern |
+| `services/retriever/worker/package.json` | config-IaC | full-read | clean -- full-read: dependency manifest, no scripts of concern |
+| `services/retriever/worker/tsconfig.json` | config-IaC | full-read | clean -- full-read: compiler config only |
+| `services/retriever/wrangler.jsonc` | config-IaC | full-read | clean -- full-read: Cloudflare Worker config; secrets via `wrangler secret put`, none inlined |
+
+138 files in the retriever slice as of this PR tree (base `e9a2768`); ticket estimated 160, delta -22, per the plan's live-count note. Every row above carries a definitive verdict, none left as `pending audit`: the 7 findings owned by #226 (#250, #251, #252, #253, #254, #255, #256) are filed as GitHub issues (`security` label) and cited on their evidence rows (detail in the audit comment); the RLS/tenant-isolation gap is handed off to #230, and the rate-limit (denial-of-wallet) and gateway-token blast-radius gaps to #228, per the plan and cited on their evidence rows; every remaining row is `clean` with a file-specific rationale.
