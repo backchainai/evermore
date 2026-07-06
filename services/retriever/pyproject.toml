@@ -31,7 +31,7 @@ dependencies = [
     "tenacity>=9.0",
     "aiobreaker>=1.2",
     "python-multipart>=0.0.18",
-    "docling>=2.0",
+    "docling>=2.94.0",
     "docling-core[chunking-openai]>=2.0",
     # Direct floor to force the transitive transformers pin above the RCE in
     # CVE-2026-4372 (Dependabot alert #95). transformers arrives via
