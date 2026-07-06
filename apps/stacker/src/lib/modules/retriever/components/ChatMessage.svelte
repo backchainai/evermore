@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { marked } from 'marked';
+	import { renderMarkdown } from '$lib/modules/retriever/renderMarkdown';
 
 	interface Props {
 		role: 'user' | 'assistant';
@@ -15,9 +15,7 @@
 		role === 'user' ? 'preset-filled-primary-500' : 'preset-filled-surface-200-800'
 	);
 	const timeStr = $derived(createdAt ? new Date(createdAt).toLocaleTimeString() : '');
-	const renderedContent = $derived(
-		role === 'assistant' ? marked.parse(content, { async: false }) as string : ''
-	);
+	const renderedContent = $derived(role === 'assistant' ? renderMarkdown(content) : '');
 </script>
 
 <div class="flex gap-3 {alignment}">

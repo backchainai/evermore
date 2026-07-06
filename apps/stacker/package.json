@@ -21,6 +21,7 @@
     "@sveltejs/kit": "^2.16.0",
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
     "@tailwindcss/vite": "^4.0.0",
+    "jsdom": "^29.1.1",
     "openapi-typescript": "^7.13.0",
     "svelte": "^5.0.0",
     "svelte-check": "^4.0.0",
@@ -39,6 +40,7 @@
     "@skeletonlabs/skeleton-svelte": "^1.0.0",
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.0.0",
+    "dompurify": "^3.4.11",
     "marked": "^17.0.4",
     "stripe": "^18.5.0"
   }
