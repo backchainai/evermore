@@ -29,6 +29,7 @@ from retriever.infrastructure.vectordb.protocol import (
 from retriever.modules.rag.prompts import FALLBACK_SYSTEM_PROMPT, build_rag_prompt
 from retriever.modules.rag.retriever import HybridRetriever
 from retriever.modules.rag.schemas import (
+    Chunk,
     ChunkWithScore,
     DocumentProcessor,
     IndexingResult,
@@ -226,6 +227,35 @@ class RAGService:
         else:
             results = []
 
+        # 4b. Screen retrieved chunk content before it reaches the
+        #     SYSTEM-role prompt. Retrieved content is untrusted (it may
+        #     have been injected into a shelter document by an attacker),
+        #     so it gets the same screening as end-user input before it
+        #     can influence the model.
+        if self._safety is not None and results:
+            screened_results: list[SearchResult] = []
+            dropped = 0
+            for result_item in results:
+                chunk_check = await self._safety.check_input(result_item["content"])
+                if chunk_check.is_safe:
+                    screened_results.append(result_item)
+                else:
+                    dropped += 1
+                    logger.warning(
+                        "rag_chunk_screened_out",
+                        source=result_item["source"],
+                        violation_type=chunk_check.violation_type.value,
+                        stage="query",
+                    )
+            if dropped:
+                logger.warning(
+                    "rag_chunks_screened_out",
+                    dropped_count=dropped,
+                    total_count=len(results),
+                    stage="query",
+                )
+            results = screened_results
+
         # If no chunks found, use fallback prompt
         if not results:
             logger.info("rag_no_documents", question_length=len(question))
@@ -392,6 +422,42 @@ class RAGService:
                     success=True,
                     parsed_title=result.document.title,
                 )
+
+            # 1b. Screen chunk content before it is embedded and stored.
+            #     Document content is untrusted (it may contain injected
+            #     instructions), so it gets the same screening as
+            #     query-time retrieved chunks before it enters the index.
+            if self._safety is not None:
+                screened_chunks: list[Chunk] = []
+                dropped = 0
+                for chunk in chunks:
+                    check_result = await self._safety.check_input(chunk.content)
+                    if check_result.is_safe:
+                        screened_chunks.append(chunk)
+                    else:
+                        dropped += 1
+                        logger.warning(
+                            "rag_chunk_screened_out",
+                            source=source,
+                            violation_type=check_result.violation_type.value,
+                            stage="ingest",
+                        )
+                if dropped:
+                    logger.warning(
+                        "rag_chunks_screened_out",
+                        dropped_count=dropped,
+                        total_count=len(chunks),
+                        stage="ingest",
+                    )
+                chunks = screened_chunks
+
+                if not chunks:
+                    return IndexingResult(
+                        source=source,
+                        chunks_created=0,
+                        success=True,
+                        parsed_title=result.document.title,
+                    )
 
             # 2. Embed batch
             logger.debug(
