@@ -22,6 +22,11 @@ _DEFAULT_ORIGINS = "http://localhost:5173,http://localhost:3000"
 # Resolved moderation-availability signal surfaced via /health and startup logs.
 ModerationStatus = Literal["gateway_guardrails", "openai_api", "disabled"]
 
+# Per-traffic-class gateway token scope. Narrows the blast radius of a
+# leaked token to one model traffic class (chat, embeddings, moderation)
+# instead of all gateway traffic authenticated by the shared token.
+GatewayScope = Literal["chat", "embeddings", "moderation"]
+
 
 def _parse_origins_str(raw: str) -> list[str]:
     """Parse an origins string into a list.
@@ -71,6 +76,13 @@ class Settings(BaseSettings):
     cloudflare_account_id: str = ""
     cloudflare_gateway_id: str = ""
     llm_gateway_token: SecretStr = SecretStr("")
+    # Optional per-service scoped tokens. When set, each narrows the blast
+    # radius of a leaked token to one traffic class instead of authenticating
+    # all gateway traffic; unset scoped fields fall back to the shared
+    # llm_gateway_token. See gateway_token_for().
+    llm_gateway_token_chat: SecretStr = SecretStr("")
+    llm_gateway_token_embeddings: SecretStr = SecretStr("")
+    llm_gateway_token_moderation: SecretStr = SecretStr("")
     # Gateway-specific auth header. Isolating the name here keeps the client
     # code generic: a different gateway sets this (or leaves the token empty to
     # use the standard Authorization header).
@@ -183,6 +195,34 @@ class Settings(BaseSettings):
         if self.moderation_backend == "guardrails":
             return "gateway_guardrails"
         return "openai_api"
+
+    def gateway_token_for(self, scope: GatewayScope | None) -> SecretStr:
+        """Resolve the gateway token to use for a given traffic-class scope.
+
+        Returns the scoped token (llm_gateway_token_chat / _embeddings /
+        _moderation) when ``scope`` is given and that scoped field's secret
+        value is non-empty; otherwise falls back to the shared
+        ``llm_gateway_token``. This lets one leaked scoped token be rotated
+        without affecting the other traffic classes, while an unconfigured
+        deployment keeps working on the single shared token.
+
+        Args:
+            scope: Traffic class needing a token ("chat", "embeddings",
+                "moderation"), or None to always use the shared token.
+
+        Returns:
+            The resolved SecretStr token to send on the gateway auth header.
+        """
+        if scope is not None:
+            scoped_tokens: dict[GatewayScope, SecretStr] = {
+                "chat": self.llm_gateway_token_chat,
+                "embeddings": self.llm_gateway_token_embeddings,
+                "moderation": self.llm_gateway_token_moderation,
+            }
+            scoped_token = scoped_tokens[scope]
+            if scoped_token.get_secret_value():
+                return scoped_token
+        return self.llm_gateway_token
 
     @property
     def llm_gateway_base_url(self) -> str:

@@ -55,7 +55,7 @@ def get_embedding_provider() -> OpenAIEmbeddingProvider:
     settings = get_settings()
     return OpenAIEmbeddingProvider(
         model=settings.default_embedding_model,
-        client=build_gateway_client(settings),
+        client=build_gateway_client(settings, scope="embeddings"),
     )
 
 
@@ -71,6 +71,7 @@ def get_llm_provider() -> FallbackLLMProvider:
         timeout_seconds=settings.llm_timeout_seconds,
         client=build_gateway_client(
             settings,
+            scope="chat",
             timeout_seconds=settings.llm_timeout_seconds,
         ),
     )
@@ -128,7 +129,9 @@ def get_safety_service() -> SafetyService | None:
     moderator: ModerationProvider
     if settings.moderation_backend == "openai_api":
         # Per-request /moderations calls; only for gateways that implement it.
-        moderator = OpenAIModerator(client=build_gateway_client(settings))
+        moderator = OpenAIModerator(
+            client=build_gateway_client(settings, scope="moderation")
+        )
     else:
         # Default: moderation is enforced upstream at the AI Gateway via
         # Guardrails, so no per-request /moderations client is needed.

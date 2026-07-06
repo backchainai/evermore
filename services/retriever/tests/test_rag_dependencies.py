@@ -41,6 +41,7 @@ def _make_mock_settings(
     settings.cloudflare_gateway_id = ""
     settings.llm_gateway_url = ""
     settings.llm_gateway_token.get_secret_value.return_value = ""
+    settings.gateway_token_for.return_value = settings.llm_gateway_token
     settings.llm_gateway_auth_header = "cf-aig-authorization"
     settings.llm_gateway_base_url = "https://gateway.ai.cloudflare.com/v1/a/b/compat"
     settings.default_embedding_model = "openai/text-embedding-3-small"
@@ -207,6 +208,7 @@ def test_get_embedding_provider_sends_gateway_token_header(
 
     headers = provider._client.default_headers
     assert headers.get("cf-aig-authorization") == "Bearer cf-token"
+    settings.gateway_token_for.assert_any_call("embeddings")
 
 
 # ── get_llm_provider ───────────────────────────────────────────────────────
@@ -240,6 +242,7 @@ def test_get_llm_provider_sends_gateway_token_header(
 
     headers = provider._provider._client.default_headers
     assert headers.get("cf-aig-authorization") == "Bearer cf-token"
+    settings.gateway_token_for.assert_any_call("chat")
 
 
 # ── get_safety_service ─────────────────────────────────────────────────────
@@ -260,6 +263,23 @@ def test_get_safety_service_routes_moderator_through_gateway(
     assert service is not None
     moderator = service._moderator
     assert str(moderator._client.base_url).rstrip("/").endswith("/compat")
+    settings.gateway_token_for.assert_any_call("moderation")
+
+
+@patch("retriever.modules.rag.dependencies.get_settings")
+def test_get_safety_service_sends_gateway_token_scope(
+    mock_get_settings: MagicMock,
+) -> None:
+    """Moderation requests the 'moderation' scoped gateway token, not chat/embeddings."""
+    settings = _make_mock_settings(moderation_backend="openai_api")
+    settings.llm_gateway_base_url = "https://gateway.ai.cloudflare.com/v1/a/b/compat"
+    settings.llm_gateway_token.get_secret_value.return_value = "cf-token"
+    mock_get_settings.return_value = settings
+
+    service = get_safety_service()
+
+    assert service is not None
+    settings.gateway_token_for.assert_any_call("moderation")
 
 
 @patch("retriever.modules.rag.dependencies.get_settings")
