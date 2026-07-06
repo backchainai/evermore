@@ -46,14 +46,22 @@ class SMSClient:
         self._last_request_time: float = 0.0
 
     def __enter__(self) -> SMSClient:
-        """Context manager entry - creates httpx.Client."""
+        """Context manager entry - creates httpx.Client.
+
+        Redirects are disabled (`follow_redirects=False`) for outbound-egress
+        safety: this client sends a static Cookie auth header on every
+        request, so a redirect from the SMS host could otherwise steer the
+        extraction client to an arbitrary host while still carrying that
+        cookie. A 3xx response instead surfaces as an `APIServerError` via
+        `_request_with_retry`'s `raise_for_status()` handling.
+        """
         self._client = httpx.Client(
             timeout=httpx.Timeout(
                 self._settings.api_timeout_seconds,
                 connect=10.0,
             ),
             headers=self._auth.get_headers(),
-            follow_redirects=True,
+            follow_redirects=False,
         )
         return self
 
