@@ -107,3 +107,47 @@ def test_parse_origins_shell_escaped() -> None:
 def test_parse_origins_empty() -> None:
     """Empty string returns empty list."""
     assert _parse_origins_str("") == []
+
+
+def test_gateway_token_for_scope_returns_scoped_token_when_set() -> None:
+    """gateway_token_for returns the scoped token when that field is set."""
+    settings = Settings(
+        _env_file=None,  # type: ignore[call-arg]
+        llm_gateway_token="shared-token",
+        llm_gateway_token_chat="chat-token",
+    )
+    assert settings.gateway_token_for("chat").get_secret_value() == "chat-token"
+
+
+def test_gateway_token_for_scope_falls_back_when_scoped_field_empty() -> None:
+    """gateway_token_for falls back to the shared token when the scoped field is unset."""
+    settings = Settings(
+        _env_file=None,  # type: ignore[call-arg]
+        llm_gateway_token="shared-token",
+    )
+    assert settings.gateway_token_for("embeddings").get_secret_value() == "shared-token"
+
+
+def test_gateway_token_for_none_returns_shared_token() -> None:
+    """gateway_token_for(None) always returns the shared token, even when scoped fields are set."""
+    settings = Settings(
+        _env_file=None,  # type: ignore[call-arg]
+        llm_gateway_token="shared-token",
+        llm_gateway_token_chat="chat-token",
+        llm_gateway_token_embeddings="embeddings-token",
+        llm_gateway_token_moderation="moderation-token",
+    )
+    assert settings.gateway_token_for(None).get_secret_value() == "shared-token"
+
+
+def test_gateway_token_for_moderation_scope() -> None:
+    """gateway_token_for returns the moderation-scoped token when set."""
+    settings = Settings(
+        _env_file=None,  # type: ignore[call-arg]
+        llm_gateway_token="shared-token",
+        llm_gateway_token_moderation="moderation-token",
+    )
+    assert (
+        settings.gateway_token_for("moderation").get_secret_value()
+        == "moderation-token"
+    )
