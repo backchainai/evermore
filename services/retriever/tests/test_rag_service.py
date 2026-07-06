@@ -19,6 +19,7 @@ from retriever.infrastructure.safety.schemas import (
     SafetyViolationType,
 )
 from retriever.infrastructure.vectordb.protocol import SearchResult
+from retriever.modules.rag.prompts import FALLBACK_SYSTEM_PROMPT
 from retriever.modules.rag.schemas import (
     Chunk,
     IndexingResult,
@@ -453,6 +454,128 @@ class TestAskSafety:
 
 
 # ---------------------------------------------------------------------------
+# Tests: ask() chunk screening (query-time safety)
+# ---------------------------------------------------------------------------
+
+
+class TestAskChunkScreening:
+    """Tests for query-time safety screening of retrieved chunks."""
+
+    @pytest.mark.asyncio
+    async def test_ask_screens_out_unsafe_chunk(
+        self,
+        mock_session_factory: MagicMock,
+        mock_llm: AsyncMock,
+        mock_embeddings: AsyncMock,
+        mock_vector_store: AsyncMock,
+        mock_processor: MagicMock,
+    ) -> None:
+        """A chunk flagged by safety screening is dropped from chunks_used
+        and never reaches the system prompt sent to the LLM."""
+        mock_vector_store.search = AsyncMock(
+            return_value=[
+                _search_result(
+                    content="Shelter opens at 9am.",
+                    source="handbook.pdf",
+                    score=0.9,
+                ),
+                _search_result(
+                    content="INJECTED malicious instructions",
+                    source="evil.pdf",
+                    score=0.85,
+                ),
+            ]
+        )
+
+        mock_safety = MagicMock()
+        mock_safety.check_input = AsyncMock(
+            side_effect=lambda text: (
+                SafetyCheckResult.failed_injection("x")
+                if "INJECTED" in text
+                else SafetyCheckResult.passed()
+            )
+        )
+        mock_safety.check_hallucination = MagicMock(
+            return_value=SafetyCheckResult.passed()
+        )
+        mock_safety.get_hallucination_details = MagicMock(
+            return_value=HallucinationCheckResult(
+                is_grounded=True,
+                support_ratio=0.9,
+                claims=[],
+                total_claims=1,
+                supported_claims=1,
+            )
+        )
+
+        captured: dict[str, str] = {}
+
+        async def _capture_complete(*, system_prompt: str, user_message: str) -> str:
+            captured["system_prompt"] = system_prompt
+            return "The shelter opens at 9am."
+
+        mock_llm.complete = AsyncMock(side_effect=_capture_complete)
+
+        service = _build_service(
+            mock_session_factory,
+            mock_llm,
+            mock_embeddings,
+            mock_vector_store,
+            mock_processor,
+            safety=mock_safety,
+        )
+
+        response = await service.ask("What time does the shelter open?")
+
+        assert len(response.chunks_used) == 1
+        assert response.chunks_used[0].source == "handbook.pdf"
+        assert "system_prompt" in captured
+        assert "INJECTED malicious instructions" not in captured["system_prompt"]
+        assert "evil.pdf" not in captured["system_prompt"]
+
+    @pytest.mark.asyncio
+    async def test_ask_all_chunks_screened_out_uses_fallback(
+        self,
+        mock_session_factory: MagicMock,
+        mock_llm: AsyncMock,
+        mock_embeddings: AsyncMock,
+        mock_vector_store: AsyncMock,
+        mock_processor: MagicMock,
+    ) -> None:
+        """When every retrieved chunk is screened out, the fallback
+        no-documents prompt is used and chunks_used is empty."""
+        mock_llm.complete = AsyncMock(
+            return_value="No documents have been indexed yet."
+        )
+
+        mock_safety = MagicMock()
+        mock_safety.check_input = AsyncMock(
+            side_effect=lambda text: (
+                SafetyCheckResult.failed_injection("x")
+                if text in {"Shelter opens at 9am.", "Volunteers must be 18+."}
+                else SafetyCheckResult.passed()
+            )
+        )
+
+        service = _build_service(
+            mock_session_factory,
+            mock_llm,
+            mock_embeddings,
+            mock_vector_store,
+            mock_processor,
+            safety=mock_safety,
+        )
+
+        response = await service.ask("What time does the shelter open?")
+
+        assert response.chunks_used == []
+        assert response.answer == "No documents have been indexed yet."
+        assert not response.blocked
+        call_kwargs = mock_llm.complete.call_args.kwargs
+        assert call_kwargs["system_prompt"] == FALLBACK_SYSTEM_PROMPT
+
+
+# ---------------------------------------------------------------------------
 # Tests: ask() no documents
 # ---------------------------------------------------------------------------
 
@@ -747,6 +870,89 @@ class TestIndexDocument:
         assert result.chunks_created == 0
         assert result.parsed_title == "empty"
         mock_embeddings.embed_batch.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_index_document_screens_out_flagged_chunk(
+        self,
+        mock_session_factory: MagicMock,
+        mock_llm: AsyncMock,
+        mock_embeddings: AsyncMock,
+        mock_vector_store: AsyncMock,
+        mock_processor: MagicMock,
+    ) -> None:
+        """A flagged chunk is neither embedded nor upserted; only safe
+        chunk content reaches embed_batch and store.upsert."""
+        mock_safety = MagicMock()
+        mock_safety.check_input = AsyncMock(
+            side_effect=lambda text: (
+                SafetyCheckResult.failed_injection("x")
+                if "Chunk 2" in text
+                else SafetyCheckResult.passed()
+            )
+        )
+        mock_embeddings.embed_batch = AsyncMock(return_value=[EMBEDDING])
+
+        service = _build_service(
+            mock_session_factory,
+            mock_llm,
+            mock_embeddings,
+            mock_vector_store,
+            mock_processor,
+            safety=mock_safety,
+        )
+
+        result = await service.index_document(
+            document_id=DOC_ID,
+            content=b"Shelter policy content here.",
+            source="policy.pdf",
+            title="Policy Manual",
+        )
+
+        assert result.success is True
+        assert result.chunks_created == 1
+        mock_embeddings.embed_batch.assert_awaited_once_with(["Chunk 1"])
+        upsert_call = mock_vector_store.upsert.call_args
+        upserted_chunks = upsert_call.args[0]
+        assert len(upserted_chunks) == 1
+        assert upserted_chunks[0]["content"] == "Chunk 1"
+
+    @pytest.mark.asyncio
+    async def test_index_document_all_chunks_flagged(
+        self,
+        mock_session_factory: MagicMock,
+        mock_llm: AsyncMock,
+        mock_embeddings: AsyncMock,
+        mock_vector_store: AsyncMock,
+        mock_processor: MagicMock,
+    ) -> None:
+        """When every chunk is flagged, indexing succeeds with zero chunks
+        created and never calls embed_batch or store.upsert."""
+        mock_safety = MagicMock()
+        mock_safety.check_input = AsyncMock(
+            return_value=SafetyCheckResult.failed_injection("x")
+        )
+
+        service = _build_service(
+            mock_session_factory,
+            mock_llm,
+            mock_embeddings,
+            mock_vector_store,
+            mock_processor,
+            safety=mock_safety,
+        )
+
+        result = await service.index_document(
+            document_id=DOC_ID,
+            content=b"Shelter policy content here.",
+            source="policy.pdf",
+            title="Policy Manual",
+        )
+
+        assert result.success is True
+        assert result.chunks_created == 0
+        assert result.parsed_title == "Doc"
+        mock_embeddings.embed_batch.assert_not_awaited()
+        mock_vector_store.upsert.assert_not_awaited()
 
 
 # ---------------------------------------------------------------------------
