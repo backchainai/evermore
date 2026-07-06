@@ -18,6 +18,10 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
 WORKDIR /app
 
+# Build the venv at its final runtime path so uv's console-script shebangs
+# (absolute, non-relocatable) stay valid after COPY into the runtime stage.
+ENV UV_PROJECT_ENVIRONMENT=/app/.venv
+
 # Copy the shared packages this service depends on via uv path sources
 # (services/petdata/pyproject.toml -> ../../packages/schema and
 # ../../packages/auth). The build context is the repo root (wrangler
@@ -49,10 +53,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends libpq5 curl \
 RUN useradd --system --create-home --shell /bin/bash petdata
 WORKDIR /app
 
-# Copy virtualenv and source from builder. The builder assembled them under
-# /app/services/petdata (its WORKDIR); map them to /app so the runtime layout,
-# PATH, entrypoint, and WORKDIR below stay unchanged.
-COPY --from=builder /app/services/petdata/.venv /app/.venv
+# Copy virtualenv and source from builder. The venv is built directly at
+# /app/.venv (UV_PROJECT_ENVIRONMENT), so no relocation happens here.
+COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/services/petdata/src /app/src
 
 COPY services/petdata/entrypoint.sh ./

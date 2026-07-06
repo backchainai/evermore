@@ -18,6 +18,10 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
 WORKDIR /app
 
+# Build the venv at its final runtime path so uv's console-script shebangs
+# (absolute, non-relocatable) stay valid after COPY into the runtime stage.
+ENV UV_PROJECT_ENVIRONMENT=/app/.venv
+
 # Copy the shared package this service depends on via a uv path source
 # (services/retriever/pyproject.toml -> ../../packages/auth). The build context
 # is the repo root (wrangler image_build_context), so the sibling is reachable.
@@ -47,10 +51,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends libpq5 curl \
 RUN useradd --system --create-home --shell /bin/bash retriever
 WORKDIR /app
 
-# Copy virtualenv and source from builder. The builder assembled them under
-# /app/services/retriever (its WORKDIR); map them to /app so the runtime layout,
-# PATH, entrypoint, and WORKDIR below stay unchanged.
-COPY --from=builder /app/services/retriever/.venv /app/.venv
+# Copy virtualenv and source from builder. The venv is built directly at
+# /app/.venv (UV_PROJECT_ENVIRONMENT), so no relocation happens here.
+COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/services/retriever/src /app/src
 
 COPY services/retriever/entrypoint.sh ./
