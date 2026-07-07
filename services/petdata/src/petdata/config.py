@@ -56,6 +56,13 @@ class Settings(BaseSettings):
     retry_max_delay_ms: int = 10000
     api_timeout_seconds: float = 30.0
 
+    # SMS response/record size caps (DoS hardening, F6): a compromised or
+    # misbehaving SMS endpoint should not be able to force the client to
+    # buffer an unbounded HTTP response body or the parsers to iterate an
+    # unbounded records array.
+    max_response_bytes: int = 10_000_000
+    max_records: int = 5000
+
     @field_validator("retry_max_attempts")
     @classmethod
     def validate_max_attempts(cls, v: int) -> int:
@@ -71,6 +78,24 @@ class Settings(BaseSettings):
         """Validate request delay is non-negative."""
         if v < 0:
             msg = "request_delay_ms must be non-negative"
+            raise ValueError(msg)
+        return v
+
+    @field_validator("max_response_bytes")
+    @classmethod
+    def validate_max_response_bytes(cls, v: int) -> int:
+        """Validate max_response_bytes is a positive number of bytes."""
+        if v < 1:
+            msg = "max_response_bytes must be at least 1"
+            raise ValueError(msg)
+        return v
+
+    @field_validator("max_records")
+    @classmethod
+    def validate_max_records(cls, v: int) -> int:
+        """Validate max_records is a positive record count."""
+        if v < 1:
+            msg = "max_records must be at least 1"
             raise ValueError(msg)
         return v
 

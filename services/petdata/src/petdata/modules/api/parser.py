@@ -10,11 +10,14 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from petdata.config import get_settings
 from petdata.modules.api.exceptions import APIValidationError
 from petdata.modules.db.models import Animal, VolunteerNote, WalkRecord
 
 
-def parse_animal_response(raw_data: dict[str, Any]) -> list[Animal]:
+def parse_animal_response(
+    raw_data: dict[str, Any], max_records: int | None = None
+) -> list[Animal]:
     """Parse SMS animals API response to Animal models.
 
     Handles SMS-specific field mappings:
@@ -23,13 +26,16 @@ def parse_animal_response(raw_data: dict[str, Any]) -> list[Animal]:
 
     Args:
         raw_data: Raw JSON response from SMS API with {"records": [...]} structure.
+        max_records: Maximum number of records to accept. Defaults to
+            `Settings.max_records` when not provided.
 
     Returns:
         List of validated Animal models. Empty list if no records.
 
     Raises:
-        APIValidationError: If response structure is invalid or any
-            record fails Pydantic validation.
+        APIValidationError: If response structure is invalid, the number of
+            records exceeds the max_records limit, or any record fails
+            Pydantic validation.
 
     Example:
         >>> raw = client.fetch_animals(limit=10)
@@ -41,6 +47,16 @@ def parse_animal_response(raw_data: dict[str, Any]) -> list[Animal]:
         records = raw_data.get("records", [])
         if not isinstance(records, list):
             msg = f"Expected 'records' to be list, got {type(records).__name__}"
+            raise APIValidationError(msg)
+
+        resolved_max = (
+            get_settings().max_records if max_records is None else max_records
+        )
+        if len(records) > resolved_max:
+            msg = (
+                f"Response has {len(records)} records, exceeding max_records "
+                f"limit of {resolved_max}"
+            )
             raise APIValidationError(msg)
 
         animals: list[Animal] = []
@@ -93,18 +109,23 @@ def parse_animal_response(raw_data: dict[str, Any]) -> list[Animal]:
         raise APIValidationError(msg) from e
 
 
-def parse_volunteer_note_response(raw_data: dict[str, Any]) -> list[VolunteerNote]:
+def parse_volunteer_note_response(
+    raw_data: dict[str, Any], max_records: int | None = None
+) -> list[VolunteerNote]:
     """Parse SMS volunteer notes API response to VolunteerNote models.
 
     Args:
         raw_data: Raw JSON response from SMS API with {"records": [...]} structure.
+        max_records: Maximum number of records to accept. Defaults to
+            `Settings.max_records` when not provided.
 
     Returns:
         List of validated VolunteerNote models. Empty list if no records.
 
     Raises:
-        APIValidationError: If response structure is invalid or any
-            record fails Pydantic validation.
+        APIValidationError: If response structure is invalid, the number of
+            records exceeds the max_records limit, or any record fails
+            Pydantic validation.
 
     Example:
         >>> raw = client.fetch_volunteer_notes(limit=50)
@@ -118,6 +139,16 @@ def parse_volunteer_note_response(raw_data: dict[str, Any]) -> list[VolunteerNot
         records = raw_data.get("records", [])
         if not isinstance(records, list):
             msg = f"Expected 'records' to be list, got {type(records).__name__}"
+            raise APIValidationError(msg)
+
+        resolved_max = (
+            get_settings().max_records if max_records is None else max_records
+        )
+        if len(records) > resolved_max:
+            msg = (
+                f"Response has {len(records)} records, exceeding max_records "
+                f"limit of {resolved_max}"
+            )
             raise APIValidationError(msg)
 
         notes: list[VolunteerNote] = []
@@ -157,18 +188,23 @@ def parse_volunteer_note_response(raw_data: dict[str, Any]) -> list[VolunteerNot
         raise APIValidationError(msg) from e
 
 
-def parse_walk_record_response(raw_data: dict[str, Any]) -> list[WalkRecord]:
+def parse_walk_record_response(
+    raw_data: dict[str, Any], max_records: int | None = None
+) -> list[WalkRecord]:
     """Parse SMS walk records API response to WalkRecord models.
 
     Args:
         raw_data: Raw JSON response from SMS API with {"records": [...]} structure.
+        max_records: Maximum number of records to accept. Defaults to
+            `Settings.max_records` when not provided.
 
     Returns:
         List of validated WalkRecord models. Empty list if no records.
 
     Raises:
-        APIValidationError: If response structure is invalid or any
-            record fails Pydantic validation.
+        APIValidationError: If response structure is invalid, the number of
+            records exceeds the max_records limit, or any record fails
+            Pydantic validation.
 
     Example:
         >>> raw = client.fetch_walk_records(limit=100)
@@ -180,6 +216,16 @@ def parse_walk_record_response(raw_data: dict[str, Any]) -> list[WalkRecord]:
         records = raw_data.get("records", [])
         if not isinstance(records, list):
             msg = f"Expected 'records' to be list, got {type(records).__name__}"
+            raise APIValidationError(msg)
+
+        resolved_max = (
+            get_settings().max_records if max_records is None else max_records
+        )
+        if len(records) > resolved_max:
+            msg = (
+                f"Response has {len(records)} records, exceeding max_records "
+                f"limit of {resolved_max}"
+            )
             raise APIValidationError(msg)
 
         walks: list[WalkRecord] = []
