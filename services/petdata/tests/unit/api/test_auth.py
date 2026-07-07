@@ -110,3 +110,16 @@ class TestIsValid:
         # This will pass format validation but may not work with API
         auth = CookieAuth(cookies="fake=cookie")
         assert auth.is_valid is True
+
+
+class TestSettingsBackedCookies:
+    """Tests for CookieAuth reading cookies from settings (SecretStr)."""
+
+    def test_settings_backed_cookie_produces_correct_header(self, monkeypatch):
+        """CookieAuth() with no explicit cookies reads settings.cookies and
+        unwraps the SecretStr via get_secret_value() into the Cookie header.
+        """
+        monkeypatch.setenv("PETDATA_COOKIES", "session=abc123")
+        auth = CookieAuth()
+        headers = auth.get_headers()
+        assert headers["Cookie"] == "session=abc123"

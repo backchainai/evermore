@@ -36,7 +36,9 @@ class CookieAuth:
             APIAuthenticationError: If cookies are missing, empty, or invalid.
         """
         settings = get_settings()
-        self._cookies = cookies if cookies is not None else settings.cookies
+        self._cookies = (
+            cookies if cookies is not None else settings.cookies.get_secret_value()
+        )
         self._validate_format()
 
     def _validate_format(self) -> None:
