@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from petdata.modules.auth.dependencies import require_auth, require_subscription
 from petdata.modules.db.models import Animal  # noqa: TC001
@@ -58,8 +58,8 @@ def _animal_to_response(animal: Animal) -> AnimalResponse:
 
 @router.get("/animals", response_model=AnimalListResponse)
 async def list_animals(
-    limit: int = 100,
-    offset: int = 0,
+    limit: int = Query(default=100, ge=1, le=1000),
+    offset: int = Query(default=0, ge=0, le=2_147_483_647),
     repo: Database = Depends(get_repository),  # noqa: B008
 ) -> AnimalListResponse:
     """List animals with pagination."""
