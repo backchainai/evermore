@@ -87,6 +87,38 @@ def test_create_engine_accepts_pool_params() -> None:
     assert engine.pool.size() == 3
 
 
+@pytest.mark.parametrize(
+    ("require_ssl", "expected_ssl"),
+    [
+        # Production default: TLS enforced via connect_args ssl="require".
+        (True, "require"),
+        # Local-dev opt-out: no ssl key, so asyncpg connects without TLS.
+        (False, None),
+    ],
+)
+def test_create_engine_require_ssl_controls_ssl_connect_arg(
+    monkeypatch: pytest.MonkeyPatch,
+    require_ssl: bool,
+    expected_ssl: str | None,
+) -> None:
+    """require_ssl toggles the ssl connect_arg passed to the async engine."""
+    captured: dict[str, object] = {}
+
+    def fake_create_async_engine(url: str, **kwargs: object) -> object:
+        captured["connect_args"] = kwargs.get("connect_args")
+        return object()
+
+    monkeypatch.setattr(
+        "retriever.models.base.create_async_engine", fake_create_async_engine
+    )
+    create_engine(
+        "postgresql://postgres:postgres@localhost:5432/test", require_ssl=require_ssl
+    )
+    connect_args = captured["connect_args"]
+    assert isinstance(connect_args, dict)
+    assert connect_args.get("ssl") == expected_ssl
+
+
 # ── Settings pool defaults ──────────────────────────────────────────────────────
 
 

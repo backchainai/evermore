@@ -104,7 +104,10 @@ class Settings(BaseSettings):
     otel_exporter_otlp_endpoint: str = ""
 
     # Database
-    database_require_ssl: bool = False  # True in production (Supabase / Cloud Run)
+    # Secure by default: production (Supabase / Cloud Run) requires TLS.
+    # Local dev opts out via DATABASE_REQUIRE_SSL=false (the local pgvector
+    # container on localhost:5433 has no TLS).
+    database_require_ssl: bool = True
 
     # Database connection pool — env-driven so each deployment target (local vs
     # Containers behind Hyperdrive) sizes its own pool without code changes.

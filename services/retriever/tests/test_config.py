@@ -140,6 +140,19 @@ def test_gateway_token_for_none_returns_shared_token() -> None:
     assert settings.gateway_token_for(None).get_secret_value() == "shared-token"
 
 
+def test_database_require_ssl_defaults_to_true() -> None:
+    """database_require_ssl defaults to True (secure by default in production)."""
+    settings = Settings(_env_file=None)  # type: ignore[call-arg]
+    assert settings.database_require_ssl is True
+
+
+def test_database_require_ssl_env_opt_out(monkeypatch: pytest.MonkeyPatch) -> None:
+    """DATABASE_REQUIRE_SSL=false opts local dev out of the secure default."""
+    monkeypatch.setenv("DATABASE_REQUIRE_SSL", "false")
+    settings = Settings()
+    assert settings.database_require_ssl is False
+
+
 def test_gateway_token_for_moderation_scope() -> None:
     """gateway_token_for returns the moderation-scoped token when set."""
     settings = Settings(
