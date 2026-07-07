@@ -150,10 +150,11 @@ class RAGService:
         4. Retrieve chunks (hybrid or semantic-only)
         5. Build prompt with context
         6. Generate answer via LLM
-        7. Hallucination check (if safety_service)
-        8. Confidence scoring
-        9. Cache set (if high/medium confidence)
-        10. Return RAGResponse
+        7. Output moderation check (if safety_service)
+        8. Hallucination check (if safety_service)
+        9. Confidence scoring
+        10. Cache set (if high/medium confidence)
+        11. Return RAGResponse
 
         Args:
             question: The user's question.
@@ -271,6 +272,26 @@ class RAGService:
                     system_prompt=FALLBACK_SYSTEM_PROMPT,
                     user_message=question,
                 )
+
+            # Moderate the generated answer before it reaches the user.
+            if self._safety is not None:
+                output_result = await self._safety.check_output(answer)
+                if not output_result.is_safe:
+                    logger.warning(
+                        "rag_output_blocked",
+                        question_length=len(question),
+                        answer_length=len(answer),
+                    )
+                    return RAGResponse(
+                        answer=output_result.message,
+                        chunks_used=[],
+                        question=question,
+                        confidence_level="low",
+                        confidence_score=0.0,
+                        blocked=True,
+                        blocked_reason=SafetyViolationType.MODERATION_FLAGGED.value,
+                    )
+
             return RAGResponse(
                 answer=answer,
                 chunks_used=[],
@@ -308,7 +329,26 @@ class RAGService:
                 user_message=question,
             )
 
-        # 7. Hallucination check and get grounding ratio
+        # 7. Output moderation check (before hallucination check)
+        if self._safety is not None:
+            output_result = await self._safety.check_output(answer)
+            if not output_result.is_safe:
+                logger.warning(
+                    "rag_output_blocked",
+                    question_length=len(question),
+                    answer_length=len(answer),
+                )
+                return RAGResponse(
+                    answer=output_result.message,
+                    chunks_used=chunks_used,
+                    question=question,
+                    confidence_level="low",
+                    confidence_score=0.0,
+                    blocked=True,
+                    blocked_reason=SafetyViolationType.MODERATION_FLAGGED.value,
+                )
+
+        # 8. Hallucination check and get grounding ratio
         grounding_ratio: float | None = None
         chunk_texts = [c.content for c in chunks_used]
 
@@ -340,7 +380,7 @@ class RAGService:
             )
             grounding_ratio = details.support_ratio
 
-        # 8. Confidence scoring
+        # 9. Confidence scoring
         scores = [c.score for c in chunks_used]
         confidence = self._confidence_scorer.score(
             chunk_scores=scores,
@@ -362,7 +402,7 @@ class RAGService:
             confidence_score=confidence.score,
         )
 
-        # 9. Cache set (only high/medium confidence answers with context)
+        # 10. Cache set (only high/medium confidence answers with context)
         if (
             self._cache is not None
             and self._tenant_id is not None
@@ -377,7 +417,7 @@ class RAGService:
                 tenant_id=self._tenant_id,
             )
 
-        # 10. Return response
+        # 11. Return response
         return RAGResponse(
             answer=answer,
             chunks_used=chunks_used,
