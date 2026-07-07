@@ -102,9 +102,14 @@ async def upload_document(
     try:
         content = await file.read()
     except Exception as exc:
+        logger.error(
+            "document.upload_read_failed",
+            filename=filename,
+            error=str(exc),
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Failed to read uploaded file: {exc}",
+            detail="Failed to read uploaded file.",
         ) from exc
 
     try:
@@ -140,7 +145,7 @@ async def upload_document(
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Indexing failed: {exc}",
+            detail="Document indexing failed.",
         ) from exc
 
 
