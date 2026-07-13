@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import random
 import time
 from typing import Any
@@ -14,6 +15,7 @@ from petdata.modules.api.exceptions import (
     APINetworkError,
     APIRateLimitError,
     APIResponseParseError,
+    APIResponseTooLargeError,
     APIServerError,
 )
 
@@ -230,8 +232,25 @@ class SMSClient:
 
         Raises:
             APIResponseParseError: If response is not valid JSON.
+            APIResponseTooLargeError: If the response body exceeds
+                `max_response_bytes`.
         """
         response = self._request_with_retry("GET", url, params=params)
+
+        size = len(response.content)
+        declared_length = response.headers.get("Content-Length")
+        if declared_length is not None:
+            # Non-integer Content-Length: ignore and fall back to the actual
+            # buffered length computed above.
+            with contextlib.suppress(ValueError):
+                size = max(size, int(declared_length))
+
+        if size > self._settings.max_response_bytes:
+            msg = (
+                f"Response body of {size} bytes exceeds the configured "
+                f"max_response_bytes limit of {self._settings.max_response_bytes}"
+            )
+            raise APIResponseTooLargeError(msg)
 
         try:
             return response.json()  # type: ignore[no-any-return]

@@ -51,3 +51,7 @@ class APINetworkError(APIError):
 
 class APIResponseParseError(APIError):
     """Failed to parse response JSON."""
+
+
+class APIResponseTooLargeError(APIError):
+    """Response body exceeds the configured size cap."""
