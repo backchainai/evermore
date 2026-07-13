@@ -78,12 +78,12 @@ entry point `grade`. No network in tests; the judge is the only paid dependency 
 
 | Module | Lines | Responsibility | Port disposition |
 |---|---|---|---|
-| `parse.py` | 273 | FOHA WordPress markdown → `Profile` (sections, tags, facets, photos) | **Replace** with an Animal-Record/Composition adapter (Section 4.1) |
+| `parse.py` | 273 | FOHA WordPress markdown → `Profile` (sections, tags, facets, photos); rubric v1.1 added label-based heading detection and comment-boundary stripping, both FOHA-web-specific | **Replace** with an Animal-Record/Composition adapter (Section 4.1); the heading/boundary logic does not port (Evermore input is structured Composition data, not scraped HTML) |
 | `scrape.py` | 95 | Firecrawl crawl of foha.org into a local cache | **Delete** (Pet Data owns extraction) |
 | `lexicons.py` | 92 | Social-word, gatekeeping, and absolute-claim phrase lists | Port as-is (domain data) |
-| `metrics.py` | 129 | Deterministic pass: social density, gatekeeping, completeness, brevity, photos; compliance flags | Port as-is |
-| `judge.py` | 210 | LLM-as-judge pass for the four qualitative dimensions; run-N-average, spread, tag/body hard cap | Port; route the client through Cloudflare AI Gateway |
-| `score.py` | 206 | Weights, band thresholds, `combine`, cohort percentiles, `DIMENSION_HELP` gloss | Port as-is |
+| `metrics.py` | 129 | Deterministic pass: social density, gatekeeping, brevity, photos; deterministic compliance flags | Port as-is (rubric v1.1: `section_completeness` and `missing_struggles` are judged now, not computed here, see 2.2) |
+| `judge.py` | 210 | LLM-as-judge pass for the four qualitative dimensions plus per-topic `topic_coverage` (rubric v1.1; drives `section_completeness`); run-N-average, spread, tag/body hard cap | Port; route the client through Cloudflare AI Gateway |
+| `score.py` | 206 | Weights, band thresholds, `combine`, cohort percentiles, `DIMENSION_HELP` gloss; `RUBRIC_VERSION` 1.1 (`section_completeness` method now judge; `missing_struggles` from `topic_coverage`) | Port as-is |
 | `record.py` | 257 | Build self-contained per-profile records + `index.json` + `scores.jsonl`; reserved-slug guard | Port; `write_run` output goes to Postgres, not files |
 | `schema.py` | 147 | Pydantic response contract (the durable interface) | Port as-is (Section 3.1) |
 | `server.py` | 103 | FastAPI app, `Store` Protocol, `FileStore`, CORS, slug/traversal guard, `/api/docs` | Port; swap `FileStore` for a Supabase store, tighten CORS, add auth |
@@ -98,12 +98,17 @@ entry point `grade`. No network in tests; the judge is the only paid dependency 
 (Evermore)    Animal Record + Composition → adapt → metrics → judge(via AI Gateway) → score → store(Postgres) → serve → SvelteKit view
 ```
 
-- **Deterministic pass** (`metrics.compute`): reproducible, no LLM. Produces five dimension
-  scores and the compliance flags.
+- **Deterministic pass** (`metrics.compute`): reproducible, no LLM. Produces four dimension
+  scores (no_social_words, no_gatekeeping, brevity, photos) and the deterministic compliance
+  flags.
 - **Judge pass** (`judge.judge_profile`): scores the four reading-dependent dimensions,
   runs N times (default 3) and averages, reports run-to-run spread so ambiguous profiles get
   a human spot-check, and enforces one hard cap (a temperament tag contradicting the body
-  caps *observed-not-promised* at 2 and raises a flag).
+  caps *observed-not-promised* at 2 and raises a flag). Rubric v1.1: the same judge call also
+  assesses per-topic `topic_coverage` (covered/brief/absent) for all eight topics from the
+  full staff text, at no extra API cost. `section_completeness` (dim 7) is derived from it
+  (covered=1.0, brief=0.5, absent=0, averaged across runs), and `missing_struggles` fires
+  when `struggles` is absent anywhere in the copy.
 - **Combine** (`score.combine`): weighted sum normalized to 0-100, plus a ranked fix list
   (edits ordered by recoverable points).
 - **Cohort percentile** (`score.apply_cohort_percentiles`): rank within a species cohort;
@@ -202,11 +207,11 @@ weighted: `raw = sum(weight_i * score_i / 4)`.
 | 4 | No social / humanizing words (`no_social_words`) | 10 | deterministic | Markowitz |
 | 5 | No gatekeeping language (`no_gatekeeping`) | 10 | deterministic | Kelling |
 | 6 | Identity-forward opening (`identity_opening`) | 5 | judge | Markowitz: open on who |
-| 7 | Section completeness (`section_completeness`) | 10 | deterministic | Template: 8 sections |
+| 7 | Section completeness (`section_completeness`) | 10 | judge (`topic_coverage`) | Template: 8 topics, judged covered/brief/absent |
 | 8 | Brevity (`brevity`) | 5 | deterministic | Markowitz: shorter places faster |
 | 9 | Photo count (`photos`) | 10 | deterministic | Kelling/Markowitz |
 
-Full 0-4 anchors per dimension live in `rubric.md` (ports verbatim). Two design commitments
+Full 0-4 anchors per dimension live in `rubric.md` (ports verbatim; `RUBRIC_VERSION` is 1.1). Two design commitments
 bind any change: (1) absolute score first, cohort percentile second (copy is judged against
 the research ideal, not curved); (2) grade the framing, not the facts (disclosing a struggle
 is mandatory and never penalized; emotional or gatekeeping framing is).
@@ -226,7 +231,7 @@ Surfaced independent of the score so no one can raise a score by deleting conten
 shows on the landing page regardless of score, so a high scorer with a contradiction is not
 blindly copied.
 
-- `missing_struggles` (high): Struggles/Dislikes section empty (disclosure floor).
+- `missing_struggles` (high): the copy discloses no struggle anywhere (rubric v1.1: judged from `topic_coverage`, not from an empty labeled section), the disclosure floor.
 - `tag_body_contradiction` (high): a temperament tag asserts a trait the body calls unknown.
 - `absolute_claim` (medium): narrative guarantee language ("great with all dogs," "will love").
 
@@ -265,6 +270,13 @@ adapt(animal_record, composition) -> Profile
 `opening_sentence`, `age_months`, `weight_lbs`) stay as-is. Keeping `Profile` as the boundary
 means `metrics`, `judge`, `score`, and `record` port with zero changes.
 
+Rubric v1.1 relaxes the section-mapping burden: the judge assesses topic coverage from the
+full staff text (`Profile.body_text`), so `section_completeness` no longer depends on every
+topic landing in its own labeled `sections` key. The adapter must supply the complete prose;
+it populates `sections` where the Composition exposes labeled content, but scoring does not
+require a perfect eight-key split. This is the practical resolution of decision D2's 8-vs-5
+section question: coverage is content-judged, not label-counted.
+
 ### 4.3 Data access (the `Store` seam → Supabase)
 
 `server.py` already isolates data access behind a `Store` Protocol
@@ -296,13 +308,15 @@ behavior to reproduce:
 - **Landing page:** every profile ranked by score, highest first, as a color-banded bar
   chart (green/amber/red from `bands.score`). A flag marker (⚑) on any flagged profile
   regardless of score. A "study these" strip of the top unflagged greens. Clicking an animal
-  name anywhere, or selecting it from a top dropdown, navigates to that profile's detail.
+  name anywhere, or selecting it from a top jump-to dropdown (sorted alphabetically; the ranked
+  bar list stays by score), navigates to that profile's detail.
 - **Detail page:** the flags block; a "fix this first" callout (top recoverable-points item);
   the nine criteria ordered by recoverable points, each leading with a left color-banded
   **percentage grade** (points earned vs. possible), then label + plain-language question,
   then points; each row expands to the grader's rationale, the verbatim driving quote, and
   the plain-language fix (`tip`). A per-criterion score bar is not used; the banded percentage
-  is the at-a-glance signal.
+  is the at-a-glance signal. The `section_completeness` row expands to the per-topic coverage
+  map (each of the eight topics marked covered/brief/absent).
 - **Security:** the copy being rendered is untrusted shelter content. Preserve the
   prototype's defenses: HTML/attribute escaping on all interpolated content, and http(s)
   scheme validation on any URL before it becomes an `href`.

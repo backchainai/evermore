@@ -1,6 +1,6 @@
 # ADR 0033: Read-only listing-verification service (`listings`)
 
-- Status: accepted
+- Status: proposed
 - Date: 2026-07-13
 - Deciders: project owner
 
