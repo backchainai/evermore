@@ -113,9 +113,21 @@ app.include_router(rag_router, dependencies=[retriever_subscription])
 
 Router-level `dependencies=[...]` do not add a documented response to the OpenAPI spec (there is no request body or response model attached to a dependency), so `openapi.json` is unaffected by this gate.
 
+### Revocation latency
+
+`subscribed_tools` is evaluated only at token-issue time (login and token refresh), by the custom access-token hook. It is not re-evaluated on every request.
+
+This means a subscription that flips to `canceled`, `past_due`, or `incomplete` (via the Stripe webhook) does NOT immediately revoke access. The user's already-issued access token keeps its `subscribed_tools` claim until that token expires, so access persists for up to the access-token TTL, even though `public.subscriptions` reflects the new status right away.
+
+That TTL is `jwt_expiry` in `apps/stacker/supabase/config.toml` (currently `3600`, one hour). Treat this as an invariant: `jwt_expiry` must stay at or below 3600 seconds, because the revocation window equals the access-token TTL, and raising it silently widens how long a canceled subscriber retains paid access.
+
+For immediate cutoff (fraud, a ban), use Supabase user-ban or session-revocation: this blocks refresh and caps exposure at the same TTL, since the already-issued token is still valid until it expires, but no new token can be minted with a fresh (or stale) `subscribed_tools` claim.
+
 ### Hosted enablement (evermore-auth)
 
-Enabling the hook locally via `config.toml` does not enable it on the hosted `evermore-auth` Supabase project. The hook must also be enabled there: Auth -> Hooks -> Custom Access Token, pointing at the `custom_access_token_hook` Postgres function. This is a manual dashboard step today; tracking it as config-as-code (so hosted auth settings stop being click-ops) is issue #157.
+There is a single Supabase auth project for the whole suite (see `docs/auth-flow.md`: "Supabase Auth is the single identity provider. All modules trust a single Supabase project's JWT signing keys"). Hosted, it is the `evermore-auth` project. Its schema, including the `subscriptions` table and this hook, is sourced from the migrations under `apps/stacker/supabase/`, and its local dev instance uses `project_id = "stacker"` in `config.toml` (the portal historically owns the Supabase config directory). "evermore-auth" and "stacker" name the same project, not two different databases.
+
+So enabling the hook on evermore-auth means enabling it on that single hosted auth project, the same project whose schema these `apps/stacker/supabase/migrations/` define: Auth -> Hooks -> Custom Access Token, pointing at the `custom_access_token_hook` Postgres function. Enabling it locally via `config.toml` does not flip the hosted toggle; that hosted step is still manual today and tracking it as config-as-code (so hosted auth settings stop being click-ops) is issue #157.
 
 ## Stripe integration
 
