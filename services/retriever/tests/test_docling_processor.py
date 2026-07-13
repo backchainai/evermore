@@ -6,6 +6,7 @@ the processing pipeline without requiring ML model downloads.
 
 from __future__ import annotations
 
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -266,6 +267,125 @@ class TestFormatAwareProcessorBinary:
 
         mock_docling.process.assert_called_once_with(b"PDF content", "report.pdf")
         assert result is expected
+
+
+# ---------------------------------------------------------------------------
+# Tests: DoclingProcessor.process (binary ML pipeline)
+# ---------------------------------------------------------------------------
+
+
+class TestDoclingProcessorProcess:
+    """Tests for DoclingProcessor.process()'s converter.convert() call."""
+
+    @patch("retriever.modules.rag.docling_processor.DoclingProcessor._get_chunker")
+    @patch("retriever.modules.rag.docling_processor.DoclingProcessor._get_converter")
+    def test_process_enforces_configured_max_pages(
+        self,
+        mock_get_converter: MagicMock,
+        mock_get_chunker: MagicMock,
+    ) -> None:
+        """process() forwards config.max_pages as converter.convert's max_num_pages."""
+        mock_result = _make_mock_conversion_result(doc_name="report.pdf")
+        mock_converter = MagicMock()
+        mock_converter.convert.return_value = mock_result
+        mock_get_converter.return_value = mock_converter
+
+        mock_chunk = _make_mock_chunk("PDF text")
+        mock_chunker = MagicMock()
+        mock_chunker.chunk.return_value = [mock_chunk]
+        mock_chunker.contextualize.return_value = "PDF text"
+        mock_get_chunker.return_value = mock_chunker
+
+        docling = DoclingProcessor(config=DoclingConfig(max_pages=42))
+
+        docling.process(b"%PDF-1.4 fake pdf content", "report.pdf")
+
+        mock_converter.convert.assert_called_once()
+        _, kwargs = mock_converter.convert.call_args
+        assert kwargs["max_num_pages"] == 42
+
+    @patch("retriever.modules.rag.docling_processor.DoclingProcessor._get_chunker")
+    @patch("retriever.modules.rag.docling_processor.DoclingProcessor._get_converter")
+    def test_process_disables_raises_on_error(
+        self,
+        mock_get_converter: MagicMock,
+        mock_get_chunker: MagicMock,
+    ) -> None:
+        """process() calls converter.convert with raises_on_error=False so that
+        conversion problems (including page-limit rejections) surface as a
+        ``ConversionResult`` status rather than a raw Docling exception.
+        """
+        mock_result = _make_mock_conversion_result(doc_name="report.pdf")
+        mock_converter = MagicMock()
+        mock_converter.convert.return_value = mock_result
+        mock_get_converter.return_value = mock_converter
+
+        mock_chunk = _make_mock_chunk("PDF text")
+        mock_chunker = MagicMock()
+        mock_chunker.chunk.return_value = [mock_chunk]
+        mock_chunker.contextualize.return_value = "PDF text"
+        mock_get_chunker.return_value = mock_chunker
+
+        docling = DoclingProcessor(config=DoclingConfig())
+
+        docling.process(b"%PDF-1.4 fake pdf content", "report.pdf")
+
+        _, kwargs = mock_converter.convert.call_args
+        assert kwargs["raises_on_error"] is False
+
+    @patch("retriever.modules.rag.docling_processor.DoclingProcessor._get_chunker")
+    @patch("retriever.modules.rag.docling_processor.DoclingProcessor._get_converter")
+    def test_process_raises_when_page_limit_exceeded(
+        self,
+        mock_get_converter: MagicMock,
+        mock_get_chunker: MagicMock,
+    ) -> None:
+        """A page-limit rejection (FAILURE status, no exception) still raises
+        our typed DocumentConversionError.
+
+        The mocked ``convert`` only returns a FAILURE result when called with
+        the enforcement kwargs (``max_num_pages`` set and
+        ``raises_on_error=False``); the pre-enforcement call shape
+        (``convert(stream)`` with no kwargs) returns a SUCCESS result
+        instead. This ties the raise to the new call contract: the test goes
+        red if ``process()`` regresses to the bare ``convert(stream)`` call,
+        because the FAILURE status (and therefore the raise) would never
+        occur.
+        """
+        from docling.datamodel.base_models import ConversionStatus
+
+        failure_result = MagicMock()
+        failure_result.status = ConversionStatus.FAILURE
+        failure_result.errors = [
+            "Document has 500 pages, exceeding the max_num_pages limit of 100."
+        ]
+        success_result = _make_mock_conversion_result(doc_name="report.pdf")
+
+        def convert_side_effect(*args: Any, **kwargs: Any) -> MagicMock:
+            if kwargs.get("max_num_pages") is not None and (
+                kwargs.get("raises_on_error") is False
+            ):
+                return failure_result
+            return success_result
+
+        mock_converter = MagicMock()
+        mock_converter.convert.side_effect = convert_side_effect
+        mock_get_converter.return_value = mock_converter
+
+        mock_chunk = _make_mock_chunk("PDF text")
+        mock_chunker = MagicMock()
+        mock_chunker.chunk.return_value = [mock_chunk]
+        mock_chunker.contextualize.return_value = "PDF text"
+        mock_get_chunker.return_value = mock_chunker
+
+        docling = DoclingProcessor(config=DoclingConfig(max_pages=100))
+
+        with pytest.raises(DocumentConversionError, match="conversion failed"):
+            docling.process(b"%PDF-1.4 fake pdf content", "big.pdf")
+
+        _, kwargs = mock_converter.convert.call_args
+        assert kwargs["max_num_pages"] == 100
+        assert kwargs["raises_on_error"] is False
 
 
 # ---------------------------------------------------------------------------

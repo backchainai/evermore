@@ -237,7 +237,11 @@ class DoclingProcessor:
         stream = DocumentStream(name=source, stream=BytesIO(content))
 
         with self._lock:
-            result = converter.convert(stream)
+            result = converter.convert(
+                stream,
+                max_num_pages=self.config.max_pages,
+                raises_on_error=False,
+            )
 
         if result.status == ConversionStatus.FAILURE:
             errors = getattr(result, "errors", [])
