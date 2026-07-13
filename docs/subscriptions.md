@@ -78,7 +78,7 @@ The result feeds `SubscriptionGate.svelte`, which renders locked-state UI for an
 
 Each module backend MUST also enforce subscription, even though the UI already gates it. Without backend enforcement, a user could hit `https://retriever.example.com/api/v1/ask` directly with a valid JWT and bypass the portal.
 
-The check is claim-based, not a DB query. Stacker's Stripe webhook keeps the `subscriptions` table current, and a Supabase auth hook projects the user's active module ids into a `subscribed_tools` claim on the JWT itself (per-request, at token-issue time, not per-request DB round-trip). The backend validates the JWT (JWKS) and reads `subscribed_tools` straight off the decoded payload: no DB read, no `service_role` key on the request path.
+The check is claim-based, not a DB query. Stacker's Stripe webhook keeps the `subscriptions` table current, and the Postgres custom access-token hook defined in `apps/stacker/supabase/migrations/20260713000000_custom_access_token_hook.sql` (function `public.custom_access_token_hook`) projects the user's actively-entitled module ids into a `subscribed_tools` claim on the JWT itself, at token-issue time, not on every request. The function aggregates `module_id` from `public.subscriptions` for rows where `status` is `active` or `trialing`; a user with no matching rows gets `subscribed_tools: []` (never null, never an error). The hook runs as `supabase_auth_admin`, so the migration grants that role `EXECUTE` on the function, `USAGE` on the `public` schema, and a `SELECT` policy on `public.subscriptions` scoped to it (the table's existing RLS policy is keyed on `auth.uid()`, which is null for the hook's own session, so it never matches that role). `[auth.hook.custom_access_token]` is enabled in `apps/stacker/supabase/config.toml` for local dev. The backend validates the JWT (JWKS) and reads `subscribed_tools` straight off the decoded payload: no DB read, no `service_role` key on the request path.
 
 The shared `evermore_auth` package (`packages/auth/`) implements this once. `AuthDependencies.require_subscription(module_id)` returns a FastAPI dependency that chains off the same instance's `require_auth` (so the JWT decodes once per request, and 401 for missing/invalid tokens is still raised before 403 for a missing subscription) and raises 403 when `module_id` is absent from `subscribed_tools`:
 
@@ -112,6 +112,10 @@ app.include_router(rag_router, dependencies=[retriever_subscription])
 ```
 
 Router-level `dependencies=[...]` do not add a documented response to the OpenAPI spec (there is no request body or response model attached to a dependency), so `openapi.json` is unaffected by this gate.
+
+### Hosted enablement (evermore-auth)
+
+Enabling the hook locally via `config.toml` does not enable it on the hosted `evermore-auth` Supabase project. The hook must also be enabled there: Auth -> Hooks -> Custom Access Token, pointing at the `custom_access_token_hook` Postgres function. This is a manual dashboard step today; tracking it as config-as-code (so hosted auth settings stop being click-ops) is issue #157.
 
 ## Stripe integration
 
