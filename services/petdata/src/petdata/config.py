@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     # Source Shelter Management System (SMS) extraction API. Values are empty by
     # default and supplied per-deployment via PETDATA_SMS_* env vars (see
     # .env.example); never hard-code a shelter's production endpoints here.
-    cookies: str = ""
+    cookies: SecretStr = SecretStr("")
     sms_base_url: str = ""
     sms_table_animals: str = ""
     sms_table_volunteer_notes: str = ""
