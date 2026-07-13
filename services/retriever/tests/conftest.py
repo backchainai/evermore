@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+from retriever.infrastructure.rate_limit import limiter
 from retriever.models.base import Base
 
 TEST_DATABASE_URL = os.getenv(
@@ -32,6 +33,18 @@ def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line(
         "markers", "integration: marks tests that require a live Postgres instance"
     )
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limiter() -> None:
+    """Reset slowapi's in-memory rate-limit windows between tests.
+
+    The limiter is a module-level singleton (see
+    retriever.infrastructure.rate_limit), so without this reset, request
+    counts from one test's /ask calls would bleed into the next test's
+    window and produce flaky 429s (e.g. in test_rag_routes.py).
+    """
+    limiter.reset()
 
 
 @pytest_asyncio.fixture

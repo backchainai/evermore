@@ -33,6 +33,7 @@ dependencies = [
     "python-multipart>=0.0.18",
     "docling>=2.94.0",
     "docling-core[chunking-openai]>=2.0",
+    "slowapi>=0.1.9",
     # Direct floor to force the transitive transformers pin above the RCE in
     # CVE-2026-4372 (Dependabot alert #95). transformers arrives via
     # docling-core[chunking-openai] and docling-ibm-models. See issue #188.
@@ -111,6 +112,11 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["docling.*", "docling_core.*"]
+ignore_missing_imports = true
+follow_imports = "skip"
+
+[[tool.mypy.overrides]]
+module = ["slowapi", "slowapi.*"]
 ignore_missing_imports = true
 follow_imports = "skip"
 

@@ -9,10 +9,11 @@ import uuid
 from typing import Annotated
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from retriever.config import get_settings
+from retriever.infrastructure.rate_limit import ask_rate_limit
 from retriever.models.user import DEFAULT_TENANT_ID
 from retriever.modules.auth import AuthUser, require_auth
 from retriever.modules.messages.repos import MessageRepository
@@ -65,10 +66,28 @@ def _to_ask_response(rag_response: RAGResponse) -> AskResponse:
     )
 
 
-@router.post("/ask", response_model=AskResponse)
-async def ask(
-    body: AskRequest,
+async def _stash_rate_limit_identity(
+    request: Request,
     user: Annotated[AuthUser, Depends(require_auth)],
+) -> AuthUser:
+    """Expose the authenticated user's id to slowapi's rate-limit key_func.
+
+    Chains off ``require_auth`` (FastAPI caches the dependency per request,
+    so this costs no extra JWT decode) and stashes ``user.sub`` onto
+    ``request.state`` where :func:`retriever.infrastructure.rate_limit.rate_limit_key`
+    reads it. This keys the ADR-0012 limit per authenticated user rather than
+    per remote address.
+    """
+    request.state.rate_limit_key = user.sub
+    return user
+
+
+@router.post("/ask", response_model=AskResponse)
+@ask_rate_limit
+async def ask(
+    request: Request,
+    body: AskRequest,
+    user: Annotated[AuthUser, Depends(_stash_rate_limit_identity)],
     rag_service: Annotated[RAGService, Depends(get_rag_service)],
     message_repo: Annotated[MessageRepository, Depends(get_message_repository)],
 ) -> AskResponse:

@@ -134,6 +134,10 @@ class Settings(BaseSettings):
     #                   only for gateways that actually implement it.
     moderation_backend: Literal["guardrails", "openai_api"] = "guardrails"
 
+    # Rate limiting (ADR-0012)
+    rate_limit_enabled: bool = True
+    rate_limit_ask: str = "10/minute"
+
     # RAG
     rag_top_k: int = 5
 

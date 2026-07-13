@@ -27,6 +27,7 @@ from retriever.infrastructure.observability.middleware import (
     RequestIdMiddleware,
 )
 from retriever.infrastructure.observability.tracing import configure_tracing
+from retriever.infrastructure.rate_limit import configure_rate_limiting
 from retriever.modules.auth import require_subscription
 from retriever.modules.documents.routes import router as documents_router
 from retriever.modules.messages.routes import router as messages_router
@@ -173,6 +174,11 @@ def create_app() -> FastAPI:
         allow_methods=["GET", "POST", "PUT", "DELETE"],
         allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
     )
+
+    # ADR-0012 rate limiting: registered after CORS so a 429 raised inside the
+    # router stack still exits back out through the CORS middleware above it
+    # and carries Access-Control-Allow-Origin.
+    configure_rate_limiting(app)
 
     # /api/v1 routes require an active "retriever" subscription (claim-based,
     # no DB read — see docs/subscriptions.md). Health has no /api/v1 prefix
