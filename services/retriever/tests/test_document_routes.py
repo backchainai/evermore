@@ -7,7 +7,8 @@ from datetime import UTC, datetime
 from io import BytesIO
 from unittest.mock import AsyncMock
 
-from fastapi import FastAPI
+import pytest
+from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
 from retriever.modules.auth import AuthUser
@@ -20,6 +21,7 @@ from retriever.modules.documents.exceptions import (
 from retriever.modules.documents.routes import (
     get_document_service_dependency,
     router,
+    upload_document,
 )
 from retriever.modules.documents.schemas import (
     DocumentDeleteResponse,
@@ -131,7 +133,9 @@ def test_upload_document_duplicate_error() -> None:
 
 def test_upload_document_indexing_error() -> None:
     mock_service = AsyncMock(spec=DocumentService)
-    mock_service.upload_document.side_effect = DocumentIndexingError("Indexing failed")
+    mock_service.upload_document.side_effect = DocumentIndexingError(
+        "SENTINEL_LEAK_/opt/secret/path"
+    )
 
     app = _build_app(mock_service, as_admin=True)
     client = TestClient(app, raise_server_exceptions=False)
@@ -142,6 +146,34 @@ def test_upload_document_indexing_error() -> None:
     )
 
     assert resp.status_code == 500
+    assert "SENTINEL_LEAK" not in resp.text
+    data = resp.json()
+    assert data["detail"]
+    assert "SENTINEL_LEAK" not in data["detail"]
+
+
+class _FailingReadFile:
+    """Fake upload file whose `.read()` raises with sensitive detail."""
+
+    filename = "leak.md"
+
+    async def read(self) -> bytes:
+        raise OSError("SENTINEL_READ_/opt/secret")
+
+
+async def test_upload_document_file_read_error() -> None:
+    mock_service = AsyncMock(spec=DocumentService)
+
+    with pytest.raises(HTTPException) as exc_info:
+        await upload_document(
+            file=_FailingReadFile(),  # type: ignore[arg-type]
+            admin=TEST_ADMIN,
+            service=mock_service,
+        )
+
+    assert exc_info.value.status_code == 400
+    assert "SENTINEL_READ" not in str(exc_info.value.detail)
+    assert exc_info.value.detail
 
 
 # ── GET /api/v1/documents ────────────────────────────────────────────────────
