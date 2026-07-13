@@ -152,6 +152,7 @@ def mock_safety() -> MagicMock:
     """Return a mock safety service."""
     safety = MagicMock()
     safety.check_input = AsyncMock(return_value=SafetyCheckResult.passed())
+    safety.check_output = AsyncMock(return_value=SafetyCheckResult.passed())
     safety.check_hallucination = MagicMock(return_value=SafetyCheckResult.passed())
     safety.get_hallucination_details = MagicMock(
         return_value=HallucinationCheckResult(
@@ -432,6 +433,7 @@ class TestAskSafety:
         """Hallucination check blocks answer when not grounded."""
         mock_safety = MagicMock()
         mock_safety.check_input = AsyncMock(return_value=SafetyCheckResult.passed())
+        mock_safety.check_output = AsyncMock(return_value=SafetyCheckResult.passed())
         mock_safety.check_hallucination = MagicMock(
             return_value=SafetyCheckResult.failed_hallucination(0.3)
         )
@@ -451,6 +453,116 @@ class TestAskSafety:
         assert response.blocked_reason == SafetyViolationType.HALLUCINATION.value
         assert response.confidence_score == 0.0
         assert len(response.chunks_used) == 2
+
+
+# ---------------------------------------------------------------------------
+# Tests: ask() output moderation
+# ---------------------------------------------------------------------------
+
+
+class TestAskOutputModeration:
+    """Tests for output moderation of the generated answer in ask()."""
+
+    @pytest.mark.asyncio
+    async def test_ask_output_moderation_blocks_unsafe_answer(
+        self,
+        mock_session_factory: MagicMock,
+        mock_llm: AsyncMock,
+        mock_embeddings: AsyncMock,
+        mock_vector_store: AsyncMock,
+        mock_processor: MagicMock,
+    ) -> None:
+        """An unsafe generated answer is blocked before it reaches the user,
+        on the main with-chunks path."""
+        mock_safety = MagicMock()
+        mock_safety.check_input = AsyncMock(return_value=SafetyCheckResult.passed())
+        blocked_result = SafetyCheckResult.failed_moderation({"violence": True})
+        mock_safety.check_output = AsyncMock(return_value=blocked_result)
+        mock_safety.check_hallucination = MagicMock(
+            return_value=SafetyCheckResult.passed()
+        )
+
+        service = _build_service(
+            mock_session_factory,
+            mock_llm,
+            mock_embeddings,
+            mock_vector_store,
+            mock_processor,
+            safety=mock_safety,
+        )
+
+        response = await service.ask("What time does the shelter open?")
+
+        assert response.blocked is True
+        assert response.blocked_reason == SafetyViolationType.MODERATION_FLAGGED.value
+        assert response.answer == blocked_result.message
+        assert response.confidence_score == 0.0
+        assert response.confidence_level == "low"
+        mock_safety.check_hallucination.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_ask_output_moderation_blocks_unsafe_fallback(
+        self,
+        mock_session_factory: MagicMock,
+        mock_llm: AsyncMock,
+        mock_embeddings: AsyncMock,
+        mock_vector_store: AsyncMock,
+        mock_processor: MagicMock,
+    ) -> None:
+        """An unsafe generated answer is blocked on the no-documents
+        fallback path."""
+        mock_vector_store.search = AsyncMock(return_value=[])
+        mock_llm.complete = AsyncMock(
+            return_value="No documents have been indexed yet."
+        )
+
+        mock_safety = MagicMock()
+        mock_safety.check_input = AsyncMock(return_value=SafetyCheckResult.passed())
+        blocked_result = SafetyCheckResult.failed_moderation({"violence": True})
+        mock_safety.check_output = AsyncMock(return_value=blocked_result)
+
+        service = _build_service(
+            mock_session_factory,
+            mock_llm,
+            mock_embeddings,
+            mock_vector_store,
+            mock_processor,
+            safety=mock_safety,
+        )
+
+        response = await service.ask("What time does the shelter open?")
+
+        assert response.blocked is True
+        assert response.blocked_reason == SafetyViolationType.MODERATION_FLAGGED.value
+        assert response.answer == blocked_result.message
+        assert response.chunks_used == []
+
+    @pytest.mark.asyncio
+    async def test_ask_output_moderation_passes_safe_answer(
+        self,
+        mock_session_factory: MagicMock,
+        mock_llm: AsyncMock,
+        mock_embeddings: AsyncMock,
+        mock_vector_store: AsyncMock,
+        mock_processor: MagicMock,
+        mock_safety: MagicMock,
+    ) -> None:
+        """A safe generated answer flows through unblocked."""
+        service = _build_service(
+            mock_session_factory,
+            mock_llm,
+            mock_embeddings,
+            mock_vector_store,
+            mock_processor,
+            safety=mock_safety,
+        )
+
+        response = await service.ask("What time does the shelter open?")
+
+        assert not response.blocked
+        assert response.blocked_reason is None
+        assert response.answer == "The shelter opens at 9am."
+        mock_safety.check_output.assert_awaited_once_with("The shelter opens at 9am.")
 
 
 # ---------------------------------------------------------------------------
@@ -495,6 +607,7 @@ class TestAskChunkScreening:
                 else SafetyCheckResult.passed()
             )
         )
+        mock_safety.check_output = AsyncMock(return_value=SafetyCheckResult.passed())
         mock_safety.check_hallucination = MagicMock(
             return_value=SafetyCheckResult.passed()
         )
@@ -556,6 +669,7 @@ class TestAskChunkScreening:
                 else SafetyCheckResult.passed()
             )
         )
+        mock_safety.check_output = AsyncMock(return_value=SafetyCheckResult.passed())
 
         service = _build_service(
             mock_session_factory,
