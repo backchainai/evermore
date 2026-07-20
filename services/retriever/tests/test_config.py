@@ -164,3 +164,10 @@ def test_gateway_token_for_moderation_scope() -> None:
         settings.gateway_token_for("moderation").get_secret_value()
         == "moderation-token"
     )
+
+
+def test_rate_limit_defaults() -> None:
+    """Rate limiting is enabled by default with a 10/minute limit on /ask."""
+    settings = Settings(_env_file=None)  # type: ignore[call-arg]
+    assert settings.rate_limit_enabled is True
+    assert settings.rate_limit_ask == "10/minute"

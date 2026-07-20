@@ -1,11 +1,11 @@
 """Concurrent-request handling and burst behavior for the retriever API.
 
-There is no app-level rate limiter in this service today (no slowapi
-middleware, no 429 responses anywhere in the routes). The burst test below
-therefore asserts service stability under load (no 5xx) rather than a
-specific 429 response, and is forward-compatible: the allowed-status set
-already includes 429 so this test keeps passing unmodified if a limiter is
-added later.
+``POST /api/v1/ask`` now carries the ADR-0012 per-user rate limit (slowapi,
+in-memory, keyed on the authenticated user's Supabase id). The burst test
+below targets ``GET /api/v1/documents``, which is unaffected by that limit,
+so it asserts service stability under load (no 5xx) rather than a specific
+429 response; its allowed-status set already includes 429, so it keeps
+passing unmodified if a limiter is ever extended to this endpoint too.
 """
 
 from __future__ import annotations
