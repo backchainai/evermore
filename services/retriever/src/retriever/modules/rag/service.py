@@ -17,9 +17,6 @@ from retriever.infrastructure.embeddings.protocol import EmbeddingProvider
 from retriever.infrastructure.llm.protocol import LLMProvider
 from retriever.infrastructure.observability.langfuse import observe
 from retriever.infrastructure.safety.confidence import ConfidenceScorer
-from retriever.infrastructure.safety.schemas import (
-    SafetyViolationType,
-)
 from retriever.infrastructure.safety.service import SafetyService
 from retriever.infrastructure.vectordb.protocol import (
     ChunkInput,
@@ -37,6 +34,13 @@ from retriever.modules.rag.schemas import (
 )
 
 logger = structlog.get_logger()
+
+# Single, undifferentiated reason surfaced to callers when a request is
+# blocked by any safety rail. The specific SafetyViolationType stays in
+# server-side logs only: returning it lets a caller tell which layer fired
+# (prompt injection vs moderation vs hallucination) and tune bypass attempts
+# against that 3-way oracle. See issue #255.
+BLOCKED_REASON = "blocked"
 
 
 def _serialize_sources(chunks: list[ChunkWithScore]) -> list[dict[str, Any]]:
@@ -135,6 +139,51 @@ class RAGService:
         self._top_k = top_k
         self._tenant_id = tenant_id
 
+    async def _screen_history(
+        self,
+        conversation_history: list[dict[str, str]],
+    ) -> list[dict[str, str]]:
+        """Re-screen prior conversation turns before they are replayed.
+
+        Only the newest question passes through ``check_input`` on each turn;
+        stored history would otherwise be appended verbatim to every later
+        model call, recirculating anything that entered the conversation
+        unscreened (for example via the retrieved-chunk path). Each stored
+        turn's content is re-screened here with the same input check, and
+        unsafe turns are dropped and logged, mirroring retrieved-chunk
+        screening. See issue #256.
+
+        Args:
+            conversation_history: Prior messages as
+                [{"role": "user"|"assistant", "content": "..."}].
+
+        Returns:
+            The screened history with unsafe turns removed (possibly empty).
+        """
+        if self._safety is None:
+            return conversation_history
+
+        screened: list[dict[str, str]] = []
+        dropped = 0
+        for message in conversation_history:
+            check = await self._safety.check_input(message.get("content", ""))
+            if check.is_safe:
+                screened.append(message)
+            else:
+                dropped += 1
+                logger.warning(
+                    "rag_history_turn_screened_out",
+                    role=message.get("role", "unknown"),
+                    violation_type=check.violation_type.value,
+                )
+        if dropped:
+            logger.warning(
+                "rag_history_screened_out",
+                dropped_count=dropped,
+                total_count=len(conversation_history),
+            )
+        return screened
+
     @observe()  # type: ignore[untyped-decorator]
     async def ask(
         self,
@@ -149,6 +198,7 @@ class RAGService:
         3. Cache lookup (if semantic_cache)
         4. Retrieve chunks (hybrid or semantic-only)
         5. Build prompt with context
+        5b. Re-screen stored conversation history (if safety_service)
         6. Generate answer via LLM
         7. Output moderation check (if safety_service)
         8. Hallucination check (if safety_service)
@@ -180,7 +230,7 @@ class RAGService:
                     confidence_level="low",
                     confidence_score=0.0,
                     blocked=True,
-                    blocked_reason=safety_result.violation_type.value,
+                    blocked_reason=BLOCKED_REASON,
                 )
 
         # 2. Embed query — MUST happen before cache lookup
@@ -257,6 +307,14 @@ class RAGService:
                 )
             results = screened_results
 
+        # 5b. Re-screen stored conversation history before it is replayed into
+        #     the generation call (see _screen_history). Only the newest
+        #     question is screened at input; prior turns would otherwise be
+        #     appended verbatim on every turn, recirculating unscreened content.
+        #     Placed after the cache lookup so a cache hit skips this work.
+        if self._safety is not None and conversation_history:
+            conversation_history = await self._screen_history(conversation_history)
+
         # If no chunks found, use fallback prompt
         if not results:
             logger.info("rag_no_documents", question_length=len(question))
@@ -289,7 +347,7 @@ class RAGService:
                         confidence_level="low",
                         confidence_score=0.0,
                         blocked=True,
-                        blocked_reason=SafetyViolationType.MODERATION_FLAGGED.value,
+                        blocked_reason=BLOCKED_REASON,
                     )
 
             return RAGResponse(
@@ -345,7 +403,7 @@ class RAGService:
                     confidence_level="low",
                     confidence_score=0.0,
                     blocked=True,
-                    blocked_reason=SafetyViolationType.MODERATION_FLAGGED.value,
+                    blocked_reason=BLOCKED_REASON,
                 )
 
         # 8. Hallucination check and get grounding ratio
@@ -370,7 +428,7 @@ class RAGService:
                     confidence_level="low",
                     confidence_score=0.0,
                     blocked=True,
-                    blocked_reason=SafetyViolationType.HALLUCINATION.value,
+                    blocked_reason=BLOCKED_REASON,
                 )
 
             # Get grounding ratio for confidence scoring
