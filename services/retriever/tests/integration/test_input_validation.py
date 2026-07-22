@@ -63,13 +63,14 @@ async def test_ask_blocks_prompt_injection(
     authed_client: httpx.AsyncClient,
     payload: str,
 ) -> None:
-    """Known injection patterns are blocked with blocked_reason=prompt_injection."""
+    """Known injection patterns are blocked, but blocked_reason is an
+    undifferentiated value that does not disclose which rail fired (#255)."""
     resp = await authed_client.post("/api/v1/ask", json={"question": payload})
     assert resp.status_code == 200
     data = resp.json()
     _assert_valid_ask_response(data)
     assert data["blocked"] is True
-    assert data["blocked_reason"] == "prompt_injection"
+    assert data["blocked_reason"] == "blocked"
     await authed_client.delete("/api/v1/history")
 
 
