@@ -387,7 +387,7 @@ Ticket estimated 160 tracked files under `services/retriever`; the live count at
 | `services/retriever/src/retriever/infrastructure/llm/__init__.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; empty or re-export-only package init |
 | `services/retriever/src/retriever/infrastructure/llm/exceptions.py` | security-critical | line-by-line | clean -- typed exception classes only, no logic |
 | `services/retriever/src/retriever/infrastructure/llm/fallback.py` | security-critical | line-by-line | clean -- circuit-breaker/retry wrapper around the primary provider, no auth or data-handling logic |
-| `services/retriever/src/retriever/infrastructure/llm/gateway_client.py` | security-critical | line-by-line | See #228 (LLM-abuse handoff, #228) -- single static gateway bearer token, no per-scope rotation |
+| `packages/llm/src/evermore_llm/gateway_client.py` | security-critical | line-by-line | See #228 (LLM-abuse handoff, #228) -- single static gateway bearer token, no per-scope rotation |
 | `services/retriever/src/retriever/infrastructure/llm/openai_compat.py` | security-critical | line-by-line | clean -- OpenAI-compat chat client using the injected gateway client; no hardcoded credentials |
 | `services/retriever/src/retriever/infrastructure/llm/protocol.py` | security-critical | line-by-line | clean -- Protocol interface definition only, no logic |
 | `services/retriever/src/retriever/infrastructure/observability/__init__.py` | inert | secret-scan + claim-check | clean -- secret-scan clean; empty or re-export-only package init |

@@ -69,7 +69,7 @@ Where the services make outbound requests.
 
 | Call site (file:line) | Destination trust | SSRF / egress verdict + severity |
 |---|---|---|
-| Retriever -> LLM gateway, all model calls (`infrastructure/llm/gateway_client.py:52-57`; `openai_compat.py:172,326`; `infrastructure/embeddings/openai.py`; `infrastructure/safety/moderation.py:69`) | `settings.llm_gateway_base_url` - config-pinned Cloudflare gateway (`config.py:187-214`); **not** request-controlled | No SSRF: URL derives from config, never request input. Single known host. **Low / clean** |
+| Retriever -> LLM gateway, all model calls (`packages/llm/src/evermore_llm/gateway_client.py:87-99`; `openai_compat.py:172,326`; `infrastructure/embeddings/openai.py`; `infrastructure/safety/moderation.py:69`) | `settings.llm_gateway_base_url` - config-pinned Cloudflare gateway (`config.py:187-214`); **not** request-controlled | No SSRF: URL derives from config, never request input. Single known host. **Low / clean** |
 | Retriever document ingest (`rag/loader.py`, `rag/docling_processor.py`) | processes uploaded bytes; no URL fetch | No fetch-by-URL surface. **Clean** |
 | Retriever R2 storage (`infrastructure/storage/r2.py`) | dead code, not wired into any live handler | No live egress. **Clean (dead code)** |
 | petdata -> SMS host (`services/petdata/src/petdata/modules/api/client.py:50-56`) | `httpx.Client(follow_redirects=True, headers=<static Cookie>)` - SMS base URL config-pinned, but redirects follow to arbitrary hosts and resend the session cookie | SSRF/egress + credential leak on redirect; relay risk. Already **#245** (redirect+cookie) and **#248** (no size cap). **High** - reconciled, not re-filed |

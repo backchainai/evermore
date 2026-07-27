@@ -45,4 +45,4 @@ Neither replaces the other. The gateway sees requests and responses at the wire;
 
 ## Follow-ups
 
-- Promote `build_gateway_client` into a shared Python package once one exists, so petdata and biowriter import it rather than copying it.
+- **Done (#93).** `build_gateway_client` moved into the shared `packages/llm` package (import `evermore_llm`); retriever imports it from there. petdata and biowriter will import it from the same package once they start making gateway calls, rather than copying it.

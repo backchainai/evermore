@@ -6,9 +6,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
+from evermore_llm import build_gateway_client
 from openai import AsyncOpenAI, BadRequestError
 
-from retriever.infrastructure.llm.gateway_client import build_gateway_client
 from retriever.infrastructure.safety import (
     ConfidenceLevel,
     ConfidenceScorer,

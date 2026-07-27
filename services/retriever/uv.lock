@@ -756,6 +756,25 @@ requires-dist = [
 provides-extras = ["dev"]
 
 [[package]]
+name = "evermore-llm"
+version = "0.1.0"
+source = { editable = "../../packages/llm" }
+dependencies = [
+    { name = "openai" },
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.13" },
+    { name = "openai", specifier = ">=1.60" },
+    { name = "pydantic", specifier = ">=2.9" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.8" },
+]
+provides-extras = ["dev"]
+
+[[package]]
 name = "faker"
 version = "40.11.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2785,6 +2804,7 @@ dependencies = [
     { name = "docling-core", extra = ["chunking-openai"] },
     { name = "easyocr" },
     { name = "evermore-auth" },
+    { name = "evermore-llm" },
     { name = "fastapi" },
     { name = "langfuse" },
     { name = "openai" },
@@ -2833,6 +2853,7 @@ requires-dist = [
     { name = "docling-core", extras = ["chunking-openai"], specifier = ">=2.0" },
     { name = "easyocr", specifier = ">=1.7.2" },
     { name = "evermore-auth", editable = "../../packages/auth" },
+    { name = "evermore-llm", editable = "../../packages/llm" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "langfuse", specifier = ">=3.0" },
     { name = "openai", specifier = ">=1.60" },

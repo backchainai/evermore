@@ -37,7 +37,7 @@ apps/stacker         SvelteKit portal: SSO, subscription gating, module registry
 services/petdata     Animal data: connectors, canonical Animal Record, Package builder
 services/biowriter   Generation: kennel cards, social posts, the lint/score editor (not yet scaffolded)
 services/retriever   RAG: shelter-ops chat, and the research-corpus index for citations
-packages/            Shared packages: auth, schema, design-system (built; see each package's own README)
+packages/            Shared packages: auth, schema, design-system, llm (built; see each package's own README)
 docs/                Architecture, ADRs, and the research corpus
 tools/               Local dev tooling (the offline LLM stub)
 scripts/             Repo-level scripts (e.g. the doc link checker)
