@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
+from evermore_llm import build_gateway_client
 from openai import AsyncOpenAI
 
 from retriever.config import Settings
-from retriever.infrastructure.llm.gateway_client import build_gateway_client
 
 
 def _make_settings(

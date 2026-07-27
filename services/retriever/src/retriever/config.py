@@ -10,6 +10,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
+from evermore_llm import GatewayScope
 from pydantic import SecretStr, computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -21,11 +22,6 @@ _DEFAULT_ORIGINS = "http://localhost:5173,http://localhost:3000"
 
 # Resolved moderation-availability signal surfaced via /health and startup logs.
 ModerationStatus = Literal["gateway_guardrails", "openai_api", "disabled"]
-
-# Per-traffic-class gateway token scope. Narrows the blast radius of a
-# leaked token to one model traffic class (chat, embeddings, moderation)
-# instead of all gateway traffic authenticated by the shared token.
-GatewayScope = Literal["chat", "embeddings", "moderation"]
 
 
 def _parse_origins_str(raw: str) -> list[str]:

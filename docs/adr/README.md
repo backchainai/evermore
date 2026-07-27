@@ -79,3 +79,4 @@ One line per record: number, slug, status. Where a record is superseded, the suc
 - 0031 shared-design-system-package: accepted
 - 0032 supabase-auth-cookie-non-httponly: accepted
 - 0033 listing-sync-verification: proposed
+- 0034 packages-llm-gateway-client: accepted
