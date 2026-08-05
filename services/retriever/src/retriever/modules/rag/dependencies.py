@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from evermore_llm import build_gateway_client
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 if TYPE_CHECKING:
@@ -17,7 +18,6 @@ from retriever.infrastructure.cache.pg_cache import PgSemanticCache
 from retriever.infrastructure.database.session import _get_factory
 from retriever.infrastructure.embeddings.openai import OpenAIEmbeddingProvider
 from retriever.infrastructure.llm.fallback import FallbackLLMProvider
-from retriever.infrastructure.llm.gateway_client import build_gateway_client
 from retriever.infrastructure.llm.openai_compat import OpenAICompatProvider
 from retriever.infrastructure.safety.confidence import ConfidenceScorer
 from retriever.infrastructure.safety.detector import PromptInjectionDetector

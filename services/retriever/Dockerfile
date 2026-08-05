@@ -2,10 +2,11 @@
 
 # This Dockerfile builds from the REPO-ROOT context, not the service directory
 # (see services/retriever/wrangler.jsonc `image_build_context: "../.."`).
-# retriever depends on the sibling shared package `packages/auth` via a uv path
-# source (`../../packages/auth`); a service-root context would place that path
+# retriever depends on the sibling shared packages `packages/auth` and
+# `packages/llm` via uv path sources (`../../packages/auth`,
+# `../../packages/llm`); a service-root context would place those paths
 # outside the build context and break `uv sync --frozen`. Building from the repo
-# root keeps the sibling reachable. This is the monorepo pattern for any
+# root keeps the siblings reachable. This is the monorepo pattern for any
 # `services/*` module that consumes a `packages/*` sibling. All COPY paths below
 # are repo-root-relative; nothing uses `COPY . .`, so no worker/env/secret files
 # enter the image.
@@ -22,10 +23,13 @@ WORKDIR /app
 # (absolute, non-relocatable) stay valid after COPY into the runtime stage.
 ENV UV_PROJECT_ENVIRONMENT=/app/.venv
 
-# Copy the shared package this service depends on via a uv path source
-# (services/retriever/pyproject.toml -> ../../packages/auth). The build context
-# is the repo root (wrangler image_build_context), so the sibling is reachable.
+# Copy the shared packages this service depends on via uv path sources
+# (services/retriever/pyproject.toml -> ../../packages/auth, ../../packages/llm).
+# The build context is the repo root (wrangler image_build_context), so the
+# siblings are reachable. Every `[tool.uv.sources]` path entry needs a COPY here
+# or `uv sync --frozen` fails with "Distribution not found at: file:///app/...".
 COPY packages/auth/ ./packages/auth/
+COPY packages/llm/ ./packages/llm/
 
 # retriever dependency manifests first for layer caching
 COPY services/retriever/pyproject.toml services/retriever/uv.lock services/retriever/README.md ./services/retriever/
