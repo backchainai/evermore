@@ -1,0 +1,28 @@
+# Local development: Profile Grader service.
+#
+# grader has no data layer, so this compose file runs only the app container
+# itself (unlike petdata's/retriever's docker-compose.yml, which run a
+# standalone Postgres for those services).
+#
+# Port 8003 (not 8001 retriever, 8002 petdata) keeps grader clear of the
+# other local services. This compose file runs grader standalone; wiring it
+# into the repo-wide one-command local stack (root Makefile targets and
+# ../../docs/local-development.md) is a follow-up, not yet done.
+#
+# Usage:
+#   cp .env.example .env        # first time only
+#   docker compose up -d        # start grader
+#   docker compose down         # stop it
+services:
+  grader:
+    build: .
+    ports:
+      - "8003:8000"
+    env_file:
+      - path: .env
+        required: false
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
