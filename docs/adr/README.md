@@ -1,6 +1,6 @@
 # Architectural Decision Records
 
-All of Evermore's ADRs live here in one consolidated, chronologically numbered sequence (0001-0032). They were previously split across three locations (root `docs/adr/`, `services/retriever/docs/decisions/`, `services/petdata/docs/adr/`); the table below maps every old path to its new number. `000-template.md` is the shared ADR template, not a numbered record, and is excluded from the sequence.
+All of Evermore's ADRs live here in one consolidated, chronologically numbered sequence (0001-0038). They were previously split across three locations (root `docs/adr/`, `services/retriever/docs/decisions/`, `services/petdata/docs/adr/`); the table below maps every old path to its new number. `000-template.md` is the shared ADR template, not a numbered record, and is excluded from the sequence.
 
 ## Old to new mapping
 
@@ -79,3 +79,8 @@ One line per record: number, slug, status. Where a record is superseded, the suc
 - 0031 shared-design-system-package: accepted
 - 0032 supabase-auth-cookie-non-httponly: accepted
 - 0033 listing-sync-verification: proposed
+- 0034 invite-only-magic-link-auth: accepted
+- 0035 shelter-reference-code-canonical-id: accepted
+- 0036 engagement-data-in-petdata: accepted
+- 0037 hosted-only-execution: accepted
+- 0038 engagement-collector-scheduled-worker: proposed
