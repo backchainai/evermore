@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FOHA &middot; Adopt-a-Pet Listing Performance</title>
+<style>
+:root{
+ /* Backchain light theme (brand palette) on a white canvas for efficient printing.
+    cream/charcoal/gray/coral-deep + slate, with green/red as the brand status colors. */
+ --bg:#ffffff;--panel:#fafaf8;--panel2:#f1ece3;--line:#d7d1c4;
+ --txt:#41423d;--mut:#50636f;--accent:#a35945;--dog:#2f455b;--cat:#a35945;
+ --dim:#cbc4b6;--up:#27ae60;--down:#c0392b;--new:#2f455b;--drop:#7c8a94;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);
+ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+ font-size:13px;line-height:1.45}
+.wrap{max-width:1200px;margin:0 auto;padding:24px 20px 50px}
+header h1{font-size:19px;margin:0 0 4px;font-weight:650;letter-spacing:.2px}
+header .sub{color:var(--mut);font-size:12px}
+.sec{margin:20px 0 8px;font-size:12px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.6px}
+.kpigroups{display:flex;gap:22px;margin:8px 0 6px}
+.kpigroup{flex:1;min-width:0}
+.kpigroup+.kpigroup{border-left:1px solid var(--line);padding-left:22px}
+.kpigroup-h{font-size:11px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.6px;margin:0 0 7px}
+.kpis3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.kpi .v{font-size:18px;font-weight:680;letter-spacing:.3px}
+.kpi .v.accent{color:var(--accent)}
+.kpi .l{color:var(--mut);font-size:12px;margin-top:3px}
+.kpi .pc{font-size:13px;font-weight:680;margin-top:6px;color:var(--txt);letter-spacing:.2px}
+.kpi .pc.lead{font-size:15px;margin-top:0;letter-spacing:.2px}
+.kpi .pc.lead.accent{color:var(--accent)}
+.kpi .pc .ar{margin:0 4px}
+.kpi .pc.lead .ar{margin:0 5px;font-weight:700}
+.kpi .d{font-size:11.5px;margin-top:2px;font-weight:600}
+.up{color:var(--up)}.down{color:var(--down)}.flat{color:var(--mut)}
+.divider{border:0;border-top:1px solid var(--line);margin:22px 0 6px}
+.legend{display:flex;gap:16px;justify-content:center;margin-top:8px;font-size:11.5px;color:var(--mut)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.card h3{margin:0 0 10px;font-size:12px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.6px}
+.card h3 .sub2{display:block;text-transform:none;letter-spacing:0;font-weight:400;color:var(--mut);font-size:11.5px;margin-top:3px}
+.tall{grid-column:1/-1}
+/* hero CTR emphasis */
+.hero{border-color:var(--accent);border-width:1px;box-shadow:0 0 0 1px rgba(163,89,69,.28) inset}
+.hero h3{color:var(--accent)}
+.trend{margin:18px 0 4px}
+.trend .charts{margin-top:12px}
+.trendchart{width:100%;overflow-x:auto}
+.trendchart svg{width:100%;height:auto;display:block;min-width:280px}
+.tblhead{margin:24px 0 4px;font-size:15px;font-weight:650}
+.tblsub{color:var(--mut);font-size:12px;margin:0 0 12px;max-width:900px}
+.tr-axis{stroke:#b0a999;stroke-width:1}
+.tr-grid{stroke:var(--line);stroke-width:1;stroke-dasharray:2 4;opacity:.8}
+.tr-line{fill:none;stroke:var(--accent);stroke-width:2.5}
+.tr-line.est{stroke-dasharray:5 5;opacity:.75}
+.tr-line.v{stroke:var(--dog)}.tr-line.h{stroke:var(--cat)}
+.tr-dot{fill:var(--accent);stroke:var(--bg);stroke-width:2}
+.tr-dot.v{fill:var(--dog)}.tr-dot.h{fill:var(--cat)}
+.tr-dot.est{fill:var(--bg);stroke-dasharray:3 3}
+.tr-dot.est.ctr{stroke:var(--accent)}.tr-dot.est.v{stroke:var(--dog)}.tr-dot.est.h{stroke:var(--cat)}
+.tr-lab{fill:var(--txt);font-size:12px;font-weight:600;text-anchor:middle}
+.tr-lab.small{font-size:11.5px;font-weight:500}
+.tr-lab.est{fill:var(--mut);font-weight:500}
+.tr-x{fill:var(--mut);font-size:11.5px;text-anchor:middle}
+.tr-y{fill:var(--mut);font-size:11px;text-anchor:end}
+.tr-note{color:var(--mut);font-size:11px;margin-top:8px}
+.bars{display:flex;flex-direction:column;gap:8px}
+.brow{display:grid;grid-template-columns:130px 1fr 54px;align-items:center;gap:10px}
+.brow .lbl{color:var(--mut);font-size:12px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track{background:var(--panel2);border-radius:4px;height:16px;overflow:hidden}
+.fill{height:100%;border-radius:4px;min-width:2px}
+.brow .val{font-size:12px;font-weight:600;text-align:left}
+.dv{display:flex;flex-direction:column;gap:7px}
+.dvrow{display:grid;grid-template-columns:120px 1fr 56px;align-items:center;gap:10px}
+.dvrow .lbl{color:var(--mut);font-size:12px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dvtrack{position:relative;height:16px}
+.dvaxis{position:absolute;left:50%;top:-2px;bottom:-2px;border-left:1px solid var(--line)}
+.dvfill{position:absolute;top:0;height:100%;border-radius:3px;min-width:2px}
+.dvrow .val{font-size:12px;font-weight:600}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+.controls input[type=search]{flex:1;min-width:200px;background:var(--panel2);border:1px solid var(--line);
+ color:var(--txt);padding:9px 12px;border-radius:8px;font-size:13px}
+.controls input::placeholder{color:var(--mut)}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:var(--panel2);color:var(--mut);border:0;padding:8px 12px;cursor:pointer;font-size:12.5px}
+.seg button.on{background:var(--accent);color:#faf7f2;font-weight:600}
+.count{color:var(--mut);font-size:12px;margin-left:auto}
+.tbl-wrap{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:760px}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{position:sticky;top:0;background:var(--panel2);color:var(--mut);font-size:12px;font-weight:600;cursor:pointer;user-select:none}
+th.num,td.num{text-align:right}
+th .arr{opacity:.4;font-size:10.5px;margin-left:3px}
+th.sort .arr{opacity:1;color:var(--accent)}
+tbody tr:hover{background:#f2ede4}
+td.name{font-weight:600;white-space:normal}
+td.breed{color:var(--mut);white-space:normal;max-width:250px;font-size:12.5px}
+.pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.pill.dog{background:rgba(47,69,91,.12);color:var(--dog)}
+.pill.cat{background:rgba(163,89,69,.13);color:var(--cat)}
+.tag{display:inline-block;padding:1px 7px;border-radius:5px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.tag.new{background:rgba(47,69,91,.12);color:var(--new)}
+.tag.dropped{background:rgba(80,99,111,.14);color:var(--drop)}
+.tag.returning{color:var(--mut);opacity:.5}
+.delta{font-size:11px;font-weight:600;margin-left:5px}
+.muted{color:var(--mut)}
+.foot{color:var(--mut);font-size:11px;margin-top:16px;line-height:1.55}
+@media(max-width:760px){.charts{grid-template-columns:1fr}
+ .kpigroups{flex-direction:column;gap:14px}
+ .kpigroup+.kpigroup{border-left:0;border-top:1px solid var(--line);padding-left:0;padding-top:12px}}
+@media print{
+ /* Base theme is already the Backchain light theme; print only needs to force
+    pure-white surfaces (zero background ink), keep the coral chart accents, and
+    compact the layout. */
+ *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ body{font-size:10.5px}
+ .wrap{max-width:none;padding:0}
+ .controls{display:none!important}
+ .card,.kpi,.tbl-wrap{background:#fff}
+ th{background:#fff}
+ .card,.kpi{box-shadow:none;break-inside:avoid}
+ .hero{box-shadow:0 0 0 1px var(--accent) inset}
+ .charts{gap:8px}
+ .kpigroups{gap:14px;margin:6px 0}
+ .kpigroup+.kpigroup{padding-left:14px}
+ .kpis3{gap:7px}
+ .kpi{padding:8px 10px}.kpi .v{font-size:15px}.kpi .pc.lead{font-size:13px}
+ .divider{margin:10px 0 4px}
+ .trend{margin:8px 0 4px}
+ .sec{margin:12px 0 6px}
+ table{min-width:0;font-size:9.5px}
+ th,td{padding:3px 6px}
+ thead{display:table-header-group}
+ tr{break-inside:avoid}
+ td.breed{max-width:190px}
+ .tblhead{break-before:page}
+ header h1{font-size:16px}
+ .foot{margin-top:10px}
+ @page{margin:11mm}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+ <h1>Friends Of Homeless Animals &middot; Adopt-a-Pet Listing Performance</h1>
+ <div class="sub">Tuesday, June 9, 2026 &ndash; Monday, August 31, 2026</div>
+</header>
+
+<div class="trend">
+ <div class="card tall hero">
+  <h3>Click-through rate (CTR) = Views &divide; Hits
+   <span class="sub2">Across all listed pets, the share of search appearances that led to someone opening a profile.</span></h3>
+  <div id="cTrendctr" class="trendchart"></div>
+  <div class="tr-note">Solid = captured weeks; hollow &amp; dashed = estimated weeks (no capture).</div>
+ </div>
+ <div class="charts">
+  <div class="card"><h3>Search appearances &mdash; per week
+   <span class="sub2">Total times listed pets showed up in search-results lists, summed across the roster.</span></h3>
+   <div id="cTrendhits" class="trendchart"></div></div>
+  <div class="card"><h3>Detail-page views &mdash; per week
+   <span class="sub2">Total times someone opened a listed pet's profile page, summed across the roster.</span></h3>
+   <div id="cTrendviews" class="trendchart"></div></div>
+ </div>
+</div>
+
+<h3 class="sec">Most recent week &mdash; Aug 25&ndash;Aug 31, 2026</h3>
+<div class="kpigroups" id="kpis"></div>
+<hr class="divider">
+
+<div class="charts">
+ <div class="card"><h3>Detail-page views by species &mdash; latest vs prior week</h3><div id="cSpecies"></div></div>
+ <div class="card"><h3>Pets listed &mdash; week over week
+  <span class="sub2">Total roster size at each weekly sample, oldest to newest &mdash; how the listed population changes over time.</span></h3><div id="cRoster"></div></div>
+ <div class="card tall"><h3>Biggest movers in detail-page views &mdash; past 2 weeks (vs week ending Aug 17)<span class="sub2">Largest week-over-week change in profile opens, across all listed dogs and cats. Each row shows prior &rarr; current views.</span></h3><div id="cMovers"></div></div>
+</div>
+
+<h3 class="tblhead">Where to focus &mdash; carried-over pets, fewest views first</h3>
+<div class="tblsub">Defaulted to pets carried over from the prior week, sorted by fewest detail-page views: the long-listed animals getting the least search interest. This is the queue to work first (fresh photos, better descriptions, social pushes) to keep adoptions moving. Adjust the filters or sort to explore.</div>
+<div class="controls">
+ <input type="search" id="q" placeholder="Search name, breed, or ID&hellip;">
+ <div class="seg" id="sp">
+  <button data-sp="all" class="on">All</button><button data-sp="dog">Dogs</button><button data-sp="cat">Cats</button>
+ </div>
+ <div class="seg" id="st">
+  <button data-st="all">Any</button><button data-st="returning" class="on">Carried over</button><button data-st="new">New</button><button data-st="dropped">Dropped</button>
+ </div>
+ <span class="count" id="count"></span>
+</div>
+
+<div class="tbl-wrap">
+<table>
+<thead><tr>
+ <th data-k="name">Name<span class="arr">&#9650;</span></th>
+ <th data-k="species">Type<span class="arr">&#9650;</span></th>
+ <th data-k="breed">Breed(s)<span class="arr">&#9650;</span></th>
+ <th class="num" data-k="hits">Hits<span class="arr">&#9650;</span></th>
+ <th class="num" data-k="views">Views<span class="arr">&#9650;</span></th>
+ <th class="num" data-k="dviews">&Delta; Views<span class="arr">&#9650;</span></th>
+ <th class="num" data-k="ctr">CTR<span class="arr">&#9650;</span></th>
+ <th data-k="status">Status<span class="arr">&#9650;</span></th>
+</tr></thead>
+<tbody id="tb"></tbody>
+</table>
+</div>
+
+<div class="foot">
+ <strong>Hits</strong> = search-result appearances. <strong>Views</strong> = detail-page opens. <strong>CTR</strong> = Views &divide; Hits (capped at 100%), the headline listing-quality signal. All KPI cards below describe the most recent captured week only. The trend charts step weekly by Monday; a <span style="opacity:.7">hollow, dashed</span> point is an <em>estimated</em> week with no capture (grounded in the following real week's 30-day counter where available, otherwise interpolated between captured weeks). &Delta; columns and KPI deltas compare the latest week to the prior <em>captured</em> week (ending 2026-08-24); pets are matched by I.D.#.<br>Sources: weeks through 2026-06-22 backfilled from the Adopt-a-Pet weekly email PDFs; 2026-07-15 onward pulled live from the Adopt-a-Pet Individual Pet Stats report. Estimated weeks are presentation-only and are never written to the stored history. Per-pet figures cover Adopt-a-Pet.com only, not partner-site-inclusive org totals.<br>
+ <span style="opacity:.7">Generated 2026-08-31 14:23 from data/aap-stats/history.json.</span>
+</div>
+</div>
+
+<script>
+const WEEKS=[{"date": "2026-06-15", "label": "Jun 15", "ctr": 7.7, "views": 982, "hits": 12826, "estimated": false}, {"date": "2026-06-22", "label": "Jun 22", "ctr": 7.8, "views": 1138, "hits": 14542, "estimated": false}, {"date": "2026-06-29", "label": "Jun 29", "ctr": 7.0, "hits": 10587, "views": 746, "estimated": true}, {"date": "2026-07-06", "label": "Jul 6", "ctr": 7.0, "hits": 10587, "views": 746, "estimated": true}, {"date": "2026-07-13", "label": "Jul 13", "ctr": 4.6, "views": 636, "hits": 13688, "estimated": false}, {"date": "2026-07-20", "label": "Jul 20", "ctr": 7.5, "hits": 13080, "views": 980, "estimated": true}, {"date": "2026-07-27", "label": "Jul 27", "ctr": 5.9, "views": 983, "hits": 16539, "estimated": false}, {"date": "2026-08-03", "label": "Aug 3", "ctr": 5.7, "views": 854, "hits": 15062, "estimated": false}, {"date": "2026-08-10", "label": "Aug 10", "ctr": 5.3, "views": 812, "hits": 15464, "estimated": false}, {"date": "2026-08-17", "label": "Aug 17", "ctr": 7.8, "views": 793, "hits": 10131, "estimated": false}, {"date": "2026-08-24", "label": "Aug 24", "ctr": 5.8, "views": 827, "hits": 14186, "estimated": false}, {"date": "2026-08-31", "label": "Aug 31", "ctr": 8.5, "views": 1342, "hits": 15784, "estimated": false}];
+const PETS=[{"id": 1203, "name": "Alaska (FKA Shiloh)", "species": "dog", "breed": "Australian Shepherd / Husky", "date_added": "2026-08-06", "hits": 326, "views": 16, "ctr": 4.9, "phits": 326, "pviews": 20, "pctr": 6.1, "status": "returning", "dviews": -4, "dhits": 0}, {"id": 56160, "name": "Alfalfa", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-08-27", "hits": 81, "views": 22, "ctr": 27.2, "phits": null, "pviews": null, "pctr": null, "status": "new", "dviews": null, "dhits": null}, {"id": 56189, "name": "Alvin", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-08-26", "hits": 72, "views": 12, "ctr": 16.7, "phits": null, "pviews": null, "pctr": null, "status": "new", "dviews": null, "dhits": null}, {"id": 56047, "name": "Andromeda", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-07-24", "hits": 74, "views": 0, "ctr": 0.0, "phits": 61, "pviews": 1, "pctr": 1.6, "status": "returning", "dviews": -1, "dhits": 13}, {"id": 578, "name": "Ashland", "species": "dog", "breed": "Chow Chow / Mixed Breed (Medium)", "date_added": "2023-09-26", "hits": 156, "views": 37, "ctr": 23.7, "phits": 157, "pviews": 27, "pctr": 17.2, "status": "returning", "dviews": 10, "dhits": -1}, {"id": 1055, "name": "Aspen", "species": "dog", "breed": "Hound (Unknown Type) / Mixed Breed (Medium)", "date_added": "2023-09-26", "hits": 117, "views": 0, "ctr": 0.0, "phits": 115, "pviews": 0, "pctr": 0.0, "status": "returning", "dviews": 0, "dhits": 2}, {"id": 56181, "name": "AstroTurf", "species": "dog", "breed": "Shiba Inu / Mixed Breed (Medium)", "date_added": "2026-08-27", "hits": 317, "views": 90, "ctr": 28.4, "phits": null, "pviews": null, "pctr": null, "status": "new", "dviews": null, "dhits": null}, {"id": 56140, "name": "Bebe", "species": "cat", "breed": "Domestic Mediumhair", "date_added": "2026-08-11", "hits": 122, "views": 6, "ctr": 4.9, "phits": 141, "pviews": 17, "pctr": 12.1, "status": "returning", "dviews": -11, "dhits": -19}, {"id": 56183, "name": "Belvedere", "species": "dog", "breed": "Beagle", "date_added": "2026-08-30", "hits": 98, "views": 8, "ctr": 8.2, "phits": null, "pviews": null, "pctr": null, "status": "new", "dviews": null, "dhits": null}, {"id": 1632, "name": "Bingo", "species": "dog", "breed": "Alaskan Malamute / Mixed Breed (Medium)", "date_added": "2024-01-31", "hits": 131, "views": 10, "ctr": 7.6, "phits": 160, "pviews": 9, "pctr": 5.6, "status": "returning", "dviews": 1, "dhits": -29}, {"id": 56143, "name": "Biscuits", "species": "cat", "breed": "Domestic Mediumhair", "date_added": "2026-08-15", "hits": 97, "views": 9, "ctr": 9.3, "phits": 136, "pviews": 28, "pctr": 20.6, "status": "returning", "dviews": -19, "dhits": -39}, {"id": 56204, "name": "Bowen", "species": "cat", "breed": "Domestic Shorthair / Domestic Shorthair", "date_added": "2026-08-26", "hits": 63, "views": 13, "ctr": 20.6, "phits": null, "pviews": null, "pctr": null, "status": "new", "dviews": null, "dhits": null}, {"id": 55952, "name": "Brandy", "species": "dog", "breed": "Mixed Breed (Medium)", "date_added": "2026-02-04", "hits": 140, "views": 0, "ctr": 0.0, "phits": 152, "pviews": 3, "pctr": 2.0, "status": "returning", "dviews": -3, "dhits": -12}, {"id": 55964, "name": "Bryce", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-02-11", "hits": 38, "views": 0, "ctr": 0.0, "phits": 48, "pviews": 0, "pctr": 0.0, "status": "returning", "dviews": 0, "dhits": -10}, {"id": 741, "name": "Buddy", "species": "dog", "breed": "Labrador Retriever / Mixed Breed (Large)", "date_added": "2023-09-26", "hits": 145, "views": 13, "ctr": 9.0, "phits": 122, "pviews": 0, "pctr": 0.0, "status": "returning", "dviews": 13, "dhits": 23}, {"id": 55951, "name": "Buster Brown", "species": "dog", "breed": "Mixed Breed (Medium)", "date_added": "2026-02-04", "hits": 102, "views": 0, "ctr": 0.0, "phits": 99, "pviews": 1, "pctr": 1.0, "status": "returning", "dviews": -1, "dhits": 3}, {"id": 55899, "name": "Cami", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2025-12-16", "hits": 44, "views": 8, "ctr": 18.2, "phits": 55, "pviews": 1, "pctr": 1.8, "status": "returning", "dviews": 7, "dhits": -11}, {"id": 55924, "name": "Cash Money Records", "species": "dog", "breed": "Boxer / Mixed Breed (Large)", "date_added": "2026-01-13", "hits": 176, "views": 12, "ctr": 6.8, "phits": 220, "pviews": 27, "pctr": 12.3, "status": "returning", "dviews": -15, "dhits": -44}, {"id": 56103, "name": "Charlie", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-06-03", "hits": 49, "views": 1, "ctr": 2.0, "phits": 61, "pviews": 2, "pctr": 3.3, "status": "returning", "dviews": -1, "dhits": -12}, {"id": 818, "name": "Chaucer", "species": "dog", "breed": "Husky", "date_added": "2023-09-26", "hits": 171, "views": 7, "ctr": 4.1, "phits": 157, "pviews": 6, "pctr": 3.8, "status": "returning", "dviews": 1, "dhits": 14}, {"id": 55826, "name": "Chilli", "species": "dog", "breed": "Australian Cattle Dog", "date_added": "2025-10-09", "hits": 140, "views": 8, "ctr": 5.7, "phits": 124, "pviews": 14, "pctr": 11.3, "status": "returning", "dviews": -6, "dhits": 16}, {"id": 56173, "name": "Comet", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-08-15", "hits": 87, "views": 4, "ctr": 4.6, "phits": 137, "pviews": 24, "pctr": 17.5, "status": "returning", "dviews": -20, "dhits": -50}, {"id": 56175, "name": "Cupertino", "species": "dog", "breed": "Labrador Retriever", "date_added": "2026-08-27", "hits": 229, "views": 49, "ctr": 21.4, "phits": null, "pviews": null, "pctr": null, "status": "new", "dviews": null, "dhits": null}, {"id": 56174, "name": "Dale", "species": "cat", "breed": "Domestic Mediumhair", "date_added": "2026-08-27", "hits": 61, "views": 15, "ctr": 24.6, "phits": null, "pviews": null, "pctr": null, "status": "new", "dviews": null, "dhits": null}, {"id": 56165, "name": "Dancing Queen", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-08-11", "hits": 185, "views": 1, "ctr": 0.5, "phits": 279, "pviews": 12, "pctr": 4.3, "status": "returning", "dviews": -11, "dhits": -94}, {"id": 55963, "name": "Daphne", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-02-11", "hits": 40, "views": 0, "ctr": 0.0, "phits": 51, "pviews": 1, "pctr": 2.0, "status": "returning", "dviews": -1, "dhits": -11}, {"id": 56159, "name": "Darla", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-08-27", "hits": 107, "views": 35, "ctr": 32.7, "phits": null, "pviews": null, "pctr": null, "status": "new", "dviews": null, "dhits": null}, {"id": 56177, "name": "Daytona", "species": "dog", "breed": "Belgian Malinois / Mixed Breed (Medium)", "date_added": "2026-08-27", "hits": 282, "views": 82, "ctr": 29.1, "phits": null, "pviews": null, "pctr": null, "status": "new", "dviews": null, "dhits": null}, {"id": 55667, "name": "Deebo", "species": "dog", "breed": "American Pit Bull Terrier", "date_added": "2025-06-24", "hits": 210, "views": 10, "ctr": 4.8, "phits": 218, "pviews": 7, "pctr": 3.2, "status": "returning", "dviews": 3, "dhits": -8}, {"id": 598, "name": "Doris", "species": "dog", "breed": "Australian Cattle Dog / Mixed Breed (Medium)", "date_added": "2023-09-26", "hits": 184, "views": 19, "ctr": 10.3, "phits": 211, "pviews": 18, "pctr": 8.5, "status": "returning", "dviews": 1, "dhits": -27}, {"id": 506, "name": "Duchess", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-07-21", "hits": 47, "views": 1, "ctr": 2.1, "phits": 56, "pviews": 3, "pctr": 5.4, "status": "returning", "dviews": -2, "dhits": -9}, {"id": 680, "name": "Dylan", "species": "dog", "breed": "Hound (Unknown Type) / Mixed Breed (Medium)", "date_added": "2023-09-26", "hits": 120, "views": 2, "ctr": 1.7, "phits": 110, "pviews": 3, "pctr": 2.7, "status": "returning", "dviews": -1, "dhits": 10}, {"id": 599, "name": "Echo", "species": "dog", "breed": "Shepherd (Unknown Type) / Mixed Breed (Medium)", "date_added": "2023-09-26", "hits": 122, "views": 4, "ctr": 3.3, "phits": 104, "pviews": 4, "pctr": 3.8, "status": "returning", "dviews": 0, "dhits": 18}, {"id": 56180, "name": "Eleanor Rigby", "species": "dog", "breed": "Mixed Breed (Medium)", "date_added": "2026-08-27", "hits": 420, "views": 49, "ctr": 11.7, "phits": null, "pviews": null, "pctr": null, "status": "new", "dviews": null, "dhits": null}, {"id": 56085, "name": "Fruit Snack", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-06-03", "hits": 93, "views": 2, "ctr": 2.2, "phits": 130, "pviews": 4, "pctr": 3.1, "status": "returning", "dviews": -2, "dhits": -37}, {"id": 56178, "name": "Gandalf", "species": "dog", "breed": "Mixed Breed (Medium)", "date_added": "2026-08-27", "hits": 240, "views": 67, "ctr": 27.9, "phits": null, "pviews": null, "pctr": null, "status": "new", "dviews": null, "dhits": null}, {"id": 56203, "name": "Ginger", "species": "cat", "breed": "Domestic Mediumhair", "date_added": "2026-08-27", "hits": 60, "views": 22, "ctr": 36.7, "phits": null, "pviews": null, "pctr": null, "status": "new", "dviews": null, "dhits": null}, {"id": 56080, "name": "Gracie", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-07-14", "hits": 91, "views": 5, "ctr": 5.5, "phits": 146, "pviews": 1, "pctr": 0.7, "status": "returning", "dviews": 4, "dhits": -55}, {"id": 56145, "name": "Gravy", "species": "cat", "breed": "Domestic Mediumhair", "date_added": "2026-08-15", "hits": 120, "views": 10, "ctr": 8.3, "phits": 217, "pviews": 32, "pctr": 14.7, "status": "returning", "dviews": -22, "dhits": -97}, {"id": 56131, "name": "Gumby", "species": "dog", "breed": "Coonhound / Collie", "date_added": "2026-07-02", "hits": 201, "views": 13, "ctr": 6.5, "phits": 184, "pviews": 17, "pctr": 9.2, "status": "returning", "dviews": -4, "dhits": 17}, {"id": 55959, "name": "Gypsy", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-02-11", "hits": 137, "views": 1, "ctr": 0.7, "phits": 144, "pviews": 1, "pctr": 0.7, "status": "returning", "dviews": 0, "dhits": -7}, {"id": 532, "name": "Henry", "species": "dog", "breed": "Husky", "date_added": "2026-03-28", "hits": 231, "views": 4, "ctr": 1.7, "phits": 251, "pviews": 4, "pctr": 1.6, "status": "returning", "dviews": 0, "dhits": -20}, {"id": 56164, "name": "Honey, Honey", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-08-10", "hits": 192, "views": 13, "ctr": 6.8, "phits": 281, "pviews": 23, "pctr": 8.2, "status": "returning", "dviews": -10, "dhits": -89}, {"id": 55955, "name": "Hugo", "species": "dog", "breed": "Australian Cattle Dog / Hound (Unknown Type)", "date_added": "2026-02-01", "hits": 156, "views": 12, "ctr": 7.7, "phits": 188, "pviews": 3, "pctr": 1.6, "status": "returning", "dviews": 9, "dhits": -32}, {"id": 55895, "name": "Jakob", "species": "dog", "breed": "Husky / German Shepherd Dog", "date_added": "2025-12-22", "hits": 376, "views": 14, "ctr": 3.7, "phits": 352, "pviews": 15, "pctr": 4.3, "status": "returning", "dviews": -1, "dhits": 24}, {"id": 56161, "name": "Jane", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-08-27", "hits": 126, "views": 28, "ctr": 22.2, "phits": null, "pviews": null, "pctr": null, "status": "new", "dviews": null, "dhits": null}, {"id": 1297, "name": "Janis J", "species": "dog", "breed": "Husky / Mixed Breed (Medium)", "date_added": "2023-09-26", "hits": 187, "views": 17, "ctr": 9.1, "phits": 176, "pviews": 5, "pctr": 2.8, "status": "returning", "dviews": 12, "dhits": 11}, {"id": 1298, "name": "Jerry G", "species": "dog", "breed": "Husky / Mixed Breed (Medium)", "date_added": "2023-09-26", "hits": 174, "views": 15, "ctr": 8.6, "phits": 160, "pviews": 4, "pctr": 2.5, "status": "returning", "dviews": 11, "dhits": 14}, {"id": 1823, "name": "Kai (Ky)", "species": "dog", "breed": "Akita / German Shepherd Dog", "date_added": "2024-07-03", "hits": 222, "views": 5, "ctr": 2.3, "phits": 205, "pviews": 11, "pctr": 5.4, "status": "returning", "dviews": -6, "dhits": 17}, {"id": 55973, "name": "Kenya", "species": "dog", "breed": "Hound (Unknown Type) / Mixed Breed (Medium)", "date_added": "2026-02-25", "hits": 148, "views": 3, "ctr": 2.0, "phits": 152, "pviews": 1, "pctr": 0.7, "status": "returning", "dviews": 2, "dhits": -4}, {"id": 1717, "name": "Kiara", "species": "dog", "breed": "Husky / Mixed Breed (Medium)", "date_added": "2024-04-27", "hits": 206, "views": 6, "ctr": 2.9, "phits": 203, "pviews": 1, "pctr": 0.5, "status": "returning", "dviews": 5, "dhits": 3}, {"id": 1716, "name": "Kita", "species": "dog", "breed": "Husky / Mixed Breed (Medium)", "date_added": "2024-04-27", "hits": 241, "views": 10, "ctr": 4.1, "phits": 239, "pviews": 2, "pctr": 0.8, "status": "returning", "dviews": 8, "dhits": 2}, {"id": 56083, "name": "Kobalt", "species": "dog", "breed": "Akita", "date_added": "2026-05-25", "hits": 168, "views": 6, "ctr": 3.6, "phits": 146, "pviews": 6, "pctr": 4.1, "status": "returning", "dviews": 0, "dhits": 22}, {"id": 55601, "name": "Kobe (fka Bandit)", "species": "dog", "breed": "Catahoula Leopard Dog / Mixed Breed (Large)", "date_added": "2025-04-14", "hits": 134, "views": 2, "ctr": 1.5, "phits": 138, "pviews": 5, "pctr": 3.6, "status": "returning", "dviews": -3, "dhits": -4}, {"id": 1269, "name": "Leo", "species": "dog", "breed": "Mixed Breed (Medium)", "date_added": "2023-09-26", "hits": 130, "views": 2, "ctr": 1.5, "phits": 148, "pviews": 3, "pctr": 2.0, "status": "returning", "dviews": -1, "dhits": -18}, {"id": 56150, "name": "Leo2", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-08-20", "hits": 78, "views": 11, "ctr": 14.1, "phits": 91, "pviews": 50, "pctr": 54.9, "status": "returning", "dviews": -39, "dhits": -13}, {"id": 56123, "name": "Link", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-07-02", "hits": 41, "views": 0, "ctr": 0.0, "phits": 50, "pviews": 1, "pctr": 2.0, "status": "returning", "dviews": -1, "dhits": -9}, {"id": 55960, "name": "Little Man", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-02-11", "hits": 43, "views": 8, "ctr": 18.6, "phits": 55, "pviews": 4, "pctr": 7.3, "status": "returning", "dviews": 4, "dhits": -12}, {"id": 56071, "name": "Loco", "species": "dog", "breed": "American Pit Bull Terrier", "date_added": "2026-05-21", "hits": 157, "views": 3, "ctr": 1.9, "phits": 141, "pviews": 4, "pctr": 2.8, "status": "returning", "dviews": -1, "dhits": 16}, {"id": 845, "name": "Loki (Dublin)", "species": "dog", "breed": "Hound (Unknown Type) / Mixed Breed (Medium)", "date_added": "2024-04-01", "hits": 149, "views": 5, "ctr": 3.4, "phits": 151, "pviews": 3, "pctr": 2.0, "status": "returning", "dviews": 2, "dhits": -2}, {"id": 56142, "name": "Lola", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-08-11", "hits": 94, "views": 6, "ctr": 6.4, "phits": 124, "pviews": 10, "pctr": 8.1, "status": "returning", "dviews": -4, "dhits": -30}, {"id": 56179, "name": "Lo Mein", "species": "dog", "breed": "Mixed Breed (Medium)", "date_added": "2026-08-27", "hits": 210, "views": 23, "ctr": 11.0, "phits": null, "pviews": null, "pctr": null, "status": "new", "dviews": null, "dhits": null}, {"id": 56157, "name": "Loofah", "species": "dog", "breed": "Setter (Unknown Type)", "date_added": "2026-07-17", "hits": 173, "views": 71, "ctr": 41.0, "phits": null, "pviews": null, "pctr": null, "status": "new", "dviews": null, "dhits": null}, {"id": 56023, "name": "Luna", "species": "cat", "breed": "Domestic Mediumhair", "date_added": "2026-04-02", "hits": 61, "views": 5, "ctr": 8.2, "phits": 57, "pviews": 3, "pctr": 5.3, "status": "returning", "dviews": 2, "dhits": 4}, {"id": 56139, "name": "Luna", "species": "cat", "breed": "Domestic Mediumhair", "date_added": "2026-08-11", "hits": 103, "views": 15, "ctr": 14.6, "phits": 127, "pviews": 15, "pctr": 11.8, "status": "returning", "dviews": 0, "dhits": -24}, {"id": 574, "name": "Lynk", "species": "dog", "breed": "Labrador Retriever / Mixed Breed (Medium)", "date_added": "2023-09-26", "hits": 163, "views": 38, "ctr": 23.3, "phits": 155, "pviews": 34, "pctr": 21.9, "status": "returning", "dviews": 4, "dhits": 8}, {"id": 56057, "name": "Lyra", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-07-24", "hits": 99, "views": 2, "ctr": 2.0, "phits": 130, "pviews": 1, "pctr": 0.8, "status": "returning", "dviews": 1, "dhits": -31}, {"id": 917, "name": "Mammoth", "species": "dog", "breed": "American Staffordshire Terrier / Mixed Breed (Medium)", "date_added": "2023-09-26", "hits": 271, "views": 2, "ctr": 0.7, "phits": 304, "pviews": 5, "pctr": 1.6, "status": "returning", "dviews": -3, "dhits": -33}, {"id": 56146, "name": "Maple", "species": "cat", "breed": "Domestic Mediumhair", "date_added": "2026-08-15", "hits": 114, "views": 14, "ctr": 12.3, "phits": 146, "pviews": 29, "pctr": 19.9, "status": "returning", "dviews": -15, "dhits": -32}, {"id": 616, "name": "Marvin", "species": "dog", "breed": "Labrador Retriever", "date_added": "2023-09-26", "hits": 280, "views": 3, "ctr": 1.1, "phits": 250, "pviews": 7, "pctr": 2.8, "status": "returning", "dviews": -4, "dhits": 30}, {"id": 56163, "name": "Mary Ann", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-08-27", "hits": 126, "views": 24, "ctr": 19.0, "phits": null, "pviews": null, "pctr": null, "status": "new", "dviews": null, "dhits": null}, {"id": 55682, "name": "Marzipan", "species": "dog", "breed": "Hound (Unknown Type) / Mixed Breed (Medium)", "date_added": "2025-07-02", "hits": 274, "views": 6, "ctr": 2.2, "phits": 269, "pviews": 6, "pctr": 2.2, "status": "returning", "dviews": 0, "dhits": 5}, {"id": 620, "name": "Mason", "species": "dog", "breed": "Rottweiler / Mixed Breed (Medium)", "date_added": "2023-09-26", "hits": 185, "views": 4, "ctr": 2.2, "phits": 212, "pviews": 5, "pctr": 2.4, "status": "returning", "dviews": -1, "dhits": -27}, {"id": 55752, "name": "Mercutio", "species": "dog", "breed": "Mixed Breed (Small)", "date_added": "2025-08-27", "hits": 175, "views": 5, "ctr": 2.9, "phits": 164, "pviews": 4, "pctr": 2.4, "status": "returning", "dviews": 1, "dhits": 11}, {"id": 1710, "name": "Milo (MEE-LO)", "species": "dog", "breed": "Feist / Mixed Breed (Medium)", "date_added": "2024-04-14", "hits": 126, "views": 9, "ctr": 7.1, "phits": 127, "pviews": 3, "pctr": 2.4, "status": "returning", "dviews": 6, "dhits": -1}, {"id": 56069, "name": "Mister Miller", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-05-20", "hits": 41, "views": 0, "ctr": 0.0, "phits": 50, "pviews": 2, "pctr": 4.0, "status": "returning", "dviews": -2, "dhits": -9}, {"id": 1347, "name": "Moose", "species": "dog", "breed": "Labrador Retriever / Mixed Breed (Medium)", "date_added": "2023-09-26", "hits": 163, "views": 11, "ctr": 6.7, "phits": 187, "pviews": 19, "pctr": 10.2, "status": "returning", "dviews": -8, "dhits": -24}, {"id": 56176, "name": "Mushu", "species": "dog", "breed": "Mixed Breed (Medium)", "date_added": "2026-08-27", "hits": 218, "views": 17, "ctr": 7.8, "phits": null, "pviews": null, "pctr": null, "status": "new", "dviews": null, "dhits": null}, {"id": 1329, "name": "Nanni", "species": "dog", "breed": "Shepherd (Unknown Type) / Mixed Breed (Medium)", "date_added": "2023-09-26", "hits": 138, "views": 3, "ctr": 2.2, "phits": 142, "pviews": 7, "pctr": 4.9, "status": "returning", "dviews": -4, "dhits": -4}, {"id": 1841, "name": "Nebula", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2024-08-14", "hits": 38, "views": 7, "ctr": 18.4, "phits": 52, "pviews": 0, "pctr": 0.0, "status": "returning", "dviews": 7, "dhits": -14}, {"id": 653, "name": "Nelson", "species": "dog", "breed": "Border Collie", "date_added": "2023-09-26", "hits": 237, "views": 8, "ctr": 3.4, "phits": 209, "pviews": 8, "pctr": 3.8, "status": "returning", "dviews": 0, "dhits": 28}, {"id": 1265, "name": "Nigel", "species": "dog", "breed": "Mixed Breed (Medium) / Mixed Breed (Medium)", "date_added": "2023-09-26", "hits": 168, "views": 3, "ctr": 1.8, "phits": 142, "pviews": 3, "pctr": 2.1, "status": "returning", "dviews": 0, "dhits": 26}, {"id": 56133, "name": "Niko", "species": "dog", "breed": "Husky / Mixed Breed (Medium)", "date_added": "2026-07-02", "hits": 217, "views": 21, "ctr": 9.7, "phits": 225, "pviews": 15, "pctr": 6.7, "status": "returning", "dviews": 6, "dhits": -8}, {"id": 654, "name": "Nolan", "species": "dog", "breed": "Foxhound / Mixed Breed (Medium)", "date_added": "2023-09-26", "hits": 111, "views": 8, "ctr": 7.2, "phits": 100, "pviews": 1, "pctr": 1.0, "status": "returning", "dviews": 7, "dhits": 11}, {"id": 56128, "name": "Norma Jean", "species": "dog", "breed": "Beagle / Hound (Unknown Type)", "date_added": "2026-07-02", "hits": 194, "views": 5, "ctr": 2.6, "phits": 235, "pviews": 11, "pctr": 4.7, "status": "returning", "dviews": -6, "dhits": -41}, {"id": 56055, "name": "Nova", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-07-24", "hits": 105, "views": 1, "ctr": 1.0, "phits": 149, "pviews": 8, "pctr": 5.4, "status": "returning", "dviews": -7, "dhits": -44}, {"id": 55810, "name": "Novella", "species": "dog", "breed": "Mixed Breed (Medium)", "date_added": "2025-10-17", "hits": 262, "views": 6, "ctr": 2.3, "phits": 294, "pviews": 4, "pctr": 1.4, "status": "returning", "dviews": 2, "dhits": -32}, {"id": 1328, "name": "Ohana", "species": "dog", "breed": "Husky / Mixed Breed (Large)", "date_added": "2023-09-26", "hits": 197, "views": 7, "ctr": 3.6, "phits": 195, "pviews": 6, "pctr": 3.1, "status": "returning", "dviews": 1, "dhits": 2}, {"id": 655, "name": "Oscar", "species": "dog", "breed": "Black and Tan Coonhound / Mixed Breed (Large)", "date_added": "2023-09-26", "hits": 121, "views": 6, "ctr": 5.0, "phits": 126, "pviews": 3, "pctr": 2.4, "status": "returning", "dviews": 3, "dhits": -5}, {"id": 718, "name": "Ozzy", "species": "dog", "breed": "Treeing Walker Coonhound / Mixed Breed (Medium)", "date_added": "2023-09-26", "hits": 119, "views": 9, "ctr": 7.6, "phits": 125, "pviews": 10, "pctr": 8.0, "status": "returning", "dviews": -1, "dhits": -6}, {"id": 56025, "name": "Panda", "species": "dog", "breed": "American Pit Bull Terrier / Mixed Breed (Large)", "date_added": "2026-04-07", "hits": 186, "views": 7, "ctr": 3.8, "phits": 197, "pviews": 7, "pctr": 3.6, "status": "returning", "dviews": 0, "dhits": -11}, {"id": 998, "name": "Pelican", "species": "dog", "breed": "Border Collie / Mixed Breed (Medium)", "date_added": "2023-09-26", "hits": 197, "views": 16, "ctr": 8.1, "phits": 176, "pviews": 2, "pctr": 1.1, "status": "returning", "dviews": 14, "dhits": 21}, {"id": 55961, "name": "Pepper", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-02-11", "hits": 0, "views": 0, "ctr": 0.0, "phits": null, "pviews": null, "pctr": null, "status": "new", "dviews": null, "dhits": null}, {"id": 56004, "name": "Polly Pocket", "species": "dog", "breed": "Mixed Breed (Medium)", "date_added": "2026-03-25", "hits": 154, "views": 0, "ctr": 0.0, "phits": 149, "pviews": 2, "pctr": 1.3, "status": "returning", "dviews": -2, "dhits": 5}, {"id": 1254, "name": "Queen", "species": "dog", "breed": "Mastiff", "date_added": "2023-09-26", "hits": 137, "views": 5, "ctr": 3.6, "phits": 138, "pviews": 3, "pctr": 2.2, "status": "returning", "dviews": 2, "dhits": -1}, {"id": 55823, "name": "Rawley", "species": "dog", "breed": "Mixed Breed (Medium)", "date_added": "2025-10-09", "hits": 115, "views": 6, "ctr": 5.2, "phits": 129, "pviews": 29, "pctr": 22.5, "status": "returning", "dviews": -23, "dhits": -14}, {"id": 1882, "name": "Rollo", "species": "dog", "breed": "Shepherd (Unknown Type) / Bull Terrier", "date_added": "2024-09-12", "hits": 145, "views": 5, "ctr": 3.4, "phits": 126, "pviews": 7, "pctr": 5.6, "status": "returning", "dviews": -2, "dhits": 19}, {"id": 56154, "name": "Roomba", "species": "dog", "breed": "Mixed Breed (Medium)", "date_added": "2026-07-17", "hits": 111, "views": 3, "ctr": 2.7, "phits": 155, "pviews": 4, "pctr": 2.6, "status": "returning", "dviews": -1, "dhits": -44}, {"id": 56063, "name": "Ruby Woo", "species": "dog", "breed": "Hound (Unknown Type)", "date_added": "2026-05-21", "hits": 168, "views": 5, "ctr": 3.0, "phits": 170, "pviews": 1, "pctr": 0.6, "status": "returning", "dviews": 4, "dhits": -2}, {"id": 56205, "name": "Sawyer", "species": "cat", "breed": "Domestic Mediumhair / Domestic Mediumhair", "date_added": "2026-08-26", "hits": 71, "views": 13, "ctr": 18.3, "phits": null, "pviews": null, "pctr": null, "status": "new", "dviews": null, "dhits": null}, {"id": 56162, "name": "Spanky", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-08-27", "hits": 77, "views": 22, "ctr": 28.6, "phits": null, "pviews": null, "pctr": null, "status": "new", "dviews": null, "dhits": null}, {"id": 56166, "name": "Super Trouper", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-08-10", "hits": 78, "views": 4, "ctr": 5.1, "phits": 129, "pviews": 18, "pctr": 14.0, "status": "returning", "dviews": -14, "dhits": -51}, {"id": 1808, "name": "Valentino", "species": "dog", "breed": "Terrier (Unknown Type, Medium) / Mixed Breed (Medium)", "date_added": "2024-07-01", "hits": 88, "views": 9, "ctr": 10.2, "phits": 90, "pviews": 14, "pctr": 15.6, "status": "returning", "dviews": -5, "dhits": -2}, {"id": 56144, "name": "Waffle", "species": "cat", "breed": "Domestic Mediumhair", "date_added": "2026-08-15", "hits": 83, "views": 7, "ctr": 8.4, "phits": 193, "pviews": 37, "pctr": 19.2, "status": "returning", "dviews": -30, "dhits": -110}, {"id": 558, "name": "Wally", "species": "dog", "breed": "Great Pyrenees / Golden Retriever", "date_added": "2023-09-26", "hits": 422, "views": 70, "ctr": 16.6, "phits": 407, "pviews": 40, "pctr": 9.8, "status": "returning", "dviews": 30, "dhits": 15}, {"id": 56022, "name": "Zeke", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-04-02", "hits": 115, "views": 4, "ctr": 3.5, "phits": 100, "pviews": 0, "pctr": 0.0, "status": "returning", "dviews": 4, "dhits": 15}, {"id": 56121, "name": "Aslan", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-07-02", "hits": null, "views": null, "ctr": null, "phits": 50, "pviews": 3, "pctr": 6.0, "status": "dropped", "dviews": null, "dhits": null}, {"id": 56081, "name": "Ben", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-07-14", "hits": null, "views": null, "ctr": null, "phits": 142, "pviews": 6, "pctr": 4.2, "status": "dropped", "dviews": null, "dhits": null}, {"id": 56048, "name": "Marmalade", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-04-21", "hits": null, "views": null, "ctr": null, "phits": 49, "pviews": 3, "pctr": 6.1, "status": "dropped", "dviews": null, "dhits": null}, {"id": 56113, "name": "Moon Pie", "species": "cat", "breed": "Domestic Longhair", "date_added": "2026-06-18", "hits": null, "views": null, "ctr": null, "phits": 92, "pviews": 3, "pctr": 3.3, "status": "dropped", "dviews": null, "dhits": null}, {"id": 56152, "name": "Precious", "species": "cat", "breed": "Domestic Shorthair", "date_added": "2026-07-17", "hits": null, "views": null, "ctr": null, "phits": 150, "pviews": 1, "pctr": 0.7, "status": "dropped", "dviews": null, "dhits": null}];
+const MOVERS=[{"name": "Alaska (FKA Shiloh)", "pviews": 26, "views": 16, "dviews": -10}, {"name": "Andromeda", "pviews": 1, "views": 0, "dviews": -1}, {"name": "Ashland", "pviews": 28, "views": 37, "dviews": 9}, {"name": "Aspen", "pviews": 5, "views": 0, "dviews": -5}, {"name": "Bebe", "pviews": 16, "views": 6, "dviews": -10}, {"name": "Bingo", "pviews": 10, "views": 10, "dviews": 0}, {"name": "Biscuits", "pviews": 22, "views": 9, "dviews": -13}, {"name": "Brandy", "pviews": 1, "views": 0, "dviews": -1}, {"name": "Bryce", "pviews": 1, "views": 0, "dviews": -1}, {"name": "Buddy", "pviews": 4, "views": 13, "dviews": 9}, {"name": "Buster Brown", "pviews": 0, "views": 0, "dviews": 0}, {"name": "Cami", "pviews": 1, "views": 8, "dviews": 7}, {"name": "Cash Money Records", "pviews": 24, "views": 12, "dviews": -12}, {"name": "Charlie", "pviews": 0, "views": 1, "dviews": 1}, {"name": "Chaucer", "pviews": 3, "views": 7, "dviews": 4}, {"name": "Comet", "pviews": 6, "views": 4, "dviews": -2}, {"name": "Dancing Queen", "pviews": 11, "views": 1, "dviews": -10}, {"name": "Daphne", "pviews": 0, "views": 0, "dviews": 0}, {"name": "Deebo", "pviews": 8, "views": 10, "dviews": 2}, {"name": "Doris", "pviews": 9, "views": 19, "dviews": 10}, {"name": "Duchess", "pviews": 0, "views": 1, "dviews": 1}, {"name": "Dylan", "pviews": 3, "views": 2, "dviews": -1}, {"name": "Echo", "pviews": 0, "views": 4, "dviews": 4}, {"name": "Fruit Snack", "pviews": 0, "views": 2, "dviews": 2}, {"name": "Gracie", "pviews": 7, "views": 5, "dviews": -2}, {"name": "Gravy", "pviews": 12, "views": 10, "dviews": -2}, {"name": "Gumby", "pviews": 6, "views": 13, "dviews": 7}, {"name": "Gypsy", "pviews": 1, "views": 1, "dviews": 0}, {"name": "Henry", "pviews": 2, "views": 4, "dviews": 2}, {"name": "Honey, Honey", "pviews": 51, "views": 13, "dviews": -38}, {"name": "Hugo", "pviews": 6, "views": 12, "dviews": 6}, {"name": "Jakob", "pviews": 20, "views": 14, "dviews": -6}, {"name": "Janis J", "pviews": 0, "views": 17, "dviews": 17}, {"name": "Jerry G", "pviews": 5, "views": 15, "dviews": 10}, {"name": "Kai (Ky)", "pviews": 3, "views": 5, "dviews": 2}, {"name": "Kenya", "pviews": 4, "views": 3, "dviews": -1}, {"name": "Kiara", "pviews": 5, "views": 6, "dviews": 1}, {"name": "Kita", "pviews": 10, "views": 10, "dviews": 0}, {"name": "Kobalt", "pviews": 6, "views": 6, "dviews": 0}, {"name": "Kobe (fka Bandit)", "pviews": 3, "views": 2, "dviews": -1}, {"name": "Leo", "pviews": 3, "views": 2, "dviews": -1}, {"name": "Link", "pviews": 1, "views": 0, "dviews": -1}, {"name": "Little Man", "pviews": 1, "views": 8, "dviews": 7}, {"name": "Loco", "pviews": 6, "views": 3, "dviews": -3}, {"name": "Loki (Dublin)", "pviews": 6, "views": 5, "dviews": -1}, {"name": "Lola", "pviews": 14, "views": 6, "dviews": -8}, {"name": "Luna", "pviews": 2, "views": 5, "dviews": 3}, {"name": "Luna", "pviews": 19, "views": 15, "dviews": -4}, {"name": "Lynk", "pviews": 28, "views": 38, "dviews": 10}, {"name": "Lyra", "pviews": 10, "views": 2, "dviews": -8}, {"name": "Mammoth", "pviews": 9, "views": 2, "dviews": -7}, {"name": "Maple", "pviews": 17, "views": 14, "dviews": -3}, {"name": "Marvin", "pviews": 5, "views": 3, "dviews": -2}, {"name": "Marzipan", "pviews": 5, "views": 6, "dviews": 1}, {"name": "Mason", "pviews": 17, "views": 4, "dviews": -13}, {"name": "Mercutio", "pviews": 4, "views": 5, "dviews": 1}, {"name": "Milo (MEE-LO)", "pviews": 11, "views": 9, "dviews": -2}, {"name": "Mister Miller", "pviews": 3, "views": 0, "dviews": -3}, {"name": "Moose", "pviews": 8, "views": 11, "dviews": 3}, {"name": "Nanni", "pviews": 2, "views": 3, "dviews": 1}, {"name": "Nebula", "pviews": 1, "views": 7, "dviews": 6}, {"name": "Nelson", "pviews": 11, "views": 8, "dviews": -3}, {"name": "Nigel", "pviews": 9, "views": 3, "dviews": -6}, {"name": "Niko", "pviews": 9, "views": 21, "dviews": 12}, {"name": "Nolan", "pviews": 7, "views": 8, "dviews": 1}, {"name": "Norma Jean", "pviews": 4, "views": 5, "dviews": 1}, {"name": "Nova", "pviews": 4, "views": 1, "dviews": -3}, {"name": "Novella", "pviews": 4, "views": 6, "dviews": 2}, {"name": "Ohana", "pviews": 11, "views": 7, "dviews": -4}, {"name": "Oscar", "pviews": 16, "views": 6, "dviews": -10}, {"name": "Ozzy", "pviews": 18, "views": 9, "dviews": -9}, {"name": "Panda", "pviews": 7, "views": 7, "dviews": 0}, {"name": "Pelican", "pviews": 5, "views": 16, "dviews": 11}, {"name": "Pepper", "pviews": 0, "views": 0, "dviews": 0}, {"name": "Polly Pocket", "pviews": 3, "views": 0, "dviews": -3}, {"name": "Queen", "pviews": 4, "views": 5, "dviews": 1}, {"name": "Rollo", "pviews": 13, "views": 5, "dviews": -8}, {"name": "Roomba", "pviews": 1, "views": 3, "dviews": 2}, {"name": "Ruby Woo", "pviews": 3, "views": 5, "dviews": 2}, {"name": "Super Trouper", "pviews": 58, "views": 4, "dviews": -54}, {"name": "Valentino", "pviews": 6, "views": 9, "dviews": 3}, {"name": "Waffle", "pviews": 12, "views": 7, "dviews": -5}, {"name": "Wally", "pviews": 28, "views": 70, "dviews": 42}, {"name": "Zeke", "pviews": 2, "views": 4, "dviews": 2}];
+const ROSTER=[{"label": "Jun 15", "count": 92}, {"label": "Jun 22", "count": 94}, {"label": "Jul 15", "count": 95}, {"label": "Jul 29", "count": 100}, {"label": "Aug 4", "count": 99}, {"label": "Aug 11", "count": 101}, {"label": "Aug 17", "count": 94}, {"label": "Aug 24", "count": 91}, {"label": "Aug 31", "count": 106}];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const cur=PETS.filter(p=>p.status!=="dropped");
+const dropped=PETS.filter(p=>p.status==="dropped");
+const ret=PETS.filter(p=>p.status==="returning");
+const sum=(a,k)=>a.reduce((s,p)=>s+(p[k]||0),0);
+const curViews=sum(cur,"views"),curHits=sum(cur,"hits");
+const prevViews=sum(ret,"pviews")+sum(dropped,"pviews");
+const prevHits=sum(ret,"phits")+sum(dropped,"phits");
+const curCTR=curHits?curViews/curHits*100:0, prevCTR=prevHits?prevViews/prevHits*100:0;
+const nNew=PETS.filter(p=>p.status==="new").length;
+const nDrop=dropped.length;
+
+function pct(c,p){return p?((c-p)/p*100):0;}
+function fmtNum(n){const r=Math.round(n*10)/10;return Number.isInteger(r)?r.toString():r.toFixed(1);}
+const F=x=>Number.isInteger(x)?x.toLocaleString():fmtNum(x);
+function leadEl(c,p,suffix="",accent=false){
+ const cls=c>p?"up":c<p?"down":"flat";
+ return `<div class="pc lead${accent?' accent':''}">${F(p)}${suffix}<span class="ar ${cls}">→</span>${F(c)}${suffix}</div>`;
+}
+function chgEl(c,p,suffix=""){
+ const d=Math.round((c-p)*10)/10, r=Math.round(pct(c,p));
+ const cls=d>0?"up":d<0?"down":"flat";const ar=d>0?"▲":d<0?"▼":"–";
+ return `<div class="d ${cls}">${ar} ${d>0?"+":""}${fmtNum(d)}${suffix} (${r>0?"+":""}${r}%) vs prior wk</div>`;
+}
+const STLABEL={returning:"Carried over",new:"New",dropped:"Dropped"};
+function leadCTR(c,p){
+ const cls=c>p?"up":c<p?"down":"flat";
+ return `<div class="pc lead">${p.toFixed(1)}%<span class="ar ${cls}">→</span>${c.toFixed(1)}%</div>`;
+}
+function chgCTR(c,p){
+ const cls=c>p?"up":c<p?"down":"flat";const ar=c>p?"▲":c<p?"▼":"–";
+ const pp=Math.round((c-p)*10)/10;
+ return `<div class="d ${cls}">${ar} ${pp>0?"+":""}${pp}pp vs prior wk</div>`;
+}
+// Two segments: pet roster (who is listed) and engagement (how listings performed).
+const rosterKpis=[
+ {v:nNew,l:"New this week"},
+ {v:nDrop,l:"Dropped vs prior week"},
+ {lead:leadEl(cur.length, ret.length+nDrop),l:"Pets listed",change:chgEl(cur.length, ret.length+nDrop)},
+];
+const engageKpis=[
+ {lead:leadEl(curHits,prevHits),l:"Search appearances",change:chgEl(curHits,prevHits)},
+ {lead:leadEl(curViews,prevViews,"",true),l:"Detail-page views",change:chgEl(curViews,prevViews)},
+ {lead:leadCTR(curCTR,prevCTR),l:"Avg click-through",change:chgCTR(curCTR,prevCTR)},
+];
+const kpiCard=k=>{
+ const lead=k.lead||`<div class="v">${k.v}</div>`;
+ return `<div class="kpi">${lead}<div class="l">${k.l}</div>${k.change||""}</div>`;
+};
+const kpiGroup=(label,items)=>
+ `<div class="kpigroup"><div class="kpigroup-h">${label}</div><div class="kpis3">${items.map(kpiCard).join("")}</div></div>`;
+document.getElementById("kpis").innerHTML=
+ kpiGroup("Pet roster",rosterKpis)+kpiGroup("Engagement",engageKpis);
+
+// ---- weekly trend charts (inline SVG) ----
+const METRIC={ctr:{fmt:v=>v+"%",cls:"ctr"},views:{fmt:v=>v.toLocaleString(),cls:"v"},hits:{fmt:v=>v.toLocaleString(),cls:"h"}};
+// Round an axis step up to a 1/1.5/2/2.5/3/4/5/7.5/10 * 10^n value so ticks are clean.
+function niceStep(x){const p=Math.pow(10,Math.floor(Math.log10(x)));const f=x/p;
+ const n=f<=1?1:f<=1.5?1.5:f<=2?2:f<=2.5?2.5:f<=3?3:f<=4?4:f<=5?5:f<=7.5?7.5:10;return n*p;}
+function renderTrend(elId,m,W,H,labelAll){
+ const cfg=METRIC[m],padL=52,padR=18,padT=26,padB=30;
+ const pts=WEEKS.map(w=>({...w,t:Date.parse(w.date),y:w[m]==null?null:w[m]})).filter(p=>p.y!=null);
+ if(!pts.length){document.getElementById(elId).innerHTML="";return;}
+ const xs=pts.map(p=>p.t),tmin=Math.min(...xs),tmax=Math.max(...xs);
+ const ystep=niceStep((Math.max(...pts.map(p=>p.y))||1)*1.05/4),ymax=ystep*4;
+ const X=t=>padL+(tmax===tmin?0.5:(t-tmin)/(tmax-tmin))*(W-padL-padR);
+ const Y=v=>padT+(1-v/ymax)*(H-padT-padB);
+ let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${m} over time">`;
+ for(let i=0;i<=4;i++){const v=ymax*i/4,y=Y(v);
+  svg+=`<line class="tr-grid" x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}"/>`
+      +`<text class="tr-y" x="${padL-8}" y="${(y+4).toFixed(1)}">${cfg.fmt(Math.round(v*10)/10)}</text>`;}
+ svg+=`<line class="tr-axis" x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}"/>`
+     +`<line class="tr-axis" x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}"/>`;
+ for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1];const est=a.estimated||b.estimated;
+  svg+=`<line class="tr-line ${cfg.cls}${est?' est':''}" x1="${X(a.t).toFixed(1)}" y1="${Y(a.y).toFixed(1)}" x2="${X(b.t).toFixed(1)}" y2="${Y(b.y).toFixed(1)}"/>`;}
+ const step=Math.max(1,Math.ceil(pts.length/9));
+ pts.forEach((p,i)=>{const x=X(p.t),y=Y(p.y);
+  svg+=`<circle class="tr-dot ${cfg.cls}${p.estimated?' est '+cfg.cls:''}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${p.estimated?4.5:5}"/>`;
+  if(labelAll||p.estimated||i===0||i===pts.length-1){
+   // Anchor edge labels inward so the first/last value never overlaps the y-axis ticks or the right edge.
+   const anc=i===0?"start":i===pts.length-1?"end":"middle";
+   const lx=i===0?x+3:i===pts.length-1?x-3:x;
+   svg+=`<text class="tr-lab${labelAll?'':' small'}${p.estimated?' est':''}" style="text-anchor:${anc}" x="${lx.toFixed(1)}" y="${(y-11).toFixed(1)}">${cfg.fmt(p.y)}${p.estimated?" est":""}</text>`;}
+  if(i%step===0||i===pts.length-1)
+   svg+=`<text class="tr-x" x="${x.toFixed(1)}" y="${H-padB+16}">${esc(p.label)}</text>`;});
+ svg+=`</svg>`;document.getElementById(elId).innerHTML=svg;
+}
+// Hero CTR spans the full width (W=900 scales up). The two half-width charts use a
+// narrower viewBox (W=440) so their text is not shrunk when the SVG is scaled to the
+// card, keeping labels legible on screen and in a 2-up print layout.
+renderTrend("cTrendctr","ctr",900,320,true);
+renderTrend("cTrendhits","hits",440,200,false);
+renderTrend("cTrendviews","views",440,200,false);
+
+function hbars(elId,items){
+ const max=Math.max(1,...items.map(i=>i.value));
+ document.getElementById(elId).innerHTML='<div class="bars">'+items.map(i=>
+  `<div class="brow"><div class="lbl">${esc(i.label)}</div>
+    <div class="track"><div class="fill" style="width:${(i.value/max*100).toFixed(1)}%;background:${i.color}"></div></div>
+    <div class="val">${i.value.toLocaleString()}</div></div>`).join('')+'</div>';
+}
+function stackedBars(elId,groups){
+ // Narrow viewBox (half-width card) so labels are not shrunk by SVG scaling.
+ const W=440,H=230,padL=52,padR=14,padT=20,padB=40;
+ const totals=groups.map(g=>g.segs.reduce((s,x)=>s+x.value,0));
+ const ystep=niceStep(Math.max(1,...totals)*1.05/4),max=ystep*4;
+ const gap=(W-padL-padR)/groups.length,bw=Math.min(150,gap*0.46);
+ const Y=v=>padT+(1-v/max)*(H-padT-padB);
+ let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Detail-page views by species, stacked prior vs latest">`;
+ for(let i=0;i<=4;i++){const v=max*i/4,y=Y(v);
+  svg+=`<line class="tr-grid" x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}"/>`
+      +`<text class="tr-y" x="${padL-8}" y="${(y+4).toFixed(1)}">${Math.round(v).toLocaleString()}</text>`;}
+ svg+=`<line class="tr-axis" x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}"/>`;
+ groups.forEach((g,i)=>{const cx=padL+gap*i+gap/2,x=cx-bw/2;let acc=0;
+  g.segs.forEach(seg=>{const y0=Y(acc),y1=Y(acc+seg.value),h=y0-y1;acc+=seg.value;
+   if(seg.value>0){svg+=`<rect x="${x.toFixed(1)}" y="${y1.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0,h).toFixed(1)}" style="fill:${seg.color}"/>`;
+    if(h>15)svg+=`<text class="tr-lab small" x="${cx.toFixed(1)}" y="${(y1+h/2+4).toFixed(1)}" style="fill:#fff">${seg.value.toLocaleString()}</text>`;}});
+  const top=Y(acc);
+  svg+=`<text class="tr-lab" x="${cx.toFixed(1)}" y="${(top-7).toFixed(1)}">${acc.toLocaleString()}</text>`
+      +`<text class="tr-x" x="${cx.toFixed(1)}" y="${H-padB+16}">${esc(g.label)}</text>`;});
+ svg+=`</svg><div class="legend"><span><i style="background:var(--dog)"></i>Dogs</span><span><i style="background:var(--cat)"></i>Cats</span></div>`;
+ document.getElementById(elId).innerHTML=svg;
+}
+function spViews(sp,wk){return PETS.filter(p=>p.species===sp).reduce((s,p)=>s+((wk==="cur"?p.views:p.pviews)||0),0);}
+stackedBars("cSpecies",[
+ {label:"Prior week",segs:[{label:"Dogs",value:spViews("dog","prev"),color:"var(--dog)"},{label:"Cats",value:spViews("cat","prev"),color:"var(--cat)"}]},
+ {label:"Latest week",segs:[{label:"Dogs",value:spViews("dog","cur"),color:"var(--dog)"},{label:"Cats",value:spViews("cat","cur"),color:"var(--cat)"}]},
+]);
+// Roster size per weekly sample, oldest at top → newest at bottom (latest highlighted).
+hbars("cRoster",ROSTER.map((r,i)=>({label:r.label,value:r.count,
+ color:i===ROSTER.length-1?"var(--accent)":"var(--dog)"})));
+
+function movers(){
+ const s=[...MOVERS].filter(p=>p.dviews!=null).sort((a,b)=>a.dviews-b.dviews);
+ const sel=[...s.slice(0,6),...s.slice(-6)].filter((v,i,a)=>a.indexOf(v)===i).sort((a,b)=>b.dviews-a.dviews);
+ const maxAbs=Math.max(1,...sel.map(p=>Math.abs(p.dviews)));
+ document.getElementById("cMovers").innerHTML='<div class="dv">'+sel.map(p=>{
+  const w=(Math.abs(p.dviews)/maxAbs*50).toFixed(1);const pos=p.dviews>=0;
+  const fill=pos?`<div class="dvfill" style="left:50%;width:${w}%;background:var(--up)"></div>`
+   :`<div class="dvfill" style="right:50%;width:${w}%;background:var(--down)"></div>`;
+  return `<div class="dvrow"><div class="lbl">${esc(p.name)}</div>
+   <div class="dvtrack"><div class="dvaxis"></div>${fill}</div>
+   <div class="val ${pos?'up':'down'}">${p.pviews}→${p.views}</div></div>`;
+ }).join('')+'</div>';
+}
+movers();
+
+let sp="all",st="returning",q="",sortK="views",asc=true;
+const tb=document.getElementById("tb");
+function dCell(d){
+ if(d===null||d===undefined)return '<span class="muted">&mdash;</span>';
+ if(d===0)return '<span class="flat">0</span>';
+ const cls=d>0?"up":"down";const ar=d>0?"▲":"▼";
+ return `<span class="${cls}">${ar} ${d>0?"+":""}${d}</span>`;
+}
+function render(){
+ let rows=PETS.filter(p=>(sp==="all"||p.species===sp)&&(st==="all"||p.status===st)&&
+  (q===""||(p.name+" "+p.breed+" "+p.id).toLowerCase().includes(q)));
+ rows.sort((a,b)=>{let x=a[sortK],y=b[sortK];
+  const xn=(x===null||x===undefined),yn=(y===null||y===undefined);
+  if(xn&&yn)return 0; if(xn)return 1; if(yn)return -1;
+  if(typeof x==="string"){x=x.toLowerCase();y=y.toLowerCase();return asc?(x<y?-1:x>y?1:0):(x>y?-1:x<y?1:0);}
+  return asc?x-y:y-x;});
+ tb.innerHTML=rows.map(p=>{
+  const hits=p.hits===null?'<span class="muted">&mdash;</span>':p.hits+(p.dhits!==null?`<span class="delta ${p.dhits>0?'up':p.dhits<0?'down':'flat'}">${p.dhits>0?'+':''}${p.dhits}</span>`:'');
+  const views=p.views===null?'<span class="muted">&mdash;</span>':p.views;
+  const c=p.ctr===null?'<span class="muted">&mdash;</span>':p.ctr+'%';
+  return `<tr>
+   <td class="name">${esc(p.name)} <span class="muted" style="font-weight:400;font-size:11px">#${p.id}</span></td>
+   <td><span class="pill ${p.species}">${p.species}</span></td>
+   <td class="breed">${esc(p.breed)}</td>
+   <td class="num">${hits}</td><td class="num">${views}</td>
+   <td class="num">${dCell(p.dviews)}</td><td class="num">${c}</td>
+   <td><span class="tag ${p.status}">${STLABEL[p.status]}</span></td>
+  </tr>`;}).join("");
+ document.getElementById("count").textContent=rows.length+" of "+PETS.length+" pets";
+ document.querySelectorAll("th").forEach(th=>{th.classList.toggle("sort",th.dataset.k===sortK);
+  const a=th.querySelector(".arr");if(a)a.innerHTML=th.dataset.k===sortK?(asc?"▲":"▼"):"▲";});
+}
+document.getElementById("q").addEventListener("input",e=>{q=e.target.value.toLowerCase().trim();render();});
+function seg(id,setter){document.querySelectorAll("#"+id+" button").forEach(b=>b.addEventListener("click",()=>{
+ document.querySelectorAll("#"+id+" button").forEach(x=>x.classList.remove("on"));
+ b.classList.add("on");setter(b);render();}));}
+seg("sp",b=>sp=b.dataset.sp);
+seg("st",b=>st=b.dataset.st);
+document.querySelectorAll("th").forEach(th=>th.addEventListener("click",()=>{
+ const k=th.dataset.k;if(k===sortK)asc=!asc;else{sortK=k;asc=(k==="name"||k==="breed"||k==="status");}
+ render();}));
+render();
+</script>
+</body>
+</html>
