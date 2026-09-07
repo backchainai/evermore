@@ -3,7 +3,7 @@
 - Status: accepted
 - Date: 2026-09-06
 - Deciders: project owner
-- Relates to: ADR 0030 (three Supabase projects, one per service), ADR 0035 (canonical animal identifier), ADR 0038 (proposed engagement collector)
+- Relates to: ADR 0030 (three Supabase projects, one per service), ADR 0035 (canonical animal identifier), ADR 0038 (engagement collector)
 
 ## Context
 

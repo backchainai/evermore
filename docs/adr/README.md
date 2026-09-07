@@ -83,4 +83,4 @@ One line per record: number, slug, status. Where a record is superseded, the suc
 - 0035 shelter-reference-code-canonical-id: accepted
 - 0036 engagement-data-in-petdata: accepted
 - 0037 hosted-only-execution: accepted
-- 0038 engagement-collector-scheduled-worker: proposed
+- 0038 engagement-collector-scheduled-worker: accepted

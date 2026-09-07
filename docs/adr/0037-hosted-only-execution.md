@@ -3,7 +3,7 @@
 - Status: accepted
 - Date: 2026-09-06
 - Deciders: project owner
-- Relates to: ADR 0029 (host all compute on Cloudflare), ADR 0038 (proposed engagement collector)
+- Relates to: ADR 0029 (host all compute on Cloudflare), ADR 0038 (engagement collector)
 
 ## Context
 
@@ -25,7 +25,7 @@ Nothing runs on the owner's laptop.
 - All credentials move into hosted secret stores (Cloudflare Worker secrets, Supabase project settings, or the hosted service's own secret store). No pipeline credential lives in a local `.env` file or an operator's keychain.
 - The constraint binds future module designs, not only the collector. Any design that needs a periodic job needs a hosted scheduler (a Cron Trigger, a hosted queue, or a scheduled hosted job) as part of the design, rather than deferring it to an operator's crontab.
 - Local development is unaffected. Running a service on a laptop in order to develop it is not a pipeline step; the constraint is about what production depends on.
-- The immediate casualty is the existing workstation engagement collector, which is why ADR 0038 proposes a hosted replacement. That collector is not committed to this repo, so this ADR retires a working local tool rather than deleting repo code.
+- The immediate casualty is the existing workstation engagement collector, which is why ADR 0038 records a hosted replacement. That collector is not committed to this repo, so this ADR retires a working local tool rather than deleting repo code.
 
 ## Alternatives considered
 
