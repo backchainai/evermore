@@ -138,21 +138,27 @@ envelope (live 2026-09-09).
 
 **The list response is an envelope, not the bare array the spec declares (live 2026-09-09).**
 
-```json
+```
 {
-  "animals": [ { "ID": "381", "Internal-ID": "1078738", "...": "..." } ],
+  "animals": [ { "ID": "<short code>", "Internal-ID": "<row id>", "...": "..." } ],
   "has_more": true,
   "success": true,
-  "total_count": 171
+  "total_count": <integer>
 }
 ```
+
+The four keys, their types and the nesting are the measured shape (live 2026-09-09). The
+values are placeholders: no live value from a shelter's tenant is reproduced here. For
+illustrative id values use the vendor's own documentation examples, `"ID": "381"` and
+`"Internal-ID": "1078738"` (spec), never a value from a real pull.
 
 Records live under `.animals`. The spec's 200 schema for the list route is `type: array` of
 `V1Animal` and defines neither `has_more` nor `total_count` anywhere. The vendor's pagination
 prose promised both fields and was right; the vendor's schema was wrong.
 
-Paging on `has_more` and `total_count` works (live 2026-09-09): `total_count` was 171 with
-`has_more: true` at `limit=100`.
+Paging on `has_more` and `total_count` works (live 2026-09-09): on a shelter whose
+`total_count` was a three-digit number, a request at `limit=100` returned `has_more: true`
+and the offset walk reached the end.
 
 The detail route returns the object unwrapped, so a parser cannot assume one shape for both
 routes.
@@ -196,9 +202,9 @@ The polling design follows from those four facts:
    `LastUpdatedUnixTime` seen. The 30-minute cache means a record can be updated at the source
    before the API will admit it, so a watermark with no overlap drops records.
 3. Poll no more often than every 30 minutes. Anything faster re-reads the same cache.
-4. The rate limit is not the constraint. A full 171-record shelter is two requests at
-   `limit=100`, against a budget of 300 per minute. Page size and request count can be chosen
-   for clarity.
+4. The rate limit is not the constraint. A shelter with a three-digit animal count is a
+   handful of requests at `limit=100`, against a budget of 300 per minute. Page size and
+   request count can be chosen for clarity.
 5. Keep the per-run outcome in `SyncLog` (`packages/schema/src/evermore_schema/animal.py`),
    with `sync_type` `incremental` for the watermark poll and `full` for an unbounded sweep.
 
@@ -219,8 +225,8 @@ What this module contributes under that decision:
 
 | ShelterLuv field | What it is | Role here |
 |---|---|---|
-| `ID` (string, example `"381"`) | The shelter's short code, returned as bare digits inside a JSON string. Not zero-padded and not prefixed. | Per-source attribute. The crosswalk value. Not addressable through either endpoint. |
-| `Internal-ID` (string, example `"1078738"`) | ShelterLuv's own row id, which does not display on the animal's profile in ShelterLuv. | Per-source attribute and the only value the detail route accepts. Natural fit for `Animal.source_record_id`. |
+| `ID` (string, spec example `"381"`) | The shelter's short code, returned as bare digits inside a JSON string. Not zero-padded and not prefixed. | Per-source attribute. The crosswalk value. Not addressable through either endpoint. |
+| `Internal-ID` (string, spec example `"1078738"`) | ShelterLuv's own row id, which does not display on the animal's profile in ShelterLuv. | Per-source attribute and the only value the detail route accepts. Natural fit for `Animal.source_record_id`. |
 
 Both are `type: string` in the schema and both render as bare digits in every example (spec).
 
@@ -282,7 +288,8 @@ ShelterLuv-only shelter.
 ### ShelterLuv fields with no Animal Record home today
 
 `Campus`, `Sex`, `Status` (free text, no enum given), `Altered` (`Yes`/`No`/`Unknown`), `Age`
-(months, integer), `Size` (a banded string such as `"Medium (20-59)"`), `Color`, `Pattern`,
+(months, integer), `Size` (a banded string, spec example `"Medium (20-59)"`), `Color`,
+`Pattern`,
 `AdoptionFeeGroup`, `LitterGroupId`, `AssociatedPerson`, `Microchips`, `PreviousIds`,
 `Videos`. Four of these matter:
 
@@ -390,7 +397,9 @@ URL as an opportunistic extra, never as the identifier or as the source of
 
 ## Typing traps
 
-All measured live on 2026-09-09. Every one of these will break a naive `model_validate`.
+The typing behaviour in each row was measured live on 2026-09-09. Every one of these will
+break a naive `model_validate`. Illustrative field values below are the vendor's
+documentation examples (spec), not values from a live pull.
 
 | Trap | Detail |
 |---|---|
@@ -398,8 +407,8 @@ All measured live on 2026-09-09. Every one of these will break a naive `model_va
 | Two different absences | Missing values arrive as `""` on `Description`, `Color`, `Size` and `CurrentWeightPounds`, and as `null` on `LitterGroupId`, `AdoptionFeeGroup`, `LastIntakeUnixTime` and `Microchips[].ImplantUnixTime`. Normalize both to `None` on the way in, or `weight_lbs` gets a `float("")` and `Description` gets scored as present-but-empty. |
 | Numbers arrive as strings | `CurrentWeightPounds` is a string even when numeric. |
 | `Age` is months | An integer count of months, not years. `Animal.age_years` derives from `birth_date`, so use `DOBUnixTime` for that and treat `Age` as an independent facet. |
-| `Breed` and `Color` are compound single strings | Space-slash separated, up to two values each (`"Chihuahua /Mix"`, `"Black /White"`). Not arrays. Note the space before the slash. |
-| `Size` is a banded string | For example `"Medium (20-59)"`. Not a number and not an enum the spec declares. Do not parse a weight out of it; use `CurrentWeightPounds`. |
+| `Breed` and `Color` are compound single strings | Space-slash separated, up to two values each (spec examples `"Chihuahua /Mix"`, `"Black /White"`). Not arrays. Note the space before the slash. |
+| `Size` is a banded string | Spec example `"Medium (20-59)"`. Not a number and not an enum the spec declares. Do not parse a weight out of it; use `CurrentWeightPounds`. |
 
 ## Spec versus reality
 
