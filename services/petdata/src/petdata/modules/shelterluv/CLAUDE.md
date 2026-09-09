@@ -9,21 +9,15 @@ ShelterLuv is an animal record source and nothing else. It returns demographics,
 status, photos, videos, microchips, adoption fee and a free-text adopter-facing description.
 It returns no volunteer notes, no walks, no activities, no outcome events, no medical data
 beyond microchip and altered status, and no listing engagement or analytics of any kind. Do
-not plan a feature on this source that needs any of those. The gap list below is exhaustive
-and was verified by search, not assumed.
+not plan a feature on this source that needs any of those.
 
 Status: documentation only. No client, parser, settings or tests exist for this source yet.
-Nothing in the repo calls the ShelterLuv API today.
-
-No design partner name, domain, tenant prefix, animal name or real record id appears here or
-in any example below.
 
 **Do not reuse `petdata.modules.api` for this source.** That module is a different shelter
 system: cookie authentication (`modules/api/auth.py`, `CookieAuth`), a `{"records": [...]}`
 envelope (`modules/api/parser.py:47`), and fetch methods for volunteer notes and walk records
 (`modules/api/client.py:290`, `:319`) that have no ShelterLuv equivalent. Its field names are
-marked in-code as placeholders (`parser.py:1-5`). One module per integration, and this is a
-separate integration.
+marked in-code as placeholders (`parser.py:1-5`).
 
 ## Provenance convention
 
@@ -32,7 +26,7 @@ durable copy. Every claim below carries one of two markers.
 
 - **(spec)** comes from the vendor's OpenAPI 3.0.0 document.
 - **(live 2026-09-09)** was measured against real responses covering three animal records.
-  Live measurements override the spec, and where the three records disagree the doc says so.
+  Live measurements override the spec.
 
 ## The Publish flag: filter it or you publish bite history
 
@@ -49,11 +43,10 @@ Bite History, Stranger Danger, Behavior Assessment Done, Has Been in Playgroup,
 Pre-Appointment Call Required, a programme tier level, Cat Test Complete.
 
 Skip the filter and Evermore publishes a bite-history flag and a stranger-danger flag on an
-adoptable animal's public card. That is a safety and liability failure for the shelter, not a
-formatting bug. The filter belongs in the parser, at the point the attributes become a
-`BehaviorProfile`, so no downstream consumer can forget it. Store the unpublishable
-attributes if internal tooling needs them, but store them where a public renderer cannot
-reach them by accident.
+adoptable animal's public card. That is a safety and liability failure for the shelter. The
+filter belongs in the parser, at the point the attributes become a `BehaviorProfile`, so no
+downstream consumer can forget it. Store the unpublishable attributes if internal tooling
+needs them, but store them where a public renderer cannot reach them by accident.
 
 ### The filter is necessary and not sufficient: `Publish` gates attributes, not prose
 
@@ -62,28 +55,22 @@ published `Description` discloses the bite in plain language.** The shelter wrot
 fact into the adopter-facing copy that the flag marks internal.
 
 So filtering `Attributes[]` does not prevent adopter-facing output from carrying the content
-the flag was meant to withhold. The flag governs one field. It says nothing about what the
-prose already contains.
+the flag was meant to withhold. The flag governs one field.
 
 Treat every path that generates, summarises, rewrites, quotes or excerpts `Description` as
 capable of surfacing bite history and other sensitive assessments, regardless of what
 `Attributes[]` says. Concretely:
 
-- Do not treat "attributes filtered" as evidence that generated copy is safe to publish. It is
-  not the same check.
+- Do not treat "attributes filtered" as evidence that generated copy is safe to publish.
 - A summariser fed the raw `Description` can reproduce or paraphrase the disclosure. Screening
   its output is a separate control from the attribute filter, and this module does not provide
   it.
 - The shelter chose to disclose in its own prose. Evermore must not silently strip that when
-  regenerating, nor amplify it. Which of those applies is an editorial decision for the
-  shelter, not a default this module gets to pick.
-
-Both controls are required. Neither substitutes for the other.
+  regenerating, nor amplify it. Which of those applies is the shelter's editorial decision.
 
 ## The two endpoints
 
-The entire API is two GET operations (spec). No POST, PUT, PATCH or DELETE exists anywhere in
-the document, so this source is read-only by construction.
+The entire API is two GET operations (spec), so this source is read-only by construction.
 
 ### `GET /api/v1/animals` (`V1ListAnimals`)
 
@@ -98,28 +85,24 @@ not just current inventory.
 | `limit` | integer | min 1, max 100, default 100 | Page size. | spec |
 | `offset` | integer | default 0 | Index of the first record in the page. | spec |
 
-There is no id filter, no name search, no microchip search and no sort direction control
-(spec). Those five parameters are the whole query surface.
+Those five parameters are the whole query surface: no id filter, no name search, no microchip
+search, no sort direction control (spec).
 
 Response codes: 200, 401, 429, 422 (spec).
 
 **`since` filters on last update, not intake (live 2026-09-09).** With `sort=updated_at` and a
 30-day `since`, every returned record's `LastUpdatedUnixTime` fell inside the window while its
 `LastIntakeUnixTime` values were years older. The `since` parameter's own description in the
-spec ("records that had an intake occur after the given timestamp") is wrong. The `sort`
-parameter's description is right.
+spec ("records that had an intake occur after the given timestamp") is wrong.
 
 ### `GET /api/v1/animals/{id}` (`V1AnimalDetails`)
 
 The path parameter is `Internal-ID`, not `ID` (live 2026-09-09). A detail request using a
 record's `ID` value returned 404; the same record requested by its `Internal-ID` returned 200.
-The spec types the parameter as `integer` and describes it as "the internal id of animal",
-which is consistent, but its curl example uses `/api/v1/animals/1`, which disambiguates
-nothing.
 
-The consequence is structural: **the shelter's short code is not addressable.** The detail
-route takes only the internal row id, and the list endpoint has no id filter at all. A lookup
-by short code means listing the animals and indexing them locally.
+**The shelter's short code is not addressable.** The detail route takes only the internal row
+id, and the list endpoint has no id filter at all. A lookup by short code means listing the
+animals and indexing them locally.
 
 Response codes: 200, 401, 429, 404 (spec). The detail 200 is a bare `V1Animal` object with no
 envelope (live 2026-09-09).
@@ -160,14 +143,14 @@ routes.
 - `x-api-scopes: ["animals"]` on both operations. That is the only scope the document names
   (spec).
 - Keys are issued per organization from the shelter's own integrations configuration page
-  (spec). There is no account-wide or multi-shelter key. A second shelter means a second key.
+  (spec). A second shelter means a second key.
 - 401 body: `{"success": 0, "error_message": "Invalid API key"}` (spec).
 
-**Cloudflare Worker compatible (spec).** One static header, no HMAC, no request signing, no
-nonce, no timestamp signature, nothing that needs Node-only crypto. A scheduled Worker can be
-the whole client, which is what hosted-only execution requires (ADR 0037), with the token
-stored as a Worker secret in the pattern ADR 0038 uses for the engagement collector. The
-token never enters this repo, `wrangler.jsonc`, or a local `.env` file.
+**Cloudflare Worker compatible (spec).** One static header and nothing that needs Node-only
+crypto. A scheduled Worker can be the whole client, which is what hosted-only execution
+requires (ADR 0037), with the token stored as a Worker secret in the pattern ADR 0038 uses for
+the engagement collector. The token never enters this repo, `wrangler.jsonc`, or a local
+`.env` file.
 
 ## Rate limits, pagination, and the polling design
 
@@ -183,7 +166,7 @@ token never enters this repo, `wrangler.jsonc`, or a local `.env` file.
   not subject to it.
 - No webhooks, no event subscription, no change feed, no ETag, no `If-Modified-Since` (spec).
 
-The polling design follows from those four facts:
+The polling design follows:
 
 1. Poll `GET /api/v1/animals?sort=updated_at&since=<watermark>&limit=100`, paging on
    `has_more` with `offset`.
@@ -191,9 +174,8 @@ The polling design follows from those four facts:
    `LastUpdatedUnixTime` seen. The 30-minute cache means a record can be updated at the source
    before the API will admit it, so a watermark with no overlap drops records.
 3. Poll no more often than every 30 minutes. Anything faster re-reads the same cache.
-4. The rate limit is not the constraint. A shelter with a three-digit animal count is a
-   handful of requests at `limit=100`, against a budget of 300 per minute. Page size and
-   request count can be chosen for clarity.
+4. A shelter with a three-digit animal count is a handful of requests at `limit=100`, against
+   a budget of 300 per minute. Choose page size and request count for clarity.
 5. Keep the per-run outcome in `SyncLog` (`packages/schema/src/evermore_schema/animal.py`),
    with `sync_type` `incremental` for the watermark poll and `full` for an unbounded sweep.
 
@@ -219,14 +201,12 @@ Both are `type: string` in the schema and both render as bare digits in every ex
 
 **Matching across sources.** The aggregator's own export carries the same short code as a bare
 unpadded integer, and one value seen in this API's sample also appears there. So a match
-compares the two numbers as integers: no zero-padding, no prefix parsing, no string equality
-on a formatted form.
+compares the two numbers as integers.
 
 The vendor's Key Terms prose describes a human-facing display code of the form
 `<PREFIX>-A-<number>`, where the prefix is the shelter's 3- or 4-letter code (spec). The API
-never returns the prefix, never returns the assembled code, and offers no endpoint for it. To
-render the display form a client must know the prefix out of band and concatenate it, which is
-inference from the prose rather than something the API supplies.
+returns neither the prefix nor the assembled code. To render the display form a client must
+know the prefix out of band and concatenate it.
 
 ## Field mapping to the Animal Record
 
@@ -269,8 +249,7 @@ volunteer snapshot: see the open questions.
 
 ### `VolunteerNote`, `StaffAssessment`, `WalkRecord`
 
-No source. This API has no notes, no assessments and no walks. Leave them empty for a
-ShelterLuv-only shelter.
+No source. Leave them empty for a ShelterLuv-only shelter.
 
 ### ShelterLuv fields with no Animal Record home today
 
@@ -298,7 +277,7 @@ ShelterLuv-only shelter.
 
 `Attributes[]` is the behaviour profile, not the operational tag list the spec's single example
 (`"Foster-to-Adopt"`) implies (live 2026-09-09). It is the only source in this API for
-`BehaviorProfile`, which has no other source at all.
+`BehaviorProfile`.
 
 One record carried 16 entries, each shaped `{Internal-ID, AttributeName, Publish}`. The names
 seen on that record:
@@ -316,8 +295,7 @@ foster-programme eligibility flag.
 **The programme flags are not behaviour.** Tier names, tier levels, senior-care programmes and
 foster-programme eligibility name shelter programmes an animal is enrolled in. They belong in
 `behavior_mod_tags` at best, as opaque operational labels, and must not be read as
-temperament, compatibility or training signals. Only the behaviour-bearing names below map to
-the compatibility fields.
+temperament, compatibility or training signals.
 
 | `BehaviorProfile` field | Attribute names seen that bear on it |
 |---|---|
@@ -338,10 +316,10 @@ Three rules for the mapping code:
 2. **A missing attribute is not a negative.** "Cat Test Complete" absent means the test was not
    recorded, not that the animal fails with cats. Map absence to `None`, not `False`.
 3. **An explicit unknown is not a negative either.** "Dogs - Unknown" states that dog
-   compatibility was not established. Map it to `None`, the same as absence, never to `False`.
+   compatibility was not established. Map it to `None`, the same as absence.
 
-And the `Publish` filter above applies to every one of them, subject to the limit that filter
-has: it gates these attributes and not the `Description` prose.
+The `Publish` filter applies to every one of them, and it gates only these attributes: the
+`Description` prose can disclose the same fact.
 
 ## `Description` is the graded copy
 
@@ -351,8 +329,7 @@ adopters, it is the content that gets published to aggregators, and it is the co
 profile grader grades.
 
 It publishes automatically, and the API exposes no publication status and no published-at
-timestamp, so grading the source text is the correct target. There is nothing else to grade
-against.
+timestamp, so grading the source text is the correct target.
 
 **The format varies by record, so a parser can assume neither shape (live 2026-09-09).** One
 record is unbroken prose: paragraphs separated by `\n\n`, no headings anywhere. Another is
@@ -378,9 +355,8 @@ the shelter's own public profile page, whose final path segment matched the name
 prototype grader keys records on. Another opens with a section heading. So the URL is present
 on some records only, and the slug bridge is one record's copy habit rather than a convention.
 
-Grades must key on the animal record, not on a slug parsed out of the prose. Treat a first-line
-URL as an opportunistic extra, never as the identifier or as the source of
-`public_profile_url`.
+Grades must key on the animal record. Treat a first-line URL as an opportunistic extra, never
+as the source of `public_profile_url`.
 
 ## Typing traps
 
@@ -447,8 +423,6 @@ any field:
    Of three records, one uses four uppercase headings and one uses none. An adapter needs to
    know whether the heading set is a shelter template worth segmenting on or ad-hoc per writer.
    Settle it by reading a full page of publishable records and tabulating the heading labels.
-   (The related first-line-URL question is settled: it is present on some records only and is
-   not a convention. Grades key on the animal record.)
 2. **Can editorial photographs be distinguished from volunteer snapshots?** `Photos[]` gives
    URLs and an order, with the cover duplicated first. The grader's photos dimension is meant
    to reward editorial images, and nothing in the payload separates the two. Settle it by
@@ -460,5 +434,5 @@ This module lives inside the petdata service, so its gates are the petdata gates
 from `services/petdata/` with the `uv run` prefix; see `services/petdata/CLAUDE.md` for the
 full set. CI runs the `petdata` job for any change under `services/petdata/**`.
 
-When this module grows code, one test is not optional: a parser test that asserts an attribute
+When this module grows code, one test is required: a parser test that asserts an attribute
 with `Publish: "No"` never reaches a publishable surface.
