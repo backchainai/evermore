@@ -15,12 +15,8 @@ and was verified by search, not assumed.
 Status: documentation only. No client, parser, settings or tests exist for this source yet.
 Nothing in the repo calls the ShelterLuv API today.
 
-Naming: this document names the vendor, which departs from the genericization rule in the root
-`CLAUDE.md` ("Do not reintroduce client names or branded SMS tool names"). The project owner
-asked for vendor-specific source-module documentation, and a named module is the only reading
-that scales past one source. The partner-side half of that rule is untouched: no design
-partner name, domain, tenant prefix, animal name or real record id appears here or in any
-example below.
+No design partner name, domain, tenant prefix, animal name or real record id appears here or
+in any example below.
 
 **Do not reuse `petdata.modules.api` for this source.** That module is a different shelter
 system: cookie authentication (`modules/api/auth.py`, `CookieAuth`), a `{"records": [...]}`
@@ -32,17 +28,11 @@ separate integration.
 ## Provenance convention
 
 The vendor's documentation sits behind a time-limited signed URL, so this document is the
-durable copy. Every claim below carries one of two markers, and the distinction matters
-because the spec is wrong in the places listed under "Spec versus reality".
+durable copy. Every claim below carries one of two markers.
 
 - **(spec)** comes from the vendor's OpenAPI 3.0.0 document.
-- **(live 2026-09-09)** was measured against real responses on 2026-09-09, from read-only
-  calls the project owner ran himself, covering three animal records. Live measurements
-  override the spec. Where the three records disagree with each other, the doc says so
-  rather than generalising from one.
-
-Where the two disagree, code follows the live measurement and the spec's claim is recorded so
-a future reader knows the vendor document cannot be trusted on that point.
+- **(live 2026-09-09)** was measured against real responses covering three animal records.
+  Live measurements override the spec, and where the three records disagree the doc says so.
 
 ## The Publish flag: filter it or you publish bite history
 
@@ -147,9 +137,8 @@ envelope (live 2026-09-09).
 }
 ```
 
-The four keys, their types and the nesting are the measured shape (live 2026-09-09). The
-values are placeholders: no live value from a shelter's tenant is reproduced here. For
-illustrative id values use the vendor's own documentation examples, `"ID": "381"` and
+The keys, types and nesting are the measured shape (live 2026-09-09); the values are
+placeholders. For illustrative ids use the vendor's documentation examples, `"ID": "381"` and
 `"Internal-ID": "1078738"` (spec), never a value from a real pull.
 
 Records live under `.animals`. The spec's 200 schema for the list route is `type: array` of
@@ -214,11 +203,9 @@ includes every animal ever taken in.
 
 ## Identity and the crosswalk
 
-The project owner ruled on 2026-09-09 that Evermore mints its own source-agnostic animal ID as
-the Animal Record's primary key, that every external integration is a module the core does not
-depend on, and that each source's identifiers are per-source data on the animal rather than
-keys. ADR 0035 as merged records a different decision and is being amended separately: read the
-amended ADR for the decision, and do not treat the shape documented at
+Evermore mints its own source-agnostic animal ID as the Animal Record's primary key, and each
+source's identifiers are per-source data on the animal rather than keys. ADR 0035 as merged
+says otherwise and is being amended: read the amended ADR, and do not treat the shape in
 `packages/schema/src/evermore_schema/animal.py` as settled.
 
 What this module contributes under that decision:
@@ -238,8 +225,8 @@ on a formatted form.
 The vendor's Key Terms prose describes a human-facing display code of the form
 `<PREFIX>-A-<number>`, where the prefix is the shelter's 3- or 4-letter code (spec). The API
 never returns the prefix, never returns the assembled code, and offers no endpoint for it. To
-render the display form a client must know the prefix out of band and concatenate it. That is
-inference from the prose, not something the API supplies.
+render the display form a client must know the prefix out of band and concatenate it, which is
+inference from the prose rather than something the API supplies.
 
 ## Field mapping to the Animal Record
 
