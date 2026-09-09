@@ -36,8 +36,10 @@ durable copy. Every claim below carries one of two markers, and the distinction 
 because the spec is wrong in the places listed under "Spec versus reality".
 
 - **(spec)** comes from the vendor's OpenAPI 3.0.0 document.
-- **(live 2026-09-09)** was measured against a real response on 2026-09-09, from two
-  read-only calls the project owner ran himself. Live measurements override the spec.
+- **(live 2026-09-09)** was measured against real responses on 2026-09-09, from read-only
+  calls the project owner ran himself, covering three animal records. Live measurements
+  override the spec. Where the three records disagree with each other, the doc says so
+  rather than generalising from one.
 
 Where the two disagree, code follows the live measurement and the spec's claim is recorded so
 a future reader knows the vendor document cannot be trusted on that point.
@@ -52,9 +54,9 @@ publishable ones.
 page, or any other public surface MUST drop every attribute whose `Publish` is not exactly
 `"Yes"`.**
 
-On the one record inspected on 2026-09-09, these attributes came back with `Publish: "No"`:
+On one record inspected on 2026-09-09, these attributes came back with `Publish: "No"`:
 Bite History, Stranger Danger, Behavior Assessment Done, Has Been in Playgroup,
-Pre-Appointment Call Required, Diamond Dog - L3, Cat Test Complete.
+Pre-Appointment Call Required, a programme tier level, Cat Test Complete.
 
 Skip the filter and Evermore publishes a bite-history flag and a stranger-danger flag on an
 adoptable animal's public card. That is a safety and liability failure for the shelter, not a
@@ -62,6 +64,31 @@ formatting bug. The filter belongs in the parser, at the point the attributes be
 `BehaviorProfile`, so no downstream consumer can forget it. Store the unpublishable
 attributes if internal tooling needs them, but store them where a public renderer cannot
 reach them by accident.
+
+### The filter is necessary and not sufficient: `Publish` gates attributes, not prose
+
+**A third record measured on 2026-09-09 carries `Bite History` with `Publish: "No"` while its
+published `Description` discloses the bite in plain language.** The shelter wrote the same
+fact into the adopter-facing copy that the flag marks internal.
+
+So filtering `Attributes[]` does not prevent adopter-facing output from carrying the content
+the flag was meant to withhold. The flag governs one field. It says nothing about what the
+prose already contains.
+
+Treat every path that generates, summarises, rewrites, quotes or excerpts `Description` as
+capable of surfacing bite history and other sensitive assessments, regardless of what
+`Attributes[]` says. Concretely:
+
+- Do not treat "attributes filtered" as evidence that generated copy is safe to publish. It is
+  not the same check.
+- A summariser fed the raw `Description` can reproduce or paraphrase the disclosure. Screening
+  its output is a separate control from the attribute filter, and this module does not provide
+  it.
+- The shelter chose to disclose in its own prose. Evermore must not silently strip that when
+  regenerating, nor amplify it. Which of those applies is an editorial decision for the
+  shelter, not a default this module gets to pick.
+
+Both controls are required. Neither substitutes for the other.
 
 ## The two endpoints
 
@@ -225,11 +252,11 @@ inference from the prose, not something the API supplies.
 | `weight_lbs` | `CurrentWeightPounds` | String to float, up to 4 decimal places. Arrives as a string even when numeric, and as `""` when absent. | spec, live |
 | `birth_date` | `DOBUnixTime` | Integer epoch seconds to an ISO date. Estimated, not certified. | spec, live |
 | `intake_date` | `LastIntakeUnixTime` | Epoch seconds to an ISO date. Arrives as a string, or `null` when absent. Most recent intake only: there is no intake history. | spec, live |
-| `location` | `CurrentLocation` | An object of `Tier1`, `Tier2`, `Tier3` naming the kennel and its parent locations. Flatten to one string. Empty on both records seen. | spec, live |
+| `location` | `CurrentLocation` | An object of `Tier1`, `Tier2`, `Tier3` naming the kennel and its parent locations. Flatten to one string. Empty on two records, populated with a `Tier1` string on a third, so handle both. | spec, live |
 | `color_category` | none | This is a shelter-local adoptability band (`Green`/`Yellow`/`Orange`/`Senior`/`Designated`) that drives `Animal.is_adoptable`. ShelterLuv has no equivalent. `Color` is coat colour and is not this field. | spec |
-| `custody_location` | `InFoster` | `true` maps to `foster`. `false` alone does not prove `kennel`, because `CurrentLocation` was empty on both records seen, including one with `InFoster` true. Leave `None` rather than guessing. | live |
+| `custody_location` | `InFoster` | `true` maps to `foster`. `false` alone does not prove `kennel`: `CurrentLocation` was empty on two records, including one with `InFoster` true. Where `CurrentLocation.Tier1` is populated and `InFoster` is false, `kennel` is supportable. Otherwise leave `None` rather than guessing. | live |
 | `photo_url` | `CoverPhoto` | Direct. Also appears duplicated as the first entry of `Photos[]`. | spec, live |
-| `public_profile_url` | possibly `Description` line 1 | Unconfirmed. See the open questions. | live |
+| `public_profile_url` | none | No field carries it. One record's `Description` opened with such a URL and another opened with a section heading, so the prose is not a dependable source. Leave `None`. | live |
 | `source_record_id` | `Internal-ID` | Direct. | live |
 | `created_at` | none | The API exposes no record creation timestamp. | spec |
 | `updated_at` | `LastUpdatedUnixTime` | Epoch seconds to ISO. Arrives as a string. | spec, live |
@@ -259,9 +286,10 @@ ShelterLuv-only shelter.
 `AdoptionFeeGroup`, `LitterGroupId`, `AssociatedPerson`, `Microchips`, `PreviousIds`,
 `Videos`. Four of these matter:
 
-- **`Microchips[]`** does arrive populated, with `Id`, `Issuer` and `ImplantUnixTime` (the
-  timestamp as a string). It is the only medical-adjacent data the API carries, and the schema
-  has no medical model at all, so it currently has nowhere to land.
+- **`Microchips[]`** does arrive populated, with `Id`, `Issuer` and `ImplantUnixTime`. The
+  timestamp is a string on one record and `null` on another, so an implant date is optional
+  even when the chip is recorded. It is the only medical-adjacent data the API carries, and
+  the schema has no medical model at all, so it currently has nowhere to land.
 - **`Sex`, `Status`, `Color`, `Age`** are facets the profile grader reads and the Animal
   Record does not model. This source can supply all four.
 - **`AdoptionFeeGroup`** returns one object with `Id`, `Name`, `Price`, `Discount`, `Tax` and
@@ -281,31 +309,45 @@ ShelterLuv-only shelter.
 One record carried 16 entries, each shaped `{Internal-ID, AttributeName, Publish}`. The names
 seen on that record:
 
-Behavior Assessment Done, Bite History, Diamond Dog, Dog Fearful, Dog Selective, Experienced
-Owner, Has Been in Playgroup, No Condo or Apartment, Pre-Appointment Call Required, No Kids,
-Diamond Dog - L3, Cat Test Complete, Has Met Cats and Done Well, Adult-Only Home Preferred,
-Housetrained, Stranger Danger.
+Behavior Assessment Done, Bite History, Dog Fearful, Dog Selective, Experienced Owner, Has
+Been in Playgroup, No Condo or Apartment, Pre-Appointment Call Required, No Kids, Cat Test
+Complete, Has Met Cats and Done Well, Adult-Only Home Preferred, Housetrained, Stranger
+Danger, plus a shelter programme tier and its level.
 
-Those names map onto `BehaviorProfile`:
+A third record widens the vocabulary with: No Cats, Dogs - Unknown, Likes water, and again
+No Kids, Bite History, Pre-Appointment Call Required and Has Been in Playgroup. It also
+carries a shelter programme tier and level, a senior-care programme flag, and a
+foster-programme eligibility flag.
+
+**The programme flags are not behaviour.** Tier names, tier levels, senior-care programmes and
+foster-programme eligibility name shelter programmes an animal is enrolled in. They belong in
+`behavior_mod_tags` at best, as opaque operational labels, and must not be read as
+temperament, compatibility or training signals. Only the behaviour-bearing names below map to
+the compatibility fields.
 
 | `BehaviorProfile` field | Attribute names seen that bear on it |
 |---|---|
-| `dogs_compatible` | Dog Fearful, Dog Selective, Has Been in Playgroup |
-| `cats_compatible` | Cat Test Complete, Has Met Cats and Done Well |
+| `dogs_compatible` | Dog Fearful, Dog Selective, Has Been in Playgroup, Dogs - Unknown |
+| `cats_compatible` | Cat Test Complete, Has Met Cats and Done Well, No Cats |
 | `kids_compatible` | No Kids, Adult-Only Home Preferred |
 | `housebroken` | Housetrained |
-| `behavior_mod_tags` | Bite History, Stranger Danger, Behavior Assessment Done, Experienced Owner, No Condo or Apartment, Pre-Appointment Call Required, Diamond Dog, Diamond Dog - L3 |
+| `things_likes` | Likes water |
+| `behavior_mod_tags` | Bite History, Stranger Danger, Behavior Assessment Done, Experienced Owner, No Condo or Apartment, Pre-Appointment Call Required, and the programme flags above as opaque labels |
 | `knows_commands` | No attribute seen bears on it. |
 
-Two rules for the mapping code:
+Three rules for the mapping code:
 
 1. **Attribute names are shelter-configured, so the mapping is a per-shelter lookup table, not
-   a constant.** The list above is one shelter's vocabulary on one day. A name that is not in
-   the table is unmapped, and an unmapped name must be visible rather than silently dropped.
+   a constant.** The lists above are one shelter's vocabulary on one day, and the third record
+   already added names the first did not carry. A name that is not in the table is unmapped,
+   and an unmapped name must be visible rather than silently dropped.
 2. **A missing attribute is not a negative.** "Cat Test Complete" absent means the test was not
    recorded, not that the animal fails with cats. Map absence to `None`, not `False`.
+3. **An explicit unknown is not a negative either.** "Dogs - Unknown" states that dog
+   compatibility was not established. Map it to `None`, the same as absence, never to `False`.
 
-And the `Publish` filter above applies to every one of them.
+And the `Publish` filter above applies to every one of them, subject to the limit that filter
+has: it gates these attributes and not the `Description` prose.
 
 ## `Description` is the graded copy
 
@@ -318,21 +360,33 @@ It publishes automatically, and the API exposes no publication status and no pub
 timestamp, so grading the source text is the correct target. There is nothing else to grade
 against.
 
-**Its measured format is flat prose: paragraphs separated by `\n\n`, with no section
-headings (live 2026-09-09).** Two consequences:
+**The format varies by record, so a parser can assume neither shape (live 2026-09-09).** One
+record is unbroken prose: paragraphs separated by `\n\n`, no headings anywhere. Another is
+organised under four uppercase section headings, covering the animal generally, household fit,
+training, and what an adopter should know. Both are the same field on the same shelter.
 
-1. The prototype grader's section parser keys on heading labels and cannot work on this text.
-   An adapter for this source has to judge the scored topics (`about`, `dogs`, `cats`, `kids`,
-   `training`, `housebreaking`, `likes`, `struggles`) from unstructured prose rather than from
-   a heading-delimited section map.
-2. `Description` arrives as `""` when the shelter has written nothing. An empty string is a
-   missing bio, not an empty bio, and must not be scored as a zero-coverage profile.
+Three consequences:
 
-On the one publishable record seen, the first line of `Description` was a bare URL to the
-shelter's own public profile page for that animal, and that URL's final path segment matched
-the name-based slug the prototype grader keys records on. That is one record's copy convention,
-observed once and unconfirmed across records. Do not build the slug or `public_profile_url`
-crosswalk on it until it is checked against a full page of records.
+1. An adapter must detect structure per record rather than assume it. Where uppercase headings
+   are present it can segment on them; where they are absent it has to judge the scored topics
+   (`about`, `dogs`, `cats`, `kids`, `training`, `housebreaking`, `likes`, `struggles`) from
+   unstructured prose. Build the unstructured path first, because it is the fallback whenever
+   heading detection misses.
+2. The prototype grader's section parser keys on heading labels, so it works on some records
+   and silently returns nothing on others. Returning no sections must be distinguishable from
+   finding empty ones, or a headingless record scores as a zero-coverage profile when it may be
+   well written.
+3. `Description` arrives as `""` when the shelter has written nothing. An empty string is a
+   missing bio, not an empty bio, and must not be scored either.
+
+**The first line is not reliably the public profile URL.** One record opened with a bare URL to
+the shelter's own public profile page, whose final path segment matched the name-based slug the
+prototype grader keys records on. Another opens with a section heading. So the URL is present
+on some records only, and the slug bridge is one record's copy habit rather than a convention.
+
+Grades must key on the animal record, not on a slug parsed out of the prose. Treat a first-line
+URL as an opportunistic extra, never as the identifier or as the source of
+`public_profile_url`.
 
 ## Typing traps
 
@@ -340,8 +394,8 @@ All measured live on 2026-09-09. Every one of these will break a naive `model_va
 
 | Trap | Detail |
 |---|---|
-| Timestamps are inconsistently typed | `LastUpdatedUnixTime` and `LastIntakeUnixTime` arrive as strings. `DOBUnixTime` arrives as an integer. The spec types all three as `integer`. Coerce all epoch fields through one string-or-int parser. |
-| Two different absences | Missing values arrive as `""` on `Description`, `Color`, `Size` and `CurrentWeightPounds`, and as `null` on `LitterGroupId`, `AdoptionFeeGroup` and `LastIntakeUnixTime`. Normalize both to `None` on the way in, or `weight_lbs` gets a `float("")` and `Description` gets scored as present-but-empty. |
+| Timestamps are inconsistently typed | `LastUpdatedUnixTime` and `LastIntakeUnixTime` arrive as strings. `DOBUnixTime` arrives as an integer. `Microchips[].ImplantUnixTime` arrives as a string on one record and `null` on another. The spec types all four as `integer`. Coerce every epoch field through one parser that accepts string, int and null. |
+| Two different absences | Missing values arrive as `""` on `Description`, `Color`, `Size` and `CurrentWeightPounds`, and as `null` on `LitterGroupId`, `AdoptionFeeGroup`, `LastIntakeUnixTime` and `Microchips[].ImplantUnixTime`. Normalize both to `None` on the way in, or `weight_lbs` gets a `float("")` and `Description` gets scored as present-but-empty. |
 | Numbers arrive as strings | `CurrentWeightPounds` is a string even when numeric. |
 | `Age` is months | An integer count of months, not years. `Animal.age_years` derives from `birth_date`, so use `DOBUnixTime` for that and treat `Age` as an independent facet. |
 | `Breed` and `Color` are compound single strings | Space-slash separated, up to two values each (`"Chihuahua /Mix"`, `"Black /White"`). Not arrays. Note the space before the slash. |
@@ -359,10 +413,11 @@ Every place the vendor's OpenAPI document and the live response disagree, all me
 | Rate-limit headers | Attached to the 429 response only. | `x-ratelimit-limit` and `x-ratelimit-remaining` present on a 200. |
 | `since` semantics | "records that had an intake occur after the given timestamp". | Filters on last update. Returned records' `LastIntakeUnixTime` values were years outside the window. |
 | Epoch field types | `LastUpdatedUnixTime`, `LastIntakeUnixTime` and `DOBUnixTime` all `integer`. | The first two are strings, the third an integer. |
-| `CurrentLocation` | `array` of string. | An object of `Tier1`, `Tier2`, `Tier3`. Empty on both records seen, including one with `InFoster` true. |
+| `CurrentLocation` | `array` of string. | An object of `Tier1`, `Tier2`, `Tier3`. Empty on two records, including one with `InFoster` true, and populated with a `Tier1` string on a third. So the array typing is a bug and the field does carry data at some shelters. |
+| `AssociatedPerson` | An `array` of object. | A single object, not an array. |
 | `AdoptionFeeGroup` | An array. | A single object (`Id`, `Name`, `Price`, `Discount`, `Tax`, `IsVariable`). |
 | `Videos` | An array of arrays of objects. | A flat array of objects (`VideoId`, `EmbedUrl`, `YoutubeUrl`, `ThumbUrl`). |
-| `Attributes[]` meaning | One example, `"Foster-to-Adopt"`: an operational tag. | The behaviour profile. 16 entries on one record, covering dog, cat, kid and housetraining assessments plus bite history. |
+| `Attributes[]` meaning | One example, `"Foster-to-Adopt"`: an operational tag. | The behaviour profile. 16 entries on one record, covering dog, cat, kid and housetraining assessments plus bite history, mixed with shelter programme flags. |
 
 ## What this API does not have
 
@@ -380,8 +435,11 @@ any field:
   from here.
 - Publication status or a published-at timestamp for `Description` or anything else.
 - Search by name or by microchip. The list endpoint has no search parameter.
-- Any people or adopter resource. The only person data is nested `AssociatedPerson` entries
-  with `FirstName`, `LastName`, `OutDateUnixTime` and `RelationshipType`.
+- Any people or adopter resource. The only person data is the nested `AssociatedPerson`
+  (a single object, not the array the spec declares) with `FirstName`, `LastName`,
+  `OutDateUnixTime` and `RelationshipType`. It carries a real person's name, usually a
+  foster's, so treat it as personal data: it must not reach a public surface, a log, a
+  prompt or a generated document.
 - Any resource other than animals. The vendor's Key Terms prose names person and transaction
   id formats, but no such endpoint exists.
 - Write operations. Two endpoints, both GET.
@@ -389,10 +447,12 @@ any field:
 
 ## Open questions
 
-1. **Is the first line of `Description` reliably the animal's public profile URL?** Seen on one
-   publishable record, where the URL's final path segment matched the grader's name-based slug.
-   Settle it by reading a full page of publishable records and counting how many open with such
-   a URL. Until then, neither `public_profile_url` nor a slug crosswalk may depend on it.
+1. **How often does `Description` carry section headings, and are the heading labels stable?**
+   Of three records, one uses four uppercase headings and one uses none. An adapter needs to
+   know whether the heading set is a shelter template worth segmenting on or ad-hoc per writer.
+   Settle it by reading a full page of publishable records and tabulating the heading labels.
+   (The related first-line-URL question is settled: it is present on some records only and is
+   not a convention. Grades key on the animal record.)
 2. **Can editorial photographs be distinguished from volunteer snapshots?** `Photos[]` gives
    URLs and an order, with the cover duplicated first. The grader's photos dimension is meant
    to reward editorial images, and nothing in the payload separates the two. Settle it by
