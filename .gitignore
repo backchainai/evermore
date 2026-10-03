@@ -28,8 +28,6 @@ build/
 /docs/research/source-research/
 /docs/research/reference-library/
 
-# Retired tooling cruft (Beads retired for Evermore per ADR 0002)
-.beads/
 .daedalus/
 
 # Claude Code local session state (logs, worktrees): per-machine, not source

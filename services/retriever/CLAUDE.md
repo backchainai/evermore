@@ -10,7 +10,7 @@ AI-powered Q&A system for shelter volunteers, using RAG to answer questions from
 
 ## Issue Tracking
 
-Evermore uses GitHub Issues for tracking (see ADR 0023 (github-native-project-management) and the root `CLAUDE.md`). Beads is retired in this repo: do not run `bd init` here.
+Evermore uses GitHub Issues for tracking (see ADR 0023 (github-native-project-management) and the root `CLAUDE.md`).
 
 **Architecture:** Cloud-native microservices
 
