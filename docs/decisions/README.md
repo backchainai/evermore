@@ -76,7 +76,7 @@ One line per record: number, slug, status (the `status` frontmatter of each file
 - 0018 mutable-pydantic-models: accepted
 - 0019 gcp-native-observability: superseded (by ADR 0027)
 - 0020 docling-document-processing: accepted
-- 0021 apache-2.0-licensing: accepted
+- 0021 apache-2-0-licensing: accepted
 - 0022 monorepo-structure: accepted
 - 0023 github-native-project-management: accepted
 - 0024 standardized-tech-stack: accepted

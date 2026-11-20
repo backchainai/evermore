@@ -99,7 +99,7 @@ petdata-integration:
 	status=$$?; \
 	if [ $$status -eq 0 ]; then \
 	  uv run --frozen alembic upgrade head \
-	  && uv run --frozen pytest -m "integration or not integration"; \
+	  && uv run --frozen pytest -m "integration or not integration" --cov=src --cov-report=term-missing; \
 	  status=$$?; \
 	fi; \
 	docker compose -p petdata-test -f docker-compose.test.yml down -v; \
