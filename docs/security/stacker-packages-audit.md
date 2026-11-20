@@ -27,7 +27,7 @@ No **Critical** findings. One **High** finding (FINDING-S1) is filed as a redact
 
 **Token/session lifetime.** `jwt_expiry = 3600` (1 hour access token) with refresh-token rotation handled by Supabase. Reasonable for a staff portal.
 
-**Non-HttpOnly cookie compensating-control verification.** The issue text refers to "ADR 0011"; the actual governing decision in this repo is **`docs/adr/0032-supabase-auth-cookie-non-httponly.md`** (the "ADR 0011" reference is stale; ADR 0011 in this tree is the development-environment decision). Per the epic, this audit **verifies** the documented compensating controls hold in code, it does not relitigate the decision.
+**Non-HttpOnly cookie compensating-control verification.** The issue text refers to "ADR 0011"; the actual governing decision in this repo is **`docs/decisions/0032_supabase-auth-cookie-non-httponly.md`** (the "ADR 0011" reference is stale; ADR 0011 in this tree is the development-environment decision). Per the epic, this audit **verifies** the documented compensating controls hold in code, it does not relitigate the decision.
 
 The compensating controls are implemented in `hooks.server.ts` `securityHeaders` and applied to every response:
 

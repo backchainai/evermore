@@ -20,7 +20,7 @@ Summary reality: destruction of animal records, generated content, and PII is re
 
 ## Backup / PITR posture
 
-No ADR documents backup or recovery posture (checked `docs/adr/0025-petdata-postgres-pgvector.md` and `docs/adr/0030-per-service-supabase-projects.md`), and no in-repo document records backup frequency, retention, PITR tier, or a tested restore. The data store is Supabase-managed Postgres, one project per service (ADR 0030). Recovery therefore relies entirely on Supabase platform defaults, which are tier-dependent (daily backups on paid tiers; point-in-time recovery is a separate add-on) and are neither documented nor restore-tested anywhere in this repo.
+No ADR documents backup or recovery posture (checked `docs/decisions/0025_petdata-postgres-pgvector.md` and `docs/decisions/0030_per-service-supabase-projects.md`), and no in-repo document records backup frequency, retention, PITR tier, or a tested restore. The data store is Supabase-managed Postgres, one project per service (ADR 0030). Recovery therefore relies entirely on Supabase platform defaults, which are tier-dependent (daily backups on paid tiers; point-in-time recovery is a separate add-on) and are neither documented nor restore-tested anywhere in this repo.
 
 Honest verdict: backup *existence* is assumed from the platform default tier; backup *frequency*, *retention*, and *restore-tested* status are all UNVERIFIED. This gap is itself a finding: recovery is the entire subject of this assessment, animal records are the top-ranked asset, and the design partner is a pro-bono shelter with limited capacity to notice data loss or to drive a restore effort unassisted.
 

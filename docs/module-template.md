@@ -10,7 +10,7 @@ Step-by-step checklist for adding a new FastAPI backend module to Evermore. Use 
 
 ## 1. Backend service scaffold
 
-Evermore is a monorepo (ADR `0022-monorepo-structure.md`): create a new service directory under `services/{module}/`, not a separate repo:
+Evermore is a monorepo (ADR `0022_monorepo-structure.md`): create a new service directory under `services/{module}/`, not a separate repo:
 
 ```
 services/{module}/
@@ -171,7 +171,7 @@ Stacker's `.env` should point each `PUBLIC_{ID}_API_URL` at the corresponding ho
 
 ## 10. Deploy
 
-Deploy targets are governed by ADR `0029-all-cloudflare-hosting.md`, not by this template: Cloudflare Pages for `apps/stacker`, Cloudflare Containers behind a Worker router for backend services like this one. CI/CD is GitHub Actions authenticated to Cloudflare with a scoped API token; there are no long-lived service-account keys. See the ADR (and its follow-ups) for current wrangler/container tooling status.
+Deploy targets are governed by ADR `0029_all-cloudflare-hosting.md`, not by this template: Cloudflare Pages for `apps/stacker`, Cloudflare Containers behind a Worker router for backend services like this one. CI/CD is GitHub Actions authenticated to Cloudflare with a scoped API token; there are no long-lived service-account keys. See the ADR (and its follow-ups) for current wrangler/container tooling status.
 
 ## 11. Verification checklist
 

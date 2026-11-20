@@ -9,7 +9,7 @@ when_to_use:
 - Reviewing code quality requirements
 dependencies:
 - architecture.md
-- ../../../../docs/adr/
+- ../../../../docs/decisions/
 ---
 # Development Standards
 
@@ -244,4 +244,4 @@ How was this tested?
 ## Related Documents
 
 - [Architecture](architecture.md)
-- [ADRs](../../../../docs/adr/)
+- [ADRs](../../../../docs/decisions/)

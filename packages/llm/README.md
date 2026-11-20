@@ -4,7 +4,7 @@ Shared model-call transport infrastructure for the Evermore services: one
 `build_gateway_client` helper that builds a single `AsyncOpenAI` client
 pointed at the OpenAI-compatible LLM gateway (chat, embeddings, and
 moderation all go through it). This executes the follow-up documented in
-[`docs/adr/0028-llm-gateway-consolidation.md`](../../docs/adr/0028-llm-gateway-consolidation.md):
+[`docs/decisions/0028_llm-gateway-consolidation.md`](../../docs/decisions/0028_llm-gateway-consolidation.md):
 "Promote `build_gateway_client` into a shared Python package once one exists,
 so petdata and biowriter import it rather than copying it." retriever imports
 it from here today; petdata and biowriter will import it from the same
