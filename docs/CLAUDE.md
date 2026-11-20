@@ -12,7 +12,7 @@ The `.md` files directly under `docs/` (`architecture.md`, `evermore-vision-and-
 
 ## `decisions/` - decisions
 
-Architecture Decision Records are append-only. A decision is recorded once, at the next sequential number (`NNNN_<slug>.md`, written through `/daedalus:decide`), and never rewritten in place. When a later decision changes course, it supersedes the earlier record: the earlier file stays, gets `status: superseded` and a `superseded_by` path naming the successor, and is not deleted or edited to match the new state. `docs/decisions/README.md` is the index (old-to-new numbering, current status per record); read it before adding or amending a decision.
+Architecture Decision Records are append-only. A decision is recorded once, at the next sequential number (`NNNN_<slug>.md`, written through `/daedalus:decide`), and never rewritten in place. When a later decision changes course, it supersedes the earlier record: the earlier file stays, gets `status: superseded` and a `superseded_by` path naming the successor (0004 and 0006 name a migration instead, since no successor ADR exists), and is not deleted or edited to match the new state. `docs/decisions/README.md` is the index (old-to-new numbering, current status per record); read it before adding or amending a decision.
 
 Every record carries `title`, `date`, and `status` (`accepted` or `superseded`) frontmatter, checked by `daedalus.sh check-docs`. The move from `docs/adr/` was a one-time metadata normalization (frontmatter added or corrected, links repointed); record bodies were not rewritten.
 

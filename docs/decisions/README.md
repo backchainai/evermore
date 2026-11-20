@@ -12,6 +12,7 @@ Each file records one architecture decision, written through `/daedalus:decide`;
 `python -m daedalus check-docs` validates every artifact here; the daedalus hooks validate each one as it is edited.
 
 All of Evermore's ADRs live here in one consolidated, chronologically numbered sequence. They were previously split across three locations (root `docs/adr/`, `services/retriever/docs/decisions/`, `services/petdata/docs/adr/`); the table below maps every old path to its new number. ADR 0033 (listing-sync verification) is still a proposal and lives in `docs/planning/proposal_listing-sync-verification.md` until the operator accepts it; its number stays unused.
+
 ## Old to new mapping
 
 | New | Source | Old path | Effective date |
