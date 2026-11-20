@@ -9,7 +9,7 @@ when_to_use:
 - Understanding how components fit together
 dependencies:
 - development-standards.md
-- ../../../../docs/adr/
+- ../../../../docs/decisions/
 ---
 # petdata Architecture
 
@@ -127,7 +127,7 @@ petdata/
 │       └── web/                   # /llms.txt and API routes
 │
 ├── docs/
-│   └── design/                    # This file, concept, phase1, development-standards (ADRs now in root docs/adr/)
+│   └── design/                    # This file, concept, phase1, development-standards (ADRs now in root docs/decisions/)
 │
 ├── pyproject.toml
 ├── uv.lock
@@ -276,4 +276,4 @@ modules/
 
 - [Phase 1 Design](phase1-data-extraction.md) - detailed Phase 1 design
 - [Development Standards](development-standards.md) - git, testing, quality
-- [ADR-0018: Mutable Models](../../../../docs/adr/0018-mutable-pydantic-models.md)
+- [ADR-0018: Mutable Models](../../../../docs/decisions/0018_mutable-pydantic-models.md)

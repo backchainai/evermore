@@ -210,5 +210,5 @@ How was this tested?
 ## Related Documents
 
 - [Architecture](architecture.md)
-- [ADRs](../../../docs/adr/)
+- [ADRs](../../../docs/decisions/)
 - [CLAUDE.md](../CLAUDE.md) - Quick reference

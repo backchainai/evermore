@@ -71,5 +71,5 @@ Lives in `docs/research/` (see `docs/research/README.md`).
 ## Related documents
 
 - System architecture: `architecture.md`
-- Decisions: `adr/0022-monorepo-structure.md`, `adr/0023-github-native-project-management.md`, `adr/0024-standardized-tech-stack.md`
+- Decisions: `decisions/0022_monorepo-structure.md`, `decisions/0023_github-native-project-management.md`, `decisions/0024_standardized-tech-stack.md`
 - Research corpus map: `research/README.md`

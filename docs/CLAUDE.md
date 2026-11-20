@@ -4,15 +4,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this directory is
 
-`docs/` holds everything under version control that is not application code: the living architecture and product docs, the append-only decision record, the research corpus, and per-module test-quality audits. Four kinds of content live here, each with its own rules below.
+`docs/` holds everything under version control that is not application code: the living architecture and product docs, the daedalus SDLC artifacts (intents, specs, plans, decisions), proposals, the research corpus, and per-module test-quality audits. Each kind of content has its own rules below.
 
 ## Living docs
 
 The `.md` files directly under `docs/` (`architecture.md`, `evermore-vision-and-architecture.md`, `auth-flow.md`, `subscriptions.md`, `module-template.md`, `local-development.md`, `cloudflare-ai-gateway-setup.md`) are living documents: edit them in place when the thing they describe changes. Each fact has one owning doc; every other mention of that fact elsewhere in the repo is a one-line signpost back to the owner, not a restatement. `docs/architecture.md` owns system topology and cross-cutting contracts (auth, subscriptions, observability); `docs/evermore-vision-and-architecture.md` owns product vision and the data model; the rest own the area named in their title.
 
-## `adr/` - decisions
+## `decisions/` - decisions
 
-Architecture Decision Records are append-only. A decision is recorded once, at the next sequential number, and never rewritten in place. When a later decision changes course, it supersedes the earlier record: the earlier file stays, gets marked superseded (naming the successor), and is not deleted or edited to match the new state. `docs/adr/README.md` is the index (old-to-new numbering, current status per record); read it before adding or amending an ADR, and add new records by appending, not by editing history.
+Architecture Decision Records are append-only. A decision is recorded once, at the next sequential number (`NNNN_<slug>.md`, written through `/daedalus:decide`), and never rewritten in place. When a later decision changes course, it supersedes the earlier record: the earlier file stays, gets `status: superseded` and a `superseded_by` path naming the successor (0004 and 0006 name a migration instead, since no successor ADR exists), and is not deleted or edited to match the new state. `docs/decisions/README.md` is the index (old-to-new numbering, current status per record); read it before adding or amending a decision.
+
+Every record carries `title`, `date`, and `status` (`accepted` or `superseded`) frontmatter, checked by `python -m daedalus check-docs` (run by the daedalus plugin and its hooks). The move from `docs/adr/` was a one-time metadata normalization (frontmatter added or corrected, links repointed); record bodies were not rewritten.
+
+## `intents/`, `specs/`, `plans/` - SDLC artifacts
+
+Written by `/daedalus:intent`, `/daedalus:spec`, and `/daedalus:plan` on an issue branch as `<issue>_<slug>.md`, and committed with the change. Each folder's `README.md` states its schema; the `docs/decisions/README.md` table covers all four artifact folders.
+
+## `planning/` - proposals
+
+Pre-decision proposals and specs that are not yet accepted (`profile-grader-integration-spec.md`, `proposal_listing-sync-verification.md`). A proposal returns through `/daedalus:decide` when the operator accepts it; until then it carries no status and is not validated.
 
 ## `research/` - the research corpus
 
@@ -45,4 +55,4 @@ Point-in-time audits of test-suite effectiveness and mutation-testing coverage, 
 
 ## What is not here
 
-No plans directory. Planning documents are not tracked under `docs/`; work breakdown lives in GitHub Issues and Projects (ADR `0023-github-native-project-management.md`).
+Work breakdown lives in GitHub Issues and Projects (ADR `0023_github-native-project-management.md`), not in a tracked backlog file. Plans under `docs/plans/` are per-issue implementation plans, not a roadmap.

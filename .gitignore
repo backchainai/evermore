@@ -30,8 +30,12 @@ build/
 
 .daedalus/
 
-# Claude Code local session state (logs, worktrees): per-machine, not source
-.claude/
+# Claude Code local session state (logs, worktrees): per-machine, not source.
+# The root .claude/settings.json is tracked: it enables the daedalus plugin for the repo.
+# Nested .claude/ folders (module sessions, worktrees) stay ignored entirely.
+/.claude/*
+!/.claude/settings.json
+*/**/.claude/
 
 # Ephemeral working memory (engram /working checkpoints): per-session, not source
 .memory/

@@ -104,10 +104,10 @@ redacted reference to the private report instead of the exploit content itself.
 ## Related decisions
 
 - `SECURITY.md`: the disclosure channel and scope for this repository.
-- ADR `0007-authentication-strategy.md`: the original JWT authentication scheme (superseded by
-  ADR `0030-per-service-supabase-projects.md`, the current per-service Supabase Auth model).
-- ADR `0009-content-safety.md`: input/output moderation and pattern-based prompt-injection
+- ADR `0007_authentication-strategy.md`: the original JWT authentication scheme (superseded by
+  ADR `0030_per-service-supabase-projects.md`, the current per-service Supabase Auth model).
+- ADR `0009_content-safety.md`: input/output moderation and pattern-based prompt-injection
   defense in `retriever`, the first line of defense against threat 1 above.
-- ADR `0015-prompt-injection-defense.md`: the prompt-injection defense record this threat model's
+- ADR `0015_prompt-injection-defense.md`: the prompt-injection defense record this threat model's
   threat 1 generalizes from a single module (`retriever`) to every ingestion path in the system,
   including shelter-system data ingested by `petdata`.

@@ -36,7 +36,7 @@ Canonical reference for how the Evermore subscription portal is structured. Read
                        └─────────────────────┘
 ```
 
-Deploy targets are governed by ADR `0029-all-cloudflare-hosting.md`, not restated here: Cloudflare Pages for `stacker`, Cloudflare Containers behind a Worker router for backend services.
+Deploy targets are governed by ADR `0029_all-cloudflare-hosting.md`, not restated here: Cloudflare Pages for `stacker`, Cloudflare Containers behind a Worker router for backend services.
 
 ## Module backend contract
 
@@ -95,7 +95,7 @@ Plus:
 | Module backend implementation | `services/{module}/` (the portal itself is `apps/stacker/`) |
 | Cross-cutting contracts | `docs/` (the retired `platform` repo's docs folded in here) |
 | Per-module conventions | each module's own `CLAUDE.md` |
-| Architecture decisions (ADRs) | `docs/adr/` (single consolidated, chronologically numbered sequence) |
+| Architecture decisions (ADRs) | `docs/decisions/` (single consolidated, chronologically numbered sequence) |
 
 ## Adding a new module
 

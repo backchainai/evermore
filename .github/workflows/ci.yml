@@ -20,6 +20,8 @@ jobs:
       petdata: ${{ steps.filter.outputs.petdata }}
       retriever: ${{ steps.filter.outputs.retriever }}
       stacker: ${{ steps.filter.outputs.stacker }}
+      grader: ${{ steps.filter.outputs.grader }}
+      packages: ${{ steps.filter.outputs.packages }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
@@ -32,6 +34,13 @@ jobs:
               - '.github/workflows/ci.yml'
             retriever:
               - 'services/retriever/**'
+              - 'packages/**'
+              - '.github/workflows/ci.yml'
+            grader:
+              - 'services/grader/**'
+              - 'packages/**'
+              - '.github/workflows/ci.yml'
+            packages:
               - 'packages/**'
               - '.github/workflows/ci.yml'
             stacker:
@@ -118,7 +127,50 @@ jobs:
       - run: npm run gen:types
       - run: git diff --exit-code -- src/lib/modules/retriever/api/types.generated.ts src/lib/modules/petdata/api/types.generated.ts
       - run: npm run check
+      - run: npm run test:unit
       - run: npm run build
+
+  grader:
+    needs: changes
+    if: ${{ needs.changes.outputs.grader == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/grader
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          enable-cache: true
+          cache-dependency-glob: services/grader/uv.lock
+      - run: uv sync --locked --all-extras
+      - run: uv run --frozen ruff format --check src/ tests/
+      - run: uv run --frozen ruff check src/ tests/
+      - run: uv run --frozen mypy src/
+      - run: uv run --frozen pytest
+
+  packages:
+    needs: changes
+    if: ${{ needs.changes.outputs.packages == 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [auth, llm, schema]
+    defaults:
+      run:
+        working-directory: packages/${{ matrix.package }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          enable-cache: true
+          cache-dependency-glob: packages/${{ matrix.package }}/uv.lock
+      - run: uv sync --locked --all-extras
+      - run: uv run --frozen ruff format --check src/ tests/
+      - run: uv run --frozen ruff check src/ tests/
+      - run: uv run --frozen mypy src/
+      - run: uv run --frozen pytest
 
   container-build:
     needs: changes
@@ -147,13 +199,13 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
 
   ci-success:
-    needs: [changes, petdata, retriever, stacker, container-build]
+    needs: [changes, petdata, retriever, stacker, grader, packages, container-build]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - name: Verify no job failed
         run: |
-          results='${{ needs.petdata.result }} ${{ needs.retriever.result }} ${{ needs.stacker.result }} ${{ needs.container-build.result }}'
+          results='${{ needs.petdata.result }} ${{ needs.retriever.result }} ${{ needs.stacker.result }} ${{ needs.grader.result }} ${{ needs.packages.result }} ${{ needs.container-build.result }}'
           echo "job results: $results"
           for r in $results; do
             if [ "$r" = "failure" ] || [ "$r" = "cancelled" ]; then

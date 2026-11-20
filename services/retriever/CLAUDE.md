@@ -89,7 +89,7 @@ docker compose down && supabase stop
 
 Outbound model calls (chat, embeddings, moderation) route through one OpenAI-compatible LLM gateway (Cloudflare AI Gateway by default) via a single `AsyncOpenAI` client built by `build_gateway_client`. Chat uses `OpenAICompatProvider`. The gateway holds the provider keys (BYOK), so the only LLM secret needed to run against it is `LLM_GATEWAY_TOKEN` (sent on the `llm_gateway_auth_header`, default `cf-aig-authorization`), alongside `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_GATEWAY_ID`. Set `LLM_GATEWAY_URL` to swap to any other OpenAI-compatible gateway.
 
-The gateway is required: there is no no-gateway path. When none is configured, `settings.llm_gateway_base_url` raises `ValueError` and the app fails fast with a clear error, so every environment that makes model calls (local dev, CI, production) configures a gateway. See ADR `docs/adr/0028-llm-gateway-consolidation.md`.
+The gateway is required: there is no no-gateway path. When none is configured, `settings.llm_gateway_base_url` raises `ValueError` and the app fails fast with a clear error, so every environment that makes model calls (local dev, CI, production) configures a gateway. See ADR `docs/decisions/0028_llm-gateway-consolidation.md`.
 
 See [CONTRIBUTING.md](../../CONTRIBUTING.md) for full setup instructions including prerequisites and environment configuration.
 
@@ -201,41 +201,41 @@ Read ADRs when you need to understand *why* a technical choice was made or when 
 **Foundation & Stack**
 | ADR | Path | Topics |
 |-----|------|--------|
-| 0001 | `docs/adr/0001-tech-stack.md` | Python, FastAPI, Pydantic, async |
-| 0003 | `docs/adr/0003-system-architecture.md` | Modular monolith, clean architecture, module boundaries |
-| 0011 | `docs/adr/0011-development-environment.md` | Dev containers, VS Code, Codespaces |
+| 0001 | `docs/decisions/0001_tech-stack.md` | Python, FastAPI, Pydantic, async |
+| 0003 | `docs/decisions/0003_system-architecture.md` | Modular monolith, clean architecture, module boundaries |
+| 0011 | `docs/decisions/0011_development-environment.md` | Dev containers, VS Code, Codespaces |
 
 **LLM & RAG Pipeline**
 | ADR | Path | Topics |
 |-----|------|--------|
-| 0002 | `docs/adr/0002-llm-provider-strategy.md` | OpenRouter, Claude, provider abstraction, fallback |
-| 0004 | `docs/adr/0004-vector-database.md` | Chroma, embeddings storage, persistence |
-| 0005 | `docs/adr/0005-embedding-model.md` | text-embedding-3-small, OpenAI embeddings |
-| 0013 | `docs/adr/0013-semantic-caching.md` | Query caching, similarity matching, cost reduction |
-| 0016 | `docs/adr/0016-hybrid-retrieval.md` | BM25, semantic search, Cohere reranking |
-| 0017 | `docs/adr/0017-conversation-history-schema.md` | Messages table, no FK constraint, MVP schema |
+| 0002 | `docs/decisions/0002_llm-provider-strategy.md` | OpenRouter, Claude, provider abstraction, fallback |
+| 0004 | `docs/decisions/0004_vector-database.md` | Chroma, embeddings storage, persistence |
+| 0005 | `docs/decisions/0005_embedding-model.md` | text-embedding-3-small, OpenAI embeddings |
+| 0013 | `docs/decisions/0013_semantic-caching.md` | Query caching, similarity matching, cost reduction |
+| 0016 | `docs/decisions/0016_hybrid-retrieval.md` | BM25, semantic search, Cohere reranking |
+| 0017 | `docs/decisions/0017_conversation-history-schema.md` | Messages table, no FK constraint, MVP schema |
 
 **Safety & Security**
 | ADR | Path | Topics |
 |-----|------|--------|
-| 0007 | `docs/adr/0007-authentication-strategy.md` | JWT, session management, future SSO |
-| 0009 | `docs/adr/0009-content-safety.md` | Moderation API, input/output filtering |
-| 0012 | `docs/adr/0012-rate-limiting.md` | slowapi, per-session limits, abuse prevention |
-| 0014 | `docs/adr/0014-hallucination-detection.md` | Claim verification, grounding, accuracy |
-| 0015 | `docs/adr/0015-prompt-injection-defense.md` | Pattern detection, attack prevention |
+| 0007 | `docs/decisions/0007_authentication-strategy.md` | JWT, session management, future SSO |
+| 0009 | `docs/decisions/0009_content-safety.md` | Moderation API, input/output filtering |
+| 0012 | `docs/decisions/0012_rate-limiting.md` | slowapi, per-session limits, abuse prevention |
+| 0014 | `docs/decisions/0014_hallucination-detection.md` | Claim verification, grounding, accuracy |
+| 0015 | `docs/decisions/0015_prompt-injection-defense.md` | Pattern detection, attack prevention |
 
 **Infrastructure & Operations**
 | ADR | Path | Topics |
 |-----|------|--------|
-| 0006 | `docs/adr/0006-frontend-architecture.md` | Jinja2, HTMX, Tailwind, server-rendered |
-| 0008 | `docs/adr/0008-observability-stack.md` | ~~Superseded by 0019~~ Sentry, structlog |
-| 0019 | `docs/adr/0019-gcp-native-observability.md` | GCP Cloud Trace, Langfuse, OTel, structlog |
-| 0010 | `docs/adr/0010-resilience-patterns.md` | Circuit breakers, retries, timeouts, aiobreaker |
+| 0006 | `docs/decisions/0006_frontend-architecture.md` | Jinja2, HTMX, Tailwind, server-rendered |
+| 0008 | `docs/decisions/0008_observability-stack.md` | ~~Superseded by 0019~~ Sentry, structlog |
+| 0019 | `docs/decisions/0019_gcp-native-observability.md` | GCP Cloud Trace, Langfuse, OTel, structlog |
+| 0010 | `docs/decisions/0010_resilience-patterns.md` | Circuit breakers, retries, timeouts, aiobreaker |
 
 **Reference**
 | ADR | Path | Topics |
 |-----|------|--------|
-| 000 | `docs/adr/000-template.md` | ADR template for new decisions |
+| - | `docs/decisions/README.md` | Decision index and folder rules; new decisions go through `/daedalus:decide` |
 
 ### Quick Reference
 

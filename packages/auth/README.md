@@ -36,5 +36,5 @@ require_subscription = auth.require_subscription
 
 Pinned to Python 3.13+, not the repo's 3.14 floor: it matches its current
 consumer, `services/retriever`. ADR
-[`0024-standardized-tech-stack.md`](../../docs/adr/0024-standardized-tech-stack.md)
+[`0024_standardized-tech-stack.md`](../../docs/decisions/0024_standardized-tech-stack.md)
 already tracks retriever's move to 3.14 as outstanding work, not grandfathered.

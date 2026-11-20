@@ -44,7 +44,66 @@ STALE_VARS := OPENROUTER_API_KEY SUPABASE_ANON_KEY PUBLIC_SUPABASE_ANON_KEY
 DEV_HOME ?= $(or $(EVERMORE_DEV_HOME),$(HOME)/.config/evermore)
 
 .PHONY: env link-env supabase-keys supabase-up db-up db-migrate retriever-up \
-	retriever-bg petdata-db-up petdata-migrate petdata-bg llm-stub dev dev-full down
+	retriever-bg petdata-db-up petdata-migrate petdata-bg llm-stub dev dev-full down \
+	setup test lint format check verify petdata-integration
+
+# Quality gate (daedalus SDLC). There is no root pyproject, so each Python module
+# is looped with `uv run --frozen`. Ruff is scoped to src/ tests/ because bare ruff
+# fails on the alembic/ directories of petdata and retriever.
+PY_MODULES := services/petdata services/retriever services/grader packages/auth packages/llm packages/schema
+PETDATA_TEST_DB := postgresql+asyncpg://postgres:postgres@localhost:5434/petdata_test
+
+setup:
+	@set -e; for m in $(PY_MODULES); do \
+	  echo "== setup $$m"; (cd $$m && uv sync --locked --all-extras); \
+	done
+	cd $(STACKER_DIR) && npm ci && ([ -f .env ] || cp .env.example .env) && npx svelte-kit sync
+
+test:
+	@set -e; for m in $(PY_MODULES); do \
+	  echo "== test $$m"; (cd $$m && uv run --frozen pytest); \
+	done
+	cd $(STACKER_DIR) && npm run test:unit
+
+lint:
+	@set -e; for m in $(PY_MODULES); do \
+	  echo "== lint $$m"; (cd $$m && uv run --frozen ruff check src/ tests/ && uv run --frozen mypy src/); \
+	done
+	cd $(STACKER_DIR) && npm run check
+
+format:
+	@set -e; for m in $(PY_MODULES); do \
+	  echo "== format $$m"; (cd $$m && uv run --frozen ruff format src/ tests/); \
+	done
+
+check: test lint
+	@set -e; for m in $(PY_MODULES); do \
+	  echo "== format check $$m"; (cd $$m && uv run --frozen ruff format --check src/ tests/); \
+	done
+
+verify: check petdata-integration
+	cd $(STACKER_DIR) && npm run gen:types
+	git diff --exit-code -- $(STACKER_DIR)/src/lib/modules/retriever/api/types.generated.ts $(STACKER_DIR)/src/lib/modules/petdata/api/types.generated.ts
+	cd $(STACKER_DIR) && npm run build
+
+# Petdata integration suite against a throwaway Postgres on :5434, in its own
+# compose project so it never touches the dev `petdata` database. `down` always
+# runs and the suite's exit status is preserved.
+petdata-integration: export TEST_DATABASE_URL := $(PETDATA_TEST_DB)
+petdata-integration: export PETDATA_DATABASE_URL := $(PETDATA_TEST_DB)
+petdata-integration:
+	@if lsof -iTCP:5434 -sTCP:LISTEN >/dev/null 2>&1; then \
+	  echo "ERROR: port 5434 is already in use (run 'make down' or stop the petdata database first)" >&2; exit 1; \
+	fi
+	@cd $(PETDATA_DIR) && docker compose -p petdata-test -f docker-compose.test.yml up -d --wait; \
+	status=$$?; \
+	if [ $$status -eq 0 ]; then \
+	  uv run --frozen alembic upgrade head \
+	  && uv run --frozen pytest -m "integration or not integration" --cov=src --cov-report=term-missing; \
+	  status=$$?; \
+	fi; \
+	docker compose -p petdata-test -f docker-compose.test.yml down -v; \
+	exit $$status
 
 env:
 	@[ -f $(STACKER_DIR)/.env ] || cp $(STACKER_DIR)/.env.example $(STACKER_DIR)/.env && echo "stacker   .env ready: $(STACKER_DIR)/.env"
