@@ -1,0 +1,2 @@
+# Copied into every Claude Code worktree (untracked, per-clone plugin enablement).
+.claude/settings.local.json
