@@ -52,7 +52,6 @@ Pending follow-ups from the plan: tech-stack conformance, which includes scaffol
 - User-visible content avoids em-dashes (use colons, parentheses, commas).
 - Per-module build/test commands live in each module's own `CLAUDE.md`; the tech-stack standard governs all of them.
 - The design partner's name was scrubbed from the working tree in Phase 3: code, tests, and docs are genericized to "Shelter Management System (SMS)". Do not reintroduce client names or branded SMS tool names; refer to shelter systems generically. An integration module is named after its integration point, for example `modules/shelterluv/`. The pre-Phase-3 snapshot-import commit still contains the design partner's name in git history; a history scrub is a separate prerequisite before the repo flips public.
-
 - **Claude Code configuration:** the tracked `.claude/settings.json` holds only public plugins and the deny list. daedalus, github, and astral are enabled per clone in the gitignored `.claude/settings.local.json`, which also declares the `backchain` and `astral-sh` marketplaces (`backchain` is a private repo). The tracked `.worktreeinclude` copies that file into every worktree Claude Code creates (`claude --worktree`, EnterWorktree, subagent worktree isolation); a worktree made with `git worktree add` needs it copied in by hand.
 
 ## Commands
