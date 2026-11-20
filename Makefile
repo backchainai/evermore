@@ -89,6 +89,8 @@ verify: check petdata-integration
 # Petdata integration suite against a throwaway Postgres on :5434, in its own
 # compose project so it never touches the dev `petdata` database. `down` always
 # runs and the suite's exit status is preserved.
+petdata-integration: export TEST_DATABASE_URL := $(PETDATA_TEST_DB)
+petdata-integration: export PETDATA_DATABASE_URL := $(PETDATA_TEST_DB)
 petdata-integration:
 	@if lsof -iTCP:5434 -sTCP:LISTEN >/dev/null 2>&1; then \
 	  echo "ERROR: port 5434 is already in use (run 'make down' or stop the petdata database first)" >&2; exit 1; \
@@ -96,8 +98,8 @@ petdata-integration:
 	@cd $(PETDATA_DIR) && docker compose -p petdata-test -f docker-compose.test.yml up -d --wait; \
 	status=$$?; \
 	if [ $$status -eq 0 ]; then \
-	  TEST_DATABASE_URL=$(PETDATA_TEST_DB) PETDATA_DATABASE_URL=$(PETDATA_TEST_DB) uv run --frozen alembic upgrade head \
-	  && TEST_DATABASE_URL=$(PETDATA_TEST_DB) PETDATA_DATABASE_URL=$(PETDATA_TEST_DB) uv run --frozen pytest -m "integration or not integration"; \
+	  uv run --frozen alembic upgrade head \
+	  && uv run --frozen pytest -m "integration or not integration"; \
 	  status=$$?; \
 	fi; \
 	docker compose -p petdata-test -f docker-compose.test.yml down -v; \
