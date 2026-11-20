@@ -52,3 +52,27 @@ Pending follow-ups from the plan: tech-stack conformance, which includes scaffol
 - User-visible content avoids em-dashes (use colons, parentheses, commas).
 - Per-module build/test commands live in each module's own `CLAUDE.md`; the tech-stack standard governs all of them.
 - The design partner's name was scrubbed from the working tree in Phase 3: code, tests, and docs are genericized to "Shelter Management System (SMS)". Do not reintroduce client names or branded SMS tool names; refer to shelter systems generically. An integration module is named after its integration point, for example `modules/shelterluv/`. The pre-Phase-3 snapshot-import commit still contains the design partner's name in git history; a history scrub is a separate prerequisite before the repo flips public.
+
+## Commands
+
+The six daedalus targets, run from the repo root. There is no root `pyproject.toml`, so each target loops over the Python modules (`services/petdata`, `services/retriever`, `services/grader`, `packages/auth`, `packages/llm`, `packages/schema`) with `uv run --frozen`, plus `apps/stacker` for the portal.
+
+| Target | Runs |
+|---|---|
+| `make setup` | `uv sync --locked --all-extras` per module; in stacker `npm ci`, creates `.env` from `.env.example` if absent, `svelte-kit sync` |
+| `make test` | `pytest` per module (integration tests excluded by default); stacker `npm run test:unit` |
+| `make lint` | `ruff check src/ tests/` and `mypy src/` per module; stacker `npm run check` |
+| `make format` | `ruff format src/ tests/` per module |
+| `make check` | `test`, `lint`, and `ruff format --check src/ tests/` per module (read-only) |
+| `make verify` | `check`, then `petdata-integration` (Postgres via Docker on :5434), stacker `gen:types` with no diff in the two `types.generated.ts` files, and `npm run build` |
+
+Healthy `make check` ends with each module reporting `N files already formatted` and exits 0; the tests report `N passed` per module (petdata, retriever, grader, auth, llm, schema) and `Success: no issues found in N source files` from mypy. It runs in about one minute.
+
+- `make check` needs a stacker `.env` that carries every key in `apps/stacker/.env.example`; a stale `.env` fails `svelte-check` on missing `$env/static/public` members. Refresh it from the example.
+- `.github/workflows/ci.yml` runs the gate per module behind path filters rather than one `make check` job.
+- `make verify` needs Docker running. `petdata-integration` fails fast if port 5434 is in use and always tears down its `petdata-test` compose project.
+- Petdata's `bandit` scan runs only in CI, not in `make check`.
+
+## Issue tracker
+
+GitHub Issues on `backchainai/evermore`.

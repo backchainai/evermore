@@ -41,6 +41,7 @@ Existing dev targets (`env`, `dev`, `dev-full`, `down`, ...) are untouched. Petd
 
 - `Makefile`
 - `.claude/settings.json`
+- `.gitignore`
 - `CLAUDE.md`
 - `REVIEW.md`
 - `.github/workflows/ci.yml`
@@ -100,6 +101,8 @@ Existing dev targets (`env`, `dev`, `dev-full`, `down`, ...) are untouched. Petd
    - Add the new jobs to `ci-success` needs and results.
 
    Check: `make check` exits 0, and the workflow parses under `actionlint` (via `npx` or `uvx`) or a YAML load. Commit. Comment on #316 (wire grader into CI) that the grader CI part landed here.
+
+Departure (step 4): `.gitignore` ignored all of `.claude/`, so `.claude/settings.json` could not be committed; it now ignores `.claude/*` except `settings.json`. The `.daedalus/config.json` deletion was refused by the auto-mode classifier and is left to the operator.
 
 ## Tests
 
