@@ -31,7 +31,7 @@ build/
 .daedalus/
 
 # Claude Code local session state (logs, worktrees): per-machine, not source.
-# The root .claude/settings.json is tracked: it enables the daedalus plugin for the repo.
+# The root .claude/settings.json is tracked (public plugins and the deny list only); daedalus is enabled per clone in the ignored settings.local.json.
 # Nested .claude/ folders (module sessions, worktrees) stay ignored entirely.
 /.claude/*
 !/.claude/settings.json
