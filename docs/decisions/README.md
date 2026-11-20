@@ -93,3 +93,4 @@ One line per record: number, slug, status (the `status` frontmatter of each file
 - 0036 engagement-data-in-petdata: accepted
 - 0037 hosted-only-execution: accepted
 - 0038 engagement-collector-scheduled-worker: accepted
+- 0039 adopt-daedalus-sdlc: accepted (builds on ADR 0023)
